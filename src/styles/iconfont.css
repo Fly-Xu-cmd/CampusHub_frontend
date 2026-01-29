@@ -1,0 +1,34 @@
+@font-face {
+  font-family: "iconfont"; /* 必须叫 iconfont */
+  /* 修正点：将 url() 括号内的所有内容保持在同一行，不要回车换行 */
+  src: url("data:application/x-font-woff2;charset=utf-8;base64,d09GMgABAAAAAAQIAAsAAAAACJAAAAO5AAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHFQGYACDMgqEHINoATYCJAMUCwwABCAFhGcHTBuOBxHVm2HJfiTGtmjyWXHRRPtozAQBtZmz7JLj4EStrk5aTyqi8tRXi4mboR5jIxRLYn/56TsubWGn+RUAf9w7bVq6vHv2AaC1tm36F37MuqwLKNAxJyXcFuaGsYvL2AcBmBSkPFrV6nWbEtC309D+xKDQigWEqaJvrx6dMFgtqiRVYCBw1e2rEHPRQZuh3QTmuI8XPygsDNDQJdpCDbtX68rZz8lf90nbsUG+xN0fCtbXAB2QQN7M9GJwubUv0o/mITHzwoqKIP9moKF9Tv6c+nng132OA0C4Nrmp/+GBhkIgQbjQkv0AqIgkaud4JgINPqdy82QDIQIBX/fJOGmi3scEDGAP8AaNkgZvv+8kQqOjg4R/XMEhR548SdxQeP9j0/PwIcJ+VOtaJU/ThzUflj0J9jYr2LtDCHf5082vN388JlP00GDYzR49YnhbPHnCcDd//PjurVquvFu048LFkW3WPCjRZcmipqa9bJN3ywr38s2ejUvHeG6eRdnnblkW9qJNWyJb+HvvXBC6+/xtMzjIczxid+85OyzvGfdp0xOa1+w4MWanY9tWgb3V9Jy0T1nebfDCK7cejZzwsX7hwg3q9920sEv5siU7lCjevhRly3cp1bppiSoBtQNvVk8cdadEK3/8NdPVqsSdUQnTjdpB2W1Jknav9pltMmbOzGiT2f6+wXJYAStaun3m/ZyWC0PaFlgXYhRo23G7y6/x/2cf9H130u7vSfaqGNJOXReTWjE1Zl3q2bW+c3yCu/49Fp7cgOVFwxq+vptvRuSb8KQ7Vc8kh9+NmBHx93TDsDzq6b8RzDtJ4W8iN2ckAM5buUYmgGMrIW1wJiik23FAEfwHy9G11e2BHQLL/jYsBcCntVO+uWrHqY8TWniPMiTuW3e3VThaISVkNiqjALOe4yAAnRIMYNfg3aJeszOE1/3IQkfh2naD0BA0fIgFiUEKXpFzQMeiMLgwKAcmuVQbbBHKQCRC+QIZTAIgCGIbaARwDCRBXMEr8hPQieALuAjiH5g0F/7jWWQI1x0FRuHJ/im5dWFDoW61N4T3ZCQr9ILkBAPUVk0yccUC6aJD/oROlYllnelCF8M0rbTJOsBpFVW3vq457yaVW+fiKDAKT/ZPya0L29gaf70bwnsyUhP/MkvGHFQ9tVVTA3+VLrXyzmSS/AmdKhMLiM90Yc2YpOhKW36tAU6r2CK89bWOxXWl1fjy+QJXACbaJXShCSmU0IULvQcES8nml8zSljNyNgGH84mM0KIAAAAA")
+    format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 定义图标类名 */
+.iconfont-geren:before {
+  content: "\e670";
+}
+
+.iconfont-faxian1:before {
+  content: "\e621";
+}
+
+.iconfont-message:before {
+  content: "\e8b1";
+}
+
+.iconfont-ticket:before {
+  content: "\e623";
+}

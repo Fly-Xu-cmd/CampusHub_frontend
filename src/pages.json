@@ -1,0 +1,68 @@
+{
+  "pages": [
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "CampusHub",
+        "enablePullDownRefresh": false,
+        "onReachBottomDistance": 50
+      }
+    },
+    {
+      "path": "pages/message/index",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/ticket/index",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/publish/index",
+      "style": { "navigationStyle": "custom" }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "CampusHub",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8",
+    "backgroundTextStyle": "dark",
+    "enablePullDownRefresh": false,
+    "onReachBottomDistance": 50,
+    "navigationStyle": "custom"
+  },
+  "platformStyle": {
+    "h5": {
+      "globalStyle": {
+        "navigationBarTextStyle": "black",
+        "navigationBarTitleText": "CampusHub",
+        "navigationBarBackgroundColor": "#F8F8F8",
+        "backgroundColor": "#F8F8F8"
+      }
+    },
+    "mp-weixin": {
+      "globalStyle": {
+        "navigationBarTextStyle": "black",
+        "navigationBarTitleText": "CampusHub",
+        "navigationBarBackgroundColor": "#F8F8F8",
+        "backgroundColor": "#F8F8F8"
+      }
+    }
+  },
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue"
+    }
+  },
+  "style": {
+    "mp-weixin": {
+      "animationType": "none",
+      "animationDuration": 300
+    }
+  }
+}
