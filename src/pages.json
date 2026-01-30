@@ -46,6 +46,11 @@
       "needLogin": true
     },
     {
+      "path": "pages/selectTags/index",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
+    },
+    {
       "path": "pages/publish/index",
       "style": { "navigationStyle": "custom" }
     },

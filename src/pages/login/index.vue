@@ -1,10 +1,10 @@
 <template>
-  <CommonLayout headerType="none" bgWhite>
-    <view class="login-container" :style="{ paddingTop: `${systemStore.statusBarHeight + 40}px` }">
+  <CommonLayout headerType="transparent" contentBg="#fff">
+    <view class="login-container" :style="{ paddingTop: `${2 * (systemStore.statusBarHeight + 30)}rpx` }">
       
       <view class="header-section">
         <view class="logo-box">
-          <wd-icon name="fill-lightning-o" size="32px" color="#ffffff"></wd-icon>
+          <wd-icon class-prefix="iconfont" name="a-shapequickpressedtrue" size="64rpx" color="#ffffff"></wd-icon>
         </view>
         <view class="title">欢迎回来</view>
         <view class="subtitle">登录 Activity Pro，发现精彩校园生活</view>
@@ -12,31 +12,38 @@
 
       <view class="form-section">
         <view class="input-wrapper">
-          <wd-icon name="mobile" size="20px" color="#94a3b8" custom-class="input-icon"></wd-icon>
+          <view class="input-icon">
+            <wd-icon name="mail" size="40rpx" color="#94a3b8" custom-class="input-icon"></wd-icon>
+          </view>
           <input 
             class="custom-input" 
-            placeholder="手机号码" 
+            placeholder="QQ邮箱" 
             placeholder-class="placeholder-style"
-            v-model="formData.mobile" 
+            v-model="formData.qqEmail" 
             type="number"
             maxlength="11"
           />
         </view>
 
         <view class="input-wrapper">
-          <wd-icon name="lock-on" size="20px" color="#94a3b8" custom-class="input-icon"></wd-icon>
+          <view class="input-icon">
+            <wd-icon name="lock-on" size="40rpx" color="#94a3b8" custom-class="input-icon"></wd-icon>
+          </view>
           <input 
             class="custom-input" 
-            placeholder="密码" 
+            :placeholder="passwordPlaceholder" 
             placeholder-class="placeholder-style"
             v-model="formData.password" 
-            password
+            :password="!showPassword&&!isCodeLogin"
           />
+          <view v-show="!isCodeLogin" class="input-icon" @click="toggleShowPassword" >
+            <wd-icon :name="showPassword?'browse':'browse-off'" size="40rpx" color="#94a3b8" custom-class="input-icon"></wd-icon>
+          </view>
         </view>
 
         <view class="action-row">
           <text class="text-gray" @click="handleForgot">忘记密码?</text>
-          <text class="text-orange" @click="handleCodeLogin">验证码登录</text>
+          <text class="text-orange" @click="toggleLoginMode">{{ isCodeLogin ? '密码登录' : '验证码登录' }}</text>
         </view>
       </view>
 
@@ -54,18 +61,36 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { reactive, ref } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
 import { useSystemStore } from '@/store/system';
+import { useUserStore } from '@/store/user';
+
+const userStore = useUserStore();
+const passwordPlaceholder = ref('密码');
+const passwordMode = ref('safe-password');
+const isCodeLogin = ref(false);// 是否是验证码登录模式
+const showPassword = ref(false);// 是否显示密码
+const redirectUrl = ref(''); // 用来存“原本想去哪”
 
 const systemStore = useSystemStore();
 
 const formData = reactive({
-  mobile: '',
+  qqEmail: '',
   password: ''
 });
 
+// 登录成功后，判断是否有 redirect 参数
+onLoad((options) => {
+  if (options && options.redirect) {
+    // 解码 URL
+    redirectUrl.value = decodeURIComponent(options.redirect);
+    console.log('登录成功后将跳转至:', redirectUrl.value);
+  }
+});
+
 const handleLogin = () => {
-  if (!formData.mobile || !formData.password) {
+  if (!formData.qqEmail || !formData.password) {
     uni.showToast({ title: '请填写完整信息', icon: 'none' });
     return;
   }
@@ -74,7 +99,17 @@ const handleLogin = () => {
   setTimeout(() => {
     uni.hideLoading();
     // 登录成功，跳转首页
-    uni.switchTab({ url: '/pages/index/index' });
+    userStore.setUserInfo({
+      id: 1,
+      qqEmail: formData.qqEmail,
+      nickname: '用户' + formData.qqEmail.slice(-4),
+      avatar: 'https://example.com/avatar.jpg'
+    });
+    if (redirectUrl.value) {
+      uni.navigateTo({ url: redirectUrl.value });
+    } else {
+      uni.switchTab({ url: '/pages/index/index' });
+    }
   }, 1500);
 };
 
@@ -86,8 +121,21 @@ const handleForgot = () => {
   uni.showToast({ title: '功能开发中', icon: 'none' });
 };
 
-const handleCodeLogin = () => {
+const toggleLoginMode = () => {
   uni.showToast({ title: '切换验证码登录', icon: 'none' });
+  isCodeLogin.value = !isCodeLogin.value;
+  if(isCodeLogin.value) {
+    passwordPlaceholder.value = '验证码';
+    formData.password = '';
+  } else {
+    passwordPlaceholder.value = '密码';
+    formData.password = '';
+  }
+};
+
+const toggleShowPassword = () => {
+  showPassword.value = !showPassword.value;
+
 };
 </script>
 
@@ -98,7 +146,6 @@ const handleCodeLogin = () => {
   padding: 0 60rpx;
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .header-section {

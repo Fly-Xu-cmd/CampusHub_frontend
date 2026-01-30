@@ -1,12 +1,6 @@
 <template>
-  <CommonLayout headerType="none" bgWhite>
-    <view class="register-container" :style="{ paddingTop: `${systemStore.statusBarHeight}px` }">
-      
-      <view class="nav-header">
-        <view class="back-btn" @click="handleBack">
-          <wd-icon name="arrow-left" size="20px" color="#1e293b"></wd-icon>
-        </view>
-      </view>
+  <CommonLayout headerType="transparent" contentBg="#fff">
+    <view class="register-container" :style="{ paddingTop: `${2 * (systemStore.statusBarHeight + 30)}rpx` }">
 
       <view class="content-body">
         <view class="header-text">
@@ -27,9 +21,9 @@
           <view class="input-wrapper">
             <input 
               class="custom-input" 
-              placeholder="手机号码" 
+              placeholder="QQ邮箱" 
               placeholder-class="placeholder-style"
-              v-model="formData.mobile" 
+              v-model="formData.QQemail" 
               type="number"
               maxlength="11"
             />
@@ -77,21 +71,17 @@ const systemStore = useSystemStore();
 
 const formData = reactive({
   nickname: '',
-  mobile: '',
+  QQemail: '',
   code: '',
   password: ''
 });
 
 const timer = ref(0);
 
-const handleBack = () => {
-  uni.navigateBack();
-};
-
 const getVerifyCode = () => {
   if (timer.value > 0) return;
-  if (!formData.mobile || formData.mobile.length !== 11) {
-    uni.showToast({ title: '请输入正确手机号', icon: 'none' });
+  if (!formData.QQemail || !/^[a-zA-Z0-9_]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$/.test(formData.QQemail)) { 
+    uni.showToast({ title: '请输入正确的QQ邮箱', icon: 'none' });
     return;
   }
   
@@ -105,7 +95,7 @@ const getVerifyCode = () => {
 };
 
 const handleRegister = () => {
-  if (!formData.mobile || !formData.password || !formData.nickname || !formData.code) {
+  if (!formData.QQemail || !formData.password || !formData.nickname || !formData.code) {
     uni.showToast({ title: '请填写完整信息', icon: 'none' });
     return;
   }
@@ -125,7 +115,6 @@ const handleRegister = () => {
 .register-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .nav-header {
@@ -184,7 +173,7 @@ const handleRegister = () => {
     }
 
     :deep(.placeholder-style) {
-      color: $text-primary; // UI 图中 placeholder 颜色较深
+      color: $text-tertiary;
       font-weight: 700;
     }
   }
@@ -211,10 +200,8 @@ const handleRegister = () => {
 }
 
 .footer-btn {
-  margin-top: auto; // 推到底部
-  margin-bottom: 60rpx;
-  
   .register-btn {
+    padding: $spacing-sm;
     background-color: $primary-color; // 橙色
     color: #fff;
     font-size: 32rpx;
