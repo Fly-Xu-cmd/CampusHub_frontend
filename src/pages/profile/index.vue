@@ -21,8 +21,8 @@
         </view>
 
         <view class="user-info">
-          <text class="nickname">Yang</text>
-          <text class="bio">这里是个人简介，可以在设置中修改。</text>
+          <text class="nickname">{{ isAuthenticated ? userInfo.nickname || '默认名' : '请登录' }}</text>
+          <text class="bio">{{ isAuthenticated ? userInfo.bio || '' : '请登录查看简介' }}</text>
         </view>
 
         <view class="tags-row">
@@ -39,15 +39,15 @@
 
         <view class="stats-row">
           <view class="stat-item" @click="handleToMyPublished">
-            <text class="num">12</text>
+            <text class="num">{{ isAuthenticated ? userInfo.published_count || 0 : '?' }}</text>
             <text class="label">发布</text>
           </view>
           <view class="stat-item" @click="handleToJoined">
-            <text class="num">45</text>
+            <text class="num">{{ isAuthenticated ? userInfo.joined_count || 0 : '?' }}</text>
             <text class="label">参与</text>
           </view>
           <view class="stat-item">
-            <text class="num green">100</text>
+            <text class="num green">{{ isAuthenticated ? userInfo.credit_score || 0 : '?' }}</text>
             <text class="label">信用分</text>
           </view>
         </view>
@@ -108,7 +108,7 @@ const defaultAvatar = '/static/default_avatar.png';
 
 // --- 导航逻辑 ---
 const handleToSettings = () => {
-  uni.navigateTo({ url: '/pages/settings/settings' });
+  uni.navigateTo({ url: '/pages/settings/index' });
 };
 
 const handleToMyPublished = () => {
@@ -172,7 +172,7 @@ const handleToVerify = () => {
         box-shadow: $shadow-sm;
         
         .badge-item {
-          font-size: $font-size-sm;
+          font-size: $font-size-xs;
           font-weight: $font-weight-bold;
           padding: 4rpx 10rpx;
           border-radius: 8rpx;

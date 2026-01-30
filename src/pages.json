@@ -21,6 +21,31 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/profile/history",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
+    },
+    {
+      "path": "pages/profile/pending",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
+    },
+    {
+      "path": "pages/profile/joined",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
+    },
+    {
+      "path": "pages/profile/published",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
+    },
+    {
+      "path": "pages/settings/index",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
+    },
+    {
       "path": "pages/publish/index",
       "style": { "navigationStyle": "custom" }
     },
