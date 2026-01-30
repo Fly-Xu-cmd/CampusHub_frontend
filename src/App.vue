@@ -17,6 +17,7 @@ onShow(()=>{
 
 <style lang="scss">
 @use "@/styles/variables.scss" as *;
+@import "@/styles/iconfont.css";
 
 /* 全局样式 */
 view, text, button, image, scroll-view, swiper, input, picker {
