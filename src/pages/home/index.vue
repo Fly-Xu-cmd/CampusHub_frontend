@@ -192,7 +192,7 @@ const selectTag = (tagId: string) => {
 
 const viewDetail = (activityId: number) => {
   uni.navigateTo({
-    url: `/pages/activity/detail?id=${activityId}`
+    url: `/pages/detail?id=${activityId}`
   });
 };
 </script>

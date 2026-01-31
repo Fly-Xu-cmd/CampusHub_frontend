@@ -23,6 +23,10 @@
     {
       "path": "pages/publish/index",
       "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/detail/index",
+      "style": { "navigationStyle": "custom" }
     }
   ],
   "globalStyle": {
