@@ -1,11 +1,5 @@
 <template>
-  <view class="detail-page">
-    <!-- 顶部导航栏 -->
-    <view class="nav-bar">
-      <view class="back-button" @click="goBack">
-        <wd-icon name="arrow-left" size="28rpx" color="#fff" />
-      </view>
-    </view>
+  <CommonLayout headerType="transparent">
     
     <!-- 活动图片 -->
     <view class="activity-image-container">
@@ -14,14 +8,14 @@
       <view class="status-tag">
         <text class="status-text">报名中</text>
       </view>
-    </view>
-    
-    <!-- 活动内容 -->
-    <view class="activity-content">
       <!-- 活动标题 -->
       <view class="activity-title">
         <text>奥森公园 5km 荧光夜跑</text>
       </view>
+    </view>
+    
+    <!-- 活动内容 -->
+    <view class="activity-content">
       
       <!-- 发起人信息 -->
       <view class="organizer-info">
@@ -49,7 +43,7 @@
           <text class="details-title">活动详情</text>
         </view>
         <view class="details-content">
-          <text class="details-text">欢迎参加我们的周五夜跑活动！我们将提供荧光手环和饮用水。跑完后会有30分钟的新手飞盘教学。</text>
+          <text class="details-text">欢迎参加我们的周五夜跑活动！我们将提供荧光手环和饮用水。跑完后会有30分钟的新手飞盘教学。这是一个非常适合初学者的活动，无论你是跑步新手还是有经验的跑者，都可以参加我们的活动。我们会在活动开始前进行简单的热身运动，确保大家的身体状态良好。活动中会有专业的教练指导，帮助大家掌握正确的跑步姿势和呼吸方法。活动结束后，我们还会组织大家一起聚餐，增进彼此的了解和友谊。</text>
         </view>
       </view>
     </view>
@@ -60,56 +54,24 @@
         <text class="register-text">立即报名</text>
       </button>
     </view>
-  </view>
+  </CommonLayout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
 
-const goBack = () => {
-  uni.navigateBack();
-};
 </script>
 
 <style lang="scss" scoped>
 @use "@/styles/variables.scss" as *;
 @use "@/styles/mixins.scss" as *;
 
-.detail-page {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: $surface-color;
-}
-
-/* 顶部导航栏 */
-.nav-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100rpx;
-  padding-top: 40rpx;
-  padding-left: $spacing-md;
-  z-index: $z-index-fixed;
-  .back-button {
-    width: 60rpx;
-    height: 60rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: rgba(0, 0, 0, 0.3);
-    border-radius: 50%;
-  }
-}
 
 /* 活动图片 */
 .activity-image-container {
   position: relative;
   width: 100%;
-  height: 500rpx;
+  height: 600rpx;
   margin-top: -100rpx;
-  padding-top: 100rpx;
   .activity-image {
     width: 100%;
     height: 100%;
@@ -117,35 +79,42 @@ const goBack = () => {
   }
   .status-tag {
     position: absolute;
-    bottom: 40rpx;
+    bottom: 160rpx;
     left: $spacing-md;
-    background-color: $accent-color;
-    padding: 12rpx 24rpx;
-    border-radius: $border-radius-full;
+    background-color: $primary-color;
+    padding: 2rpx 20rpx;
+    border-radius: $border-radius-md;
     .status-text {
       color: $text-light;
-      font-size: 24rpx;
+      line-height: 40rpx;
+      font-size: 20rpx;
       font-weight: $font-weight-semibold;
     }
   }
+  /* 活动标题 */
+  .activity-title {
+    position: absolute;
+    left: $spacing-md;
+    bottom: 80rpx;
+    text {
+      font-size: 48rpx;
+      font-weight: $font-weight-bold;
+      color: $text-light;
+      line-height: 1.4;
+    }
+  }  
 }
 
 /* 活动内容 */
 .activity-content {
-  flex: 1;
+  position: relative;
+  top: -55rpx;
+  z-index: 666;
   padding: $spacing-md;
   padding-bottom: 150rpx;
-}
-
-/* 活动标题 */
-.activity-title {
-  margin-bottom: $spacing-md;
-  text {
-    font-size: 36rpx;
-    font-weight: $font-weight-bold;
-    color: $text-primary;
-    line-height: 1.4;
-  }
+  background-color: $surface-color;
+  border-top-left-radius: 50rpx;
+  border-top-right-radius: 50rpx;
 }
 
 /* 发起人信息 */
@@ -153,8 +122,9 @@ const goBack = () => {
   display: flex;
   align-items: center;
   margin-bottom: $spacing-lg;
-  padding-bottom: $spacing-md;
-  border-bottom: 1rpx solid $border-light;
+  padding: $spacing-md;
+  background-color: $background-color;
+  border-radius: $border-radius-xl;
   .organizer-avatar {
     width: 60rpx;
     height: 60rpx;
@@ -162,7 +132,7 @@ const goBack = () => {
     margin-right: $spacing-sm;
   }
   .organizer-name {
-    font-size: 26rpx;
+    font-size: 28rpx;
     font-weight: $font-weight-semibold;
     color: $text-primary;
     margin-right: 10rpx;
@@ -178,41 +148,51 @@ const goBack = () => {
 .info-cards {
   display: flex;
   gap: $spacing-sm;
-  margin-bottom: $spacing-lg;
+  margin-bottom: $spacing-xl;
   .info-card {
     flex: 1;
     padding: $spacing-md;
     border-radius: $border-radius-xl;
-    background-color: $background-color;
     .info-label {
       display: block;
       font-size: 20rpx;
+      font-weight: $font-weight-semibold;
       color: $text-tertiary;
       margin-bottom: 10rpx;
     }
     .info-value {
-      font-size: 26rpx;
+      font-size: 28rpx;
       font-weight: $font-weight-semibold;
       color: $text-primary;
     }
+  }
+  .time-card {
+    background-color: #fffbf6;
+    border: 1rpx solid #fff4e5;
+  }
+  .location-card {
+    background-color: #f7faff;
+    border: 1rpx solid #e9f1fe;
   }
 }
 
 /* 活动详情 */
 .activity-details {
+  padding-bottom: 150rpx;
   .details-header {
-    margin-bottom: $spacing-sm;
+    margin-bottom: $spacing-md;
     .details-title {
-      font-size: 30rpx;
+      font-size: 38rpx;
       font-weight: $font-weight-bold;
       color: $text-primary;
     }
   }
   .details-content {
+    margin-bottom: $spacing-sm;
     .details-text {
-      font-size: 24rpx;
+      font-size: 25rpx;
       color: $text-secondary;
-      line-height: 1.6;
+      line-height: 1.4;
     }
   }
 }
@@ -223,12 +203,14 @@ const goBack = () => {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: $spacing-md;
+  z-index: $z-index-fixed;
+  padding: 0 $spacing-md $spacing-xl;
   background-color: $surface-color;
   box-shadow: $shadow-md;
+
   .register-button {
     width: 100%;
-    height: 90rpx;
+    height: 100rpx;
     background-color: #111;
     color: $text-light;
     border-radius: 45rpx;

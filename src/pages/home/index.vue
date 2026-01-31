@@ -22,7 +22,7 @@
             :class="{ active: activeTag === tag.id }"
             @click="selectTag(tag.id)"
           >
-            <wd-icon v-if="tag.icon" :name="tag.icon" size="16px" />
+            <wd-icon v-if="tag.icon" :name="tag.icon" size="30rpx" />
             <text>{{ tag.name }}</text>
           </view>
         </scroll-view>
@@ -48,7 +48,7 @@
               <image :src="activity.image" class="card-image" mode="aspectFill" />
               <!-- 报名状态 -->
               <view class="registration-status">
-                <wd-icon name="" size="14px" color="#fff" />
+                <wd-icon name="" size="25rpx" color="#fff" />
                 <text>报名中</text>
               </view>
               <!-- 人数信息 -->
@@ -68,7 +68,7 @@
                 class="activity-tag"
                 :class="tag.type"
               >
-                <wd-icon :name="tag.icon" size="12px" />
+                <wd-icon :name="tag.icon" size="25rpx" />
                 <text>{{ tag.name }}</text>
               </view>
             </view>
@@ -76,12 +76,12 @@
             <!-- 活动信息 -->
             <view class="activity-info">
               <view class="info-item">
-                <wd-icon name="time" size="14px" color="#999" />
+                <wd-icon name="time" size="28rpx" color="#999" />
                 <text>{{ activity.time }}</text>
               </view>
               <view class="log"></view>
               <view class="info-item">
-                <wd-icon name="location" size="14px" color="#999" />
+                <wd-icon name="location" size="28rpx" color="#999" />
                 <text>{{ activity.location }}</text>
               </view>
             </view>
@@ -192,7 +192,7 @@ const selectTag = (tagId: string) => {
 
 const viewDetail = (activityId: number) => {
   uni.navigateTo({
-    url: `/pages/detail?id=${activityId}`
+    url: `/pages/detail/index`
   });
 };
 </script>
@@ -201,7 +201,6 @@ const viewDetail = (activityId: number) => {
 @use "@/styles/variables.scss" as *;
 @use "@/styles/mixins.scss" as *;
 
-$theme-color: #f97316;
 $tag-active-bg: #111;
 $tag-active-color: #fff;
 $tag-inactive-bg: #fff;
@@ -215,13 +214,13 @@ $tag-inactive-color: #111;
 
 .search-section {
   margin-top: 20rpx;
-  padding: 0 $spacing-sm;
+  padding: 0 $spacing-md;
   :deep(.custom-search) {
     background: transparent !important;
     padding: 0 !important;
     .wd-search__input {
       background: #ffffff !important;
-      border: 1px solid $border-color;
+      border: 1rpx solid $border-color;
       box-shadow: $shadow-sm; 
       border-radius: 32rpx;
       height: 100rpx;
@@ -230,7 +229,7 @@ $tag-inactive-color: #111;
 }
 /* 推荐活动标题 */
 .recommend-header {
-  padding: 32rpx $spacing-sm 0rpx;
+  padding: 32rpx $spacing-md 0rpx;
   margin-bottom: 50rpx;
   .recommend-title {
     font-size: 50rpx;
@@ -243,14 +242,14 @@ $tag-inactive-color: #111;
   .recommend-line {
     width: 65rpx;
     height: 8rpx;
-    background-color: $theme-color;
+    background-color: $primary-color;
     border-radius: $border-radius-full;
   }
 }
 
 /* 标签行 */
 .tag-row {
-  padding: 0 $spacing-sm 20rpx;
+  padding: 0 $spacing-md 20rpx;
 }
 
 .tag-scroll {
@@ -270,7 +269,7 @@ $tag-inactive-color: #111;
   color: $tag-inactive-color;
   font-weight: $font-weight-semibold;
   transition: all 0.3s ease;
-  border: 1px solid transparent;
+  border: 1rpx solid transparent;
   box-shadow: $shadow-sm;
   
   &:last-child {
@@ -287,7 +286,7 @@ $tag-inactive-color: #111;
 /* 活动列表 */
 .activity-list {
   flex: 1;
-  padding: 0 $spacing-sm 20rpx;
+  padding: 0 $spacing-md 20rpx;
 }
 
 .loading {
@@ -308,7 +307,7 @@ $tag-inactive-color: #111;
   margin-bottom: 50rpx;
   border-radius: $border-radius-xl;
   overflow: hidden;
-  box-shadow: 0 10px 10px 4px rgba(249, 115, 22, 0.05);
+  box-shadow: 0 10rpx 10rpx 4rpx rgba(249, 115, 22, 0.05);
   background-color: $surface-color;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   padding: 25rpx;
@@ -346,7 +345,7 @@ $tag-inactive-color: #111;
     background-color: #fff;
     border-radius: $border-radius-full;
     font-size: 22rpx;
-    color: $accent-color;
+    color: $primary-color;
     font-weight: $font-weight-semibold;
   }
   
