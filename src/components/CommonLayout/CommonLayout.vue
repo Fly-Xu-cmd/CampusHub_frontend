@@ -41,7 +41,7 @@
         }"
       >
         <view class="nav-left" @click="handleBack" v-if="showBack">
-          <wd-icon name="arrow-left" size="24px" color="#1e293b"></wd-icon>
+          <wd-icon name="arrow-left1" size="24px" color="#1e293b"></wd-icon>
         </view>
 
         <view class="nav-title" :style="{ maxWidth: titleMaxWidth }">
@@ -361,6 +361,5 @@ $theme-color: #f97316; // 橙色主题
 .main-content {
   flex: 1;
   width: 100%;
-  padding: 0 $spacing-md; // 16px
 }
 </style>

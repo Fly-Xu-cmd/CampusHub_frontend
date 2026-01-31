@@ -2,6 +2,7 @@ import { createSSRApp } from "vue";
 import { createPinia } from "pinia";
 import App from "./App.vue";
 import "@/styles/iconfont.css";
+import initPermission from "@/utils/permission";
 /**
  * 创建应用实例
  * @returns 包含app实例的对象
@@ -11,6 +12,8 @@ export function createApp() {
   // 创建并配置pinia
   const pinia = createPinia();
   app.use(pinia);
+  // 初始化权限
+  initPermission();
   return {
     app,
   };
