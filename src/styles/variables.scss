@@ -1,71 +1,73 @@
 /**
  * 全局变量定义
- * 用于统一管理应用的颜色、字体、间距等样式变量
+ * 适配标准：以 375px 设计稿为基准，1px = 2rpx
  */
 
-// 主题颜色
-$primary-color: #3498db; // 主色调
-$secondary-color: #2ecc71; // 次要颜色
-$accent-color: #ff6200; // 强调色
-$background-color: #f8f8f8; // 背景色
-$surface-color: #ffffff; // 卡片/表面颜色
+// 主题颜色 (保持不变)
+$primary-color: #f97316; // 这里建议改为你的 CampusHub 橙色主题
+$secondary-color: #2ecc71;
+$accent-color: #e74c3c;
+$background-color: #f8f8f8;
+$surface-color: #ffffff;
 
 // 文本颜色
-$text-primary: #333333; // 主要文本
-$text-secondary: #666666; // 次要文本
-$text-tertiary: #999999; // 第三级文本
-$text-light: #ffffff; // 浅色文本
+$text-primary: #333333;
+$text-secondary: #666666;
+$text-tertiary: #999999;
+$text-light: #ffffff;
 
 // 边框颜色
-$border-color: #e0e0e0; // 边框颜色
-$border-light: #f0f0f0; // 浅色边框
+$border-color: #e0e0e0;
+$border-light: #f0f0f0;
 
-// 字体配置
+// 字体配置 (px -> rpx)
+// 小提示：uni-app 中 font-size 用 rpx 会随屏幕缩放，适合大部分场景
 $font-family:
   -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
   Arial, sans-serif;
-$font-size-xs: 12px;
-$font-size-sm: 14px;
-$font-size-base: 16px;
-$font-size-lg: 18px;
-$font-size-xl: 20px;
-$font-size-2xl: 24px;
-$font-size-3xl: 32px;
+$font-size-xs: 24rpx; // 原 12px
+$font-size-sm: 28rpx; // 原 14px
+$font-size-base: 32rpx; // 原 16px
+$font-size-lg: 36rpx; // 原 18px
+$font-size-xl: 40rpx; // 原 20px
+$font-size-2xl: 48rpx; // 原 24px
 
-// 字重
+// 字重 (数字不需要单位)
 $font-weight-normal: 400;
 $font-weight-medium: 500;
 $font-weight-semibold: 600;
 $font-weight-bold: 700;
 
-// 间距配置
-$spacing-xs: 4px;
-$spacing-sm: 8px;
-$spacing-md: 16px;
-$spacing-lg: 24px;
-$spacing-xl: 32px;
-$spacing-2xl: 48px;
+// 间距配置 (px -> rpx)
+$spacing-xs: 8rpx; // 原 4px
+$spacing-sm: 16rpx; // 原 8px
+$spacing-md: 32rpx; // 原 16px
+$spacing-lg: 48rpx; // 原 24px
+$spacing-xl: 64rpx; // 原 32px
+$spacing-2xl: 96rpx; // 原 48px
 
-// 圆角配置
-$border-radius-sm: 4px;
-$border-radius-md: 8px;
-$border-radius-lg: 12px;
-$border-radius-xl: 16px;
+// 圆角配置 (px -> rpx)
+$border-radius-sm: 8rpx; // 原 4px
+$border-radius-md: 16rpx; // 原 8px
+$border-radius-lg: 24rpx; // 原 12px
+$border-radius-xl: 32rpx; // 原 16px
 $border-radius-full: 9999px;
 
-// 阴影配置
-$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-$shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-$shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+// 阴影配置 (保持 px 或转 rpx 均可，建议阴影偏移量保持 px 显得更精致，或者也转 rpx)
+// 这里为了适配性，我将其转为 rpx
+$shadow-sm: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+$shadow-md: 0 8rpx 12rpx rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 20rpx 30rpx rgba(0, 0, 0, 0.1);
+$shadow-xl: 0 40rpx 50rpx rgba(0, 0, 0, 0.15);
 
-// 响应式断点
+// 响应式断点 (媒体查询通常使用 px，因为浏览器宽度的物理单位是 px)
+// 注意：断点单位建议保持 px，不要动！
 $breakpoint-mobile: 767px;
 $breakpoint-tablet: 768px;
 $breakpoint-desktop: 1024px;
 $breakpoint-large: 1280px;
 
-// Z-index 层级
+// Z-index 层级 (无单位，不变)
 $z-index-dropdown: 1000;
 $z-index-sticky: 1020;
 $z-index-fixed: 1030;
