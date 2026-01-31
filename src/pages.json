@@ -9,6 +9,14 @@
       }
     },
     {
+      "path": "pages/home/detail",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/home/publicProfil",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/message/index",
       "style": { "navigationStyle": "custom" }
     },
@@ -52,10 +60,6 @@
     },
     {
       "path": "pages/publish/index",
-      "style": { "navigationStyle": "custom" }
-    },
-    {
-      "path": "pages/detail/index",
       "style": { "navigationStyle": "custom" }
     },
     {

@@ -18,11 +18,13 @@
     <view class="activity-content">
       
       <!-- 发起人信息 -->
-      <view class="organizer-info">
+      <view class="organizer-info" @click="viewPubilcProfil">
         <image class="organizer-avatar" src="https://picsum.photos/50?random=100" />
-        <text class="organizer-name">极客跑团</text>
-        <text class="organizer-detail">点击查看发起人详情</text>
-        <wd-icon name="arrow-right" size="20rpx" color="#999" />
+        <view class="organizer-text">
+          <text class="organizer-name">极客跑团</text>
+          <text class="organizer-detail">点击查看发起人详情</text>
+        </view>
+        <wd-icon name="arrow-right" size="35rpx" color="#999" />
       </view>
       
       <!-- 时间和地点信息 -->
@@ -58,7 +60,11 @@
 </template>
 
 <script setup lang="ts">
-
+const viewPubilcProfil = () => {
+  uni.navigateTo({
+    url: `/pages/home/publicProfil`
+  });
+}
 </script>
 
 <style lang="scss" scoped>
@@ -126,21 +132,25 @@
   background-color: $background-color;
   border-radius: $border-radius-xl;
   .organizer-avatar {
-    width: 60rpx;
-    height: 60rpx;
+    width: 70rpx;
+    height: 70rpx;
     border-radius: 50%;
     margin-right: $spacing-sm;
   }
-  .organizer-name {
-    font-size: 28rpx;
-    font-weight: $font-weight-semibold;
-    color: $text-primary;
-    margin-right: 10rpx;
-  }
-  .organizer-detail {
-    font-size: 22rpx;
-    color: $text-tertiary;
+  .organizer-text{
     flex: 1;
+    @include flex(column, center, flex-start);
+    margin-left: 10rpx;
+    .organizer-name {
+      font-size: 28rpx;
+      font-weight: $font-weight-semibold;
+      color: $text-primary;
+    }
+    
+    .organizer-detail {
+      font-size: 22rpx;
+      color: $text-tertiary;
+    }
   }
 }
 
@@ -205,7 +215,6 @@
   right: 0;
   z-index: $z-index-fixed;
   padding: 0 $spacing-md $spacing-xl;
-  background-color: $surface-color;
   box-shadow: $shadow-md;
 
   .register-button {
