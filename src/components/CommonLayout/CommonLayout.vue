@@ -33,10 +33,11 @@
 				:class="{ 'border-b': showBorder }" :style="{ 
           paddingTop: `${systemStore.statusBarHeight}px`, 
           height: `${systemStore.navBarHeight+systemStore.statusBarHeight}px`
-        }">
-				<view class="nav-left" @click="handleBack" v-if="showBack">
-					<wd-icon name="arrow-left" size="24px" color="#1e293b"></wd-icon>
-				</view>
+        }"
+      >
+        <view class="nav-left" @click="handleBack" v-if="showBack">
+          <wd-icon name="arrow-left1" size="24px" color="#1e293b"></wd-icon>
+        </view>
 
 				<view class="nav-title" :style="{ maxWidth: titleMaxWidth }">
 					{{ title }}

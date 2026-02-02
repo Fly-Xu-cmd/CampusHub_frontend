@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import type { SystemState } from "@/types/system";
+import type { SystemState } from "@/types/modules/system";
 
 export const useSystemStore = defineStore("system", {
   // 1. 补全 State 初始值
