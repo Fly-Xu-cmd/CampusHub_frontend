@@ -62,7 +62,7 @@
 <script setup lang="ts">
 const viewPubilcProfil = () => {
   uni.navigateTo({
-    url: `/pages/home/publicProfile`
+    url: `/pages/home/PublicProfile`
   });
 }
 </script>
