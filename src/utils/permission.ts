@@ -11,7 +11,7 @@ const whiteList = [
   "/pages/selectTags/index", // 注册后的标签选择
   "/pages/profile/index",
   "/pages/publish/index",
-  "/pages/ticket/index",// 用户个人中心
+  "/pages/ticket/index", // 用户个人中心
   // '/pages/message/message', // 如果消息列表允许游客看，就加上
 ];
 

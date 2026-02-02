@@ -2,16 +2,11 @@
 	<CommonLayout headerType="standard" title="发布新活动" :showTabBar="true">
 		<view class="publish-container">
 			<!-- 上传组件 -->
-		<view class="upload-section" @click="isUploadHover = false">
-			<wd-upload :file-list="fileList" multiple action="" @change="handleChange" class="custom-upload"
-				@touchstart="isUploadHover = true" @touchend="isUploadHover = false" @touchcancel="isUploadHover = false"
-				@click.stop>
-				<view class="upload-placeholder" :class="{ 'upload-hover': isUploadHover }">
-					<wd-icon name="camera" size="48rpx" :color="isUploadHover ? '#f97316' : '#999'"></wd-icon>
-					<text class="upload-text" :style="{ color: isUploadHover ? '#f97316' : '#6b7280' }">上传活动封面/视频</text>
-				</view>
-			</wd-upload>
-		</view>
+		<UploadVideo 
+			v-model:fileList="fileList"
+			upload-text="上传活动封面/视频"
+		/>
+			<!-- 上传组件 -->
 
 			<!-- 活动标题 -->
 			<view class="form-item title-item">
@@ -20,37 +15,34 @@
 
 			<!-- 活动信息容器（白色背景） -->
 			<view class="form-info-container">
+				<!-- 报名时间 -->
+				<TimeSelect 
+					label="报名时间"
+					v-model:startValue="signupStartValue"
+					v-model:endValue="signupEndValue"
+					v-model:isShowPicker="isShowSignupPicker"
+					v-model:errorMessage="signupTimeError"
+					@toggle="toggleSignupPicker"
+				/>
+
 				<!-- 活动时间 -->
-				<view class="form-item time-item" @click="togglePicker">
-					<view class="form-item-left">
-						<view class="icon-container">
-							<wd-icon name="clock" size="38rpx" color="#666" />
-						</view>
-						<view class="text-content">
-							<text class="form-label">活动时间</text>
-							<text class="form-value">设置开始 ~ 结束时间</text>
-						</view>
-					</view>
-					<view class="form-item-right">
-						<wd-icon name="arrow-right" size="24rpx" color="#999" />
-					</view>
-				</view>
+				<TimeSelect 
+					label="活动时间"
+					v-model:startValue="startValue"
+					v-model:endValue="endValue"
+					v-model:isShowPicker="isShowPicker"
+					v-model:errorMessage="timeError"
+					@toggle="togglePicker"
+				/>
 
 				<!-- 活动地点 -->
-				<view class="form-item location-item" @click="selectLocation">
-					<view class="form-item-left">
-						<view class="icon-container">
-							<view class="iconfont iconfont-location" style="font-size: 40rpx; color: #6b7280;"></view>
-						</view>
-						<view class="text-content">
-							<text class="form-label">活动地点</text>
-							<text class="form-value location-total">{{ locationName }}</text>
-						</view>
-					</view>
-					<view class="form-item-right">
-						<wd-icon name="arrow-right" size="24rpx" color="#999" />
-					</view>
-				</view>
+				<LocationSelect 
+					label="活动地点"
+					v-model:locationName="locationName"
+					v-model:locationAddress="locationAddress"
+					v-model:locationLatitude="locationLatitude"
+					v-model:locationLongitude="locationLongitude"
+				/>
 
 				<!-- 人数限制 -->
 				<view class="form-item people-item">
@@ -87,22 +79,6 @@
 				<text class="section-title">活动详情</text>
 				<textarea v-model="activityDetail" placeholder="输入详细的活动流程、注意事项等..." class="detail-textarea" placeholder-style="color: #999;"></textarea>
 			</view>
-
-			<!-- 全屏遮罩层 -->
-			<view v-show="isShowPicker" class="picker-mask"></view>
-
-			<!-- 组件包裹层：新增z-index高于遮罩，避免被遮挡；点击自身不触发遮罩事件 -->
-			<view v-show="isShowPicker" class="picker-wrap" @click.stop>
-				<!-- 新增：顶部确定按钮 -->
-				<view class="picker-header">
-					<view class="confirm-btn" @click="hidePicker">确定</view>
-				</view>
-				<!-- 日期选择组件：原有代码、样式属性完全不变 -->
-				<wd-datetime-picker-view v-model="startValue" label="开始时间" @change="onStartChange" font-size="26rpx"
-					label-width="60rpx" picker-height="40rpx" style="margin-bottom: 20rpx;" />
-				<wd-datetime-picker-view v-model="endValue" label="结束时间" @change="onEndChange" font-size="26rpx"
-					label-width="60rpx" picker-height="40rpx" />
-			</view>
 		</view>
 	</CommonLayout>
 </template>
@@ -115,147 +91,51 @@ import {
 import {
 	ref,
 	computed,
+	watch,
 } from 'vue'
 import { usePublishStore } from '@/store/publish'
+import TimeSelect from '@/components/TimeSelect/TimeSelect.vue'
+import LocationSelect from '@/components/LocationSelect/LocationSelect.vue'
+import UploadVideo from '@/components/UploadVideo/UploadVideo.vue'
 
 	const toast = useToast()
 	const publishStore = usePublishStore()
-	const startValue = ref<number>(Date.now())
-	const endValue = ref<number>(Date.now())
-	const isShowPicker = ref<boolean>(false)
-	const isUploadHover = ref<boolean>(false)
 	const activityTitle = ref<string>('')
-	const activityDetail = ref<string>('')
-	const fileList = ref<any[]>([])
-	const peopleLimit = ref<number>(20)
-	const locationName = ref<string>('选择线下地点')
-	const locationAddress = ref<string>('')
-	const locationLatitude = ref<number>(0)
-	const locationLongitude = ref<number>(0)
+const activityDetail = ref<string>('')
+const fileList = ref<any[]>([])
+const peopleLimit = ref<number>(20)
+const locationName = ref<string>('选择线下地点')
+const locationAddress = ref<string>('')
+const locationLatitude = ref<number>(0)
+const locationLongitude = ref<number>(0)
+// 日期选择相关的变量和逻辑已移至TimeSelect组件
+const startValue = ref<number>(Date.now())
+const endValue = ref<number>(Date.now())
+const signupStartValue = ref<number>(Date.now())
+const signupEndValue = ref<number>(Date.now())
+const isShowPicker = ref<boolean>(false)
+const isShowSignupPicker = ref<boolean>(false)
+const timeError = ref<string>('')
+const signupTimeError = ref<string>('')
 
+// 切换选择器显示/隐藏
+const togglePicker = (): void => {
+	isShowPicker.value = !isShowPicker.value
+}
 
+// 切换报名时间选择器显示/隐藏
+const toggleSignupPicker = (): void => {
+	isShowSignupPicker.value = !isShowSignupPicker.value
+}
 
+// 监听结束时间变化，更新store
+watch(endValue, (newValue) => {
+	publishStore.setEndTime(newValue)
+})
 
+// 上传相关的变量和逻辑已移至UploadVideo组件
 
-	// 格式化日期为 YYYY-MM-DD HH:mm：原有逻辑不变
-	const timeRange = computed<string>(() => {
-		if (!startValue.value || !endValue.value) return ''
-		const formatDate = (time: number) => {
-			const date = new Date(time)
-			const year = date.getFullYear()
-			const month = (date.getMonth() + 1).toString().padStart(2, '0')
-			const day = date.getDate().toString().padStart(2, '0')
-			const hours = date.getHours().toString().padStart(2, '0')
-			const minutes = date.getMinutes().toString().padStart(2, '0')
-			return `${year}-${month}-${day} ${hours}:${minutes}`
-		}
-		return `${formatDate(startValue.value)} ~ ${formatDate(endValue.value)}`
-	})
-
-	// 原有：切换组件显示/隐藏
-	const togglePicker = (): void => {
-		isShowPicker.value = !isShowPicker.value
-	}
-	// 新增：单独的隐藏组件方法（失去焦点/点击遮罩时调用）
-	const hidePicker = (): void => {
-		isShowPicker.value = false
-	}
-
-	// 时间选择回调：添加日期验证逻辑
-	const onStartChange = (event: any): void => {
-		// 处理不同格式的事件参数
-		const value = event.value || event.detail?.value || event
-		// 确保value是number类型
-		const numericValue = typeof value === 'number' ? value : Number(value) || Date.now()
-		startValue.value = numericValue
-		// 确保结束日期不早于开始日期
-		if (endValue.value < startValue.value) {
-			endValue.value = startValue.value
-			publishStore.setEndTime(startValue.value)
-
-		}
-	}
-	const onEndChange = (event: any): void => {
-		// 处理不同格式的事件参数
-		const value = event.value || event.detail?.value || event
-		// 确保value是number类型
-		const numericValue = typeof value === 'number' ? value : Number(value) || Date.now()
-		// 确保结束日期不早于开始日期
-		if (numericValue < startValue.value) {
-
-			// 重置为开始日期
-			endValue.value = startValue.value
-			publishStore.setEndTime(startValue.value)
-			return
-		}
-		endValue.value = numericValue
-		publishStore.setEndTime(numericValue)
-	}
-
-	// 处理文件上传
-	const handleChange = (files: any[]): void => {
-		fileList.value = files
-	}
-
-	// 打开位置选择器
-	const openLocationPicker = (): void => {
-		// #ifdef MP-WEIXIN
-		// 使用微信小程序的选择位置API（底层使用高德地图）
-		uni.chooseLocation({
-			latitude: 39.9042, // 默认北京
-			longitude: 116.4074,
-			scale: 16,
-			success: (res) => {
-				locationName.value = res.name
-				locationAddress.value = res.address
-				locationLatitude.value = res.latitude
-				locationLongitude.value = res.longitude
-				console.log('选择的位置:', res)
-			},
-			fail: (err: UniApp.GeneralCallbackResult)  => {
-				console.error('选择位置失败:', err)
-			}
-		})
-		// #endif
-	}
-
-	// 选择线下地点 - 使用高德地图API
-	const selectLocation = (): void => {
-		// #ifdef MP-WEIXIN
-		// 检查位置权限
-		uni.getSetting({
-			success: (res) => {
-				if (!res.authSetting['scope.userLocation']) {
-					// 请求位置权限
-					uni.authorize({
-						scope: 'scope.userLocation',
-						success: () => {
-							// 权限获取成功，打开位置选择
-							openLocationPicker()
-						},
-						fail: () => {
-							// 权限获取失败，引导用户手动开启
-							uni.showModal({
-								title: '需要位置权限',
-								content: '请在设置中开启位置权限，以便选择活动地点',
-								confirmText: '去设置',
-								cancelText: '取消',
-								success: (modalRes) => {
-									if (modalRes.confirm) {
-										uni.openSetting()
-									}
-								}
-							})
-						}
-					})
-				} else {
-					// 已有权限，直接打开位置选择
-					openLocationPicker()
-				}
-			}
-		})
-		// #endif
-	}
+	// 地点选择相关的变量和逻辑已移至LocationSelect组件
 </script>
 
 <style>
@@ -278,83 +158,7 @@ import { usePublishStore } from '@/store/publish'
 		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
 	}
 
-	/* 上传组件样式 */
-	.upload-section {
-		padding: 30rpx;
-		display: flex;
-		justify-content: center;
-	}
-
-	.custom-upload {
-		width: 100%;
-		flex: 1;
-	}
-
-	.upload-placeholder {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 80rpx 0;
-		border: 2rpx dashed #d1d5db;
-		border-radius: 16rpx;
-		background-color: #f9fafb;
-		gap: 16rpx;
-		width: 100% !important;
-		max-width: 100% !important;
-		transition: all 0.3s ease;
-	}
-
-	.upload-placeholder.upload-hover {
-		border-color: #f97316;
-		box-shadow: 0 4rpx 12rpx rgba(249, 115, 22, 0.15);
-	}
-
-	.upload-placeholder:hover {
-		border-color: #f97316;
-		box-shadow: 0 4rpx 12rpx rgba(249, 115, 22, 0.15);
-	}
-
-	.upload-placeholder:hover .upload-text {
-		color: #f97316;
-	}
-
-	.upload-placeholder:hover :deep(.wd-icon) {
-		color: #f97316 !important;
-	}
-
-	.upload-text {
-		font-size: 26rpx;
-		color: #6b7280;
-		text-align: center !important;
-		display: block !important;
-	}
-
-	/* 确保上传组件占据整行 */
-	:deep(.wd-upload) {
-		width: 100% !important;
-		max-width: 100% !important;
-		display: block !important;
-	}
-
-	:deep(.wd-upload__slot) {
-		width: 100% !important;
-		max-width: 100% !important;
-		display: block !important;
-	}
-
-	:deep(.wd-upload__trigger) {
-		width: 100% !important;
-		max-width: 100% !important;
-		display: block !important;
-	}
-
-	/* 确保所有wd-upload内部元素都占据整行 */
-	:deep(.wd-upload ) {
-		width: 100% !important;
-		max-width: 100% !important;
-		box-sizing: border-box !important;
-	}
+	/* 上传相关的样式已移至UploadVideo组件 */
 
 	/* 确保图标和文字居中显示 */
 	:deep(.wd-icon) {
@@ -595,8 +399,35 @@ import { usePublishStore } from '@/store/publish'
 	}
 
 	.confirm-btn:hover { 
-		background-color: #ea580c;
-	}
+			background-color: #ea580c;
+		}
+
+		/* 错误信息样式 */
+		.time-error-message {
+			margin-top: 20rpx;
+			font-size: 22rpx;
+			color: #ef4444;
+			text-align: center;
+			padding: 10rpx;
+			background-color: #fef2f2;
+			border-radius: 8rpx;
+			border: 1rpx solid #fee2e2;
+		}
+
+		/* 选择器部分样式 */
+		.picker-section {
+			margin-bottom: 30rpx;
+		}
+
+		/* 选择器部分标签样式 */
+		.picker-section-label {
+			display: block;
+			font-size: 24rpx;
+			color: #333;
+			font-weight: 500;
+			margin-bottom: 15rpx;
+			padding-left: 10rpx;
+		}
 
 	/* 自定义标题样式：调整宽度和位置，避免与提交按钮重叠 */
 	:deep(.standard-header .nav-title) {
