@@ -47,14 +47,6 @@
         <view class="nav-title" :style="{ maxWidth: titleMaxWidth }">
           {{ title }}
         </view>
-
-        <view class="nav-right" :style="{ paddingRight: mpCapsuleSpace }">
-          <slot name="right-action">
-            <text v-if="rightText" class="right-text-btn" @click="$emit('rightClick')">
-              {{ rightText }}
-            </text>
-          </slot>
-        </view>
       </view>
 
       <view 
@@ -277,18 +269,17 @@ $theme-color: #f97316; // 橙色主题
 /* --- Standard Header --- */
 .standard-header {
   background: $surface-color;
-  @include flex(row, center, center);
+  @include flex(row, flex-start, center);
   
   &.border-b {
     border-bottom: 1px solid $border-light;
   }
   
   .nav-left {
-    position: absolute;
-    left: $spacing-lg; // 24px
     height: 100%;
     @include flex(row, center, center);
     padding: 0 10rpx;
+    margin-right: $spacing-xs;
   }
   
   .nav-title {
