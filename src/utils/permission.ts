@@ -4,6 +4,8 @@ import { useUserStore } from "@/store/user";
 const whiteList = [
   "/", // 根路径
   "/pages/home/index",
+  "/pages/home/detail",
+  "/pages/home/publicProfile",
   "/pages/login/index",
   "/pages/register/index",
   "/pages/selectTags/index", // 注册后的标签选择
