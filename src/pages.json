@@ -9,6 +9,14 @@
       }
     },
     {
+      "path": "pages/home/detail",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/home/publicProfile",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/message/index",
       "style": { "navigationStyle": "custom" }
     },
