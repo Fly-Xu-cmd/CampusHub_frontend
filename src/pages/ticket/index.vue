@@ -7,7 +7,7 @@
 				<view class="time-item">
 					<view class="time-item-left">
 						<view class="i-running">
-							<wd-icon class-prefix="iconfont" name="running" size="28rpx" color="#f97316" />
+							<wd-icon class-prefix="iconfont" name="running" size="68rpx" color="#f97316" />
 						</view>
 						<view class="event-info">
 							<view class="event-title">奥森公园夜跑</view>
