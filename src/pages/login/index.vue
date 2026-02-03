@@ -36,8 +36,11 @@
             v-model="formData.password" 
             :password="!showPassword&&!isCodeLogin"
           />
-          <view v-show="!isCodeLogin" class="input-icon" @click="toggleShowPassword" >
+          <view v-if="!isCodeLogin" class="input-icon" @click="toggleShowPassword" >
             <wd-icon :name="showPassword?'browse':'browse-off'" size="40rpx" color="#94a3b8" custom-class="input-icon"></wd-icon>
+          </view>
+          <view v-else class="send-code-btn" @click="handleSendCode">
+            <text>发送验证码</text>
           </view>
         </view>
 
@@ -68,7 +71,6 @@ import { useUserStore } from '@/store/user';
 
 const userStore = useUserStore();
 const passwordPlaceholder = ref('密码');
-const passwordMode = ref('safe-password');
 const isCodeLogin = ref(false);// 是否是验证码登录模式
 const showPassword = ref(false);// 是否显示密码
 const redirectUrl = ref(''); // 用来存“原本想去哪”
@@ -120,6 +122,12 @@ const goToRegister = () => {
 const handleForgot = () => {
   uni.showToast({ title: '功能开发中', icon: 'none' });
 };
+
+const handleSendCode = () => {
+  uni.showToast({ title: '功能开发中', icon: 'none' });
+};
+
+
 
 const toggleLoginMode = () => {
   uni.showToast({ title: '切换验证码登录', icon: 'none' });
@@ -201,6 +209,14 @@ const toggleShowPassword = () => {
     
     .input-icon {
       margin-right: 24rpx;
+    }
+
+    .send-code-btn {
+      font-size: 24rpx;
+      color: $primary-color;
+      font-weight: 600;
+      height: 40rpx;
+      line-height: 40rpx;
     }
     
     .custom-input {

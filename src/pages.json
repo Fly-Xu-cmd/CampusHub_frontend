@@ -9,6 +9,14 @@
       }
     },
     {
+      "path": "pages/home/detail",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/home/publicProfile",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/message/index",
       "style": { "navigationStyle": "custom" }
     },
@@ -27,11 +35,6 @@
     },
     {
       "path": "pages/profile/pending",
-      "style": { "navigationStyle": "custom" },
-      "needLogin": true
-    },
-    {
-      "path": "pages/profile/joined",
       "style": { "navigationStyle": "custom" },
       "needLogin": true
     },
@@ -65,6 +68,26 @@
       "style": {
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/profile/verify",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/settings/edit-profile",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/settings/security",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/settings/change-password",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/settings/change-qqEmail",
+      "style": { "navigationStyle": "custom" }
     }
   ],
   "globalStyle": {

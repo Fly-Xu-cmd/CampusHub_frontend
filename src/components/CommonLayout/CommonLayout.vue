@@ -39,18 +39,10 @@
           <wd-icon name="arrow-left1" size="24px" color="#1e293b"></wd-icon>
         </view>
 
-				<view class="nav-title" :style="{ maxWidth: titleMaxWidth }">
-					{{ title }}
-				</view>
-
-				<view class="nav-right" :style="{ paddingRight: mpCapsuleSpace }">
-					<slot name="right-action">
-						<text v-if="rightText" class="right-text-btn" @click="$emit('rightClick')">
-							{{ rightText }}
-						</text>
-					</slot>
-				</view>
-			</view>
+        <view class="nav-title" :style="{ maxWidth: titleMaxWidth }">
+          {{ title }}
+        </view>
+      </view>
 
 			<view v-else-if="headerType === 'transparent'" class="nav-bar transparent-header"
 				:style="{ paddingTop: `${systemStore.statusBarHeight}px`, height: `${systemStore.navBarHeight+systemStore.statusBarHeight}px` }">
@@ -209,12 +201,46 @@
 			.brand-info {
 				@include flex(column, center, flex-start);
 
-				.sub-text {
-					font-size: $font-size-xs;
-					color: $text-tertiary;
-					font-weight: $font-weight-medium;
-					margin-bottom: 4rpx;
-				}
+/* --- Standard Header --- */
+.standard-header {
+  background: $surface-color;
+  @include flex(row, flex-start, center);
+  
+  &.border-b {
+    border-bottom: 1px solid $border-light;
+  }
+  
+  .nav-left {
+    height: 100%;
+    @include flex(row, center, center);
+    padding: 0 10rpx;
+    margin-right: $spacing-xs;
+  }
+  
+  .nav-title {
+    font-size: 34rpx;
+    font-weight: $font-weight-bold;
+    color: $text-primary;
+    text-align: center;
+    @include truncate(1); // 使用截断混合器
+  }
+  
+  .nav-right {
+    position: absolute;
+    right: $spacing-xl; // 32px
+    height: 100%;
+    @include flex(row, center, center);
+    
+    .right-text-btn {
+      font-size: 26rpx;
+      color: $theme-color;
+      font-weight: $font-weight-bold;
+      background: #fff7ed;
+      padding: 10rpx 24rpx;
+      border-radius: $border-radius-full;
+    }
+  }
+}
 
 				.main-title {
 					@include flex(row, flex-start, center);

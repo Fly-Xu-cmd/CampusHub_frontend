@@ -4,12 +4,22 @@ import { useUserStore } from "@/store/user";
 const whiteList = [
   "/", // 根路径
   "/pages/home/index",
+  "/pages/home/detail",
+  "/pages/home/publicProfile",
   "/pages/login/index",
   "/pages/register/index",
   "/pages/selectTags/index", // 注册后的标签选择
-  "/pages/profile/index",
-  "/pages/publish/index",
-  "/pages/ticket/index", // 用户个人中心
+  "/pages/profile/index", // 用户个人中心
+  "/pages/ticket/index", // 票券
+  "/pages/profile/pending", // 待审核
+  "/pages/profile/history", // 活动历史
+  "/pages/profile/published", // 已发布
+  "/pages/profile/verify", // 验证
+  "/pages/settings/index", // 设置
+  "/pages/settings/edit-profile", // 编辑个人信息
+  "/pages/settings/security", // 安全设置
+  "/pages/settings/change-password", // 更改密码
+  "/pages/settings/change-qqEmail", // 更改 QQ 邮箱
   // '/pages/message/message', // 如果消息列表允许游客看，就加上
 ];
 
