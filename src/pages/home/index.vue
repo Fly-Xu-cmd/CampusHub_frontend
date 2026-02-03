@@ -36,9 +36,9 @@
         <view v-if="loading" class="loading">
           <wd-loading size="100rpx" color="#f97316"/>
         </view>
-        <view v-else-if="activities.length === 0" class="empty">
+        <!-- <view v-else-if="activities.length === 0" class="empty">
           <text>暂无活动</text>
-        </view>
+        </view> -->
         <view v-else>
           <view 
             v-for="activity in activities" 
@@ -52,7 +52,7 @@
               <!-- 报名状态 -->
               <view class="registration-status">
                 <view class="iconfont iconfont-remen" style="font-size: 25rpx;" />
-                <text>报名中</text>
+                <text>{{ activity.status_text }}</text>
               </view>
               <!-- 人数信息 -->
               <view class="participant-count">
@@ -92,12 +92,12 @@
             <!-- 底部信息 -->
             <view class="card-footer">
               <view class="organizer">
-                <image :src="activity.organizer.avatar" class="organizer-avatar" />
-                <text>{{ activity.organizer.name }}</text>
+                <image :src="activity.organizer_avatar" class="organizer-avatar" />
+                <text>{{ activity.organizer_name }}</text>
               </view>
               <view class="action-button">
                 <text>查看详情</text>
-                
+                <wd-icon name="arrow-right1" size="28rpx" style="font-weight: 600;"/>
               </view>
             </view>
           </view>
@@ -109,11 +109,54 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { getActivityCategoryList, getActivityList } from '@/api/home/router';
 
-interface Tag {
-  id: string;
-  name: string;
-  icon?: string;
+onMounted(async () => {
+  // 获取活动分类列表
+  await getCategories();
+
+  // 获取活动列表
+  await getActivities();
+});
+
+const tags = ref(); // 活动分类列表
+// 获取活动分类列表
+const getCategories = async () => {
+  const { data: { list: Categories } } = await getActivityCategoryList();
+  tags.value = Categories.map(item => ({
+    id: item.id,
+    name: item.name,
+    icon: item.icon
+  }));
+}
+
+const activeTag = ref<number>(0); // 当前选中的标签
+// 选择标签
+const selectTag = (tagId: number) => {
+  activeTag.value = tagId;
+};
+
+const activities = ref(); // 活动列表
+// 获取活动列表
+const getActivities = async () => {
+  const { data: { list: Activities } } = await getActivityList();
+  activities.value = Activities.map(item => ({
+    id: item.id,
+    title: item.title,
+    image: item.cover_url,
+    type: item.cover_type,
+    name: item.category_name,
+    organizer_name: item.organizer_name,
+    organizer_avatar: item.organizer_avatar,
+    time: item.activity_start_time,
+    location: item.location,
+    participants: item.current_participants,
+    maxParticipants: item.max_participants,
+    status: item.status,
+    status_text: item.status_text,
+    tags: item.tags,
+    
+  }));
 }
 
 interface ActivityTag {
@@ -127,71 +170,11 @@ interface Organizer {
   avatar: string;
 }
 
-interface Activity {
-  id: number;
-  title: string;
-  image: string;
-  time: string;
-  location: string;
-  participants: number;
-  maxParticipants: number;
-  tags: ActivityTag[];
-  organizer: Organizer;
-}
 
-const activeTag = ref<string>('all');
 const loading = ref<boolean>(false);
 
-const tags = ref<Tag[]>([
-  { id: 'all', name: '全部', icon: 'iconfont-quanbu' },
-  { id: 'running', name: '跑步', icon: 'iconfont-running' },
-  { id: 'basketball', name: '球类', icon: 'iconfont-lanqiu' },
-  { id: 'hiking', name: '徒步', icon: 'iconfont-mountain' },
-  { id: 'cycling', name: '露营', icon: 'iconfont-louying' },
-  { id: 'music', name: '音乐', icon: 'iconfont-yinle' },
-  { id: 'reading', name: '读书', icon: 'iconfont-book' },
-  { id: 'photography', name: '摄影', icon: 'iconfont-fenleisheyingshuma' },
-  { id: 'food', name: '美食', icon: 'iconfont-meishi' },
-]);
 
-const activities = ref<Activity[]>([
-  {
-    id: 1,
-    title: '周五晚·奥森公园 5km荧光夜跑',
-    image: 'https://picsum.photos/800/600?random=1',
-    time: '周五 19:00',
-    location: '奥森南门',
-    participants: 15,
-    maxParticipants: 20,
-    tags: [
-      { name: '跑步', type: 'running', icon: 'iconfont-running' },
-      { name: '夜跑', type: 'night', icon: 'iconfont-yueliang' }
-    ],
-    organizer: {
-      name: '极客跑团',
-      avatar: 'https://picsum.photos/50?random=100'
-    }
-  },
-]);
 
-onMounted(() => {
-  fetchActivities();
-});
-
-const fetchActivities = async () => {
-  loading.value = true;
-  try {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  } catch (error) {
-    console.error('Failed to fetch activities:', error);
-  } finally {
-    loading.value = false;
-  }
-};
-
-const selectTag = (tagId: string) => {
-  activeTag.value = tagId;
-};
 
 const viewDetail = (activityId: number) => {
   uni.navigateTo({
@@ -485,13 +468,16 @@ $tag-inactive-color: #111;
   }
   
   .action-button {
-    padding: 20rpx 60rpx;
+    @include flex(row, center, center);
+    gap: 12rpx;
+    padding: 20rpx 50rpx;
     background-color: #111;
     color: #fff;
     border-radius: $border-radius-full;
     font-size: 24rpx;
     font-weight: $font-weight-bold;
     box-shadow: $shadow-md;
+    
   }
 }
 </style>
