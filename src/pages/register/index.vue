@@ -23,7 +23,7 @@
               class="custom-input" 
               placeholder="QQ邮箱" 
               placeholder-class="placeholder-style"
-              v-model="formData.QQemail" 
+              v-model="formData.qqEmail" 
               type="number"
               maxlength="11"
             />
@@ -34,7 +34,7 @@
               class="custom-input" 
               placeholder="验证码" 
               placeholder-class="placeholder-style"
-              v-model="formData.code" 
+              v-model="formData.qqCode" 
               type="number"
               maxlength="6"
             />
@@ -66,13 +66,17 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 import { useSystemStore } from '@/store/system';
+import { authApi } from '@/api/register/router';
+import { useUserStore } from '@/store/user';
+
+const userStore = useUserStore();
 
 const systemStore = useSystemStore();
 
 const formData = reactive({
   nickname: '',
-  QQemail: '',
-  code: '',
+  qqEmail: '',
+  qqCode: '',
   password: ''
 });
 
@@ -80,7 +84,7 @@ const timer = ref(0);
 
 const getVerifyCode = () => {
   if (timer.value > 0) return;
-  if (!formData.QQemail || !/^[a-zA-Z0-9_]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$/.test(formData.QQemail)) { 
+  if (!formData.qqEmail || !/^[a-zA-Z0-9_]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$/.test(formData.qqEmail)) { 
     uni.showToast({ title: '请输入正确的QQ邮箱', icon: 'none' });
     return;
   }
@@ -94,18 +98,32 @@ const getVerifyCode = () => {
   }, 1000);
 };
 
-const handleRegister = () => {
-  if (!formData.QQemail || !formData.password || !formData.nickname || !formData.code) {
+const handleRegister = async () => {
+  if (!formData.qqEmail || !formData.password || !formData.nickname || !formData.qqCode) {
     uni.showToast({ title: '请填写完整信息', icon: 'none' });
     return;
   }
   
   uni.showLoading({ title: '注册中...' });
-  setTimeout(() => {
+  try {
+    const response = await authApi.register({
+      nickname: formData.nickname,
+      qqEmail: formData.qqEmail,
+      password: formData.password,
+      qqCode: formData.qqCode
+    });
     uni.hideLoading();
-    // 注册成功，跳转到选择标签页 (UI 21)
-    uni.navigateTo({ url: '/pages/select-tags/index' });
-  }, 1500);
+    uni.showToast({ title: '注册成功', icon: 'success' });
+    userStore.login(response.data.userInfo, response.data.accessToken, response.data.refreshToken);
+    // 注册成功，跳转到选择标签页
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/selectTags/index' });
+    }, 1000);
+  } catch (error) {
+    uni.hideLoading();
+    uni.showToast({ title: '注册失败，请重试', icon: 'none' });
+    console.error('注册失败:', error);
+  }
 };
 </script>
 

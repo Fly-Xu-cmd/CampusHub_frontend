@@ -99,6 +99,22 @@ const errorInterceptors: Array<(error: any) => any> = [
         icon: "none",
       });
     }
+    // 处理 401 错误（token 过期）
+    if (error.statusCode === 401) {
+      uni.showToast({
+        title: "登录过期，请重新登录",
+        icon: "none",
+      });
+      // 清除过期 token
+      uni.removeStorageSync("accessToken");
+      uni.removeStorageSync("refreshToken");
+      // 跳转到登录页
+      setTimeout(() => {
+        uni.navigateTo({
+          url: "/pages/login/index",
+        });
+      }, 1000);
+    }
     return error;
   },
 ];

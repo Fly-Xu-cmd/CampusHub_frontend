@@ -1,5 +1,5 @@
 <template>
-  <CommonLayout headerType="none" title="编辑资料" showBack bgWhite rightText="保存" @rightClick="handleSave">
+  <CommonLayout headerType="none" padding="0 0" title="编辑资料" showBack bgWhite rightText="保存" @rightClick="handleSave">
     <view class="header">
       <wd-icon name="arrow-left" size="48rpx" color="#000" @click="toBack"></wd-icon>
       <view class="title">编辑资料</view>
@@ -16,7 +16,7 @@
       <view class="form-section">
         <view class="form-item">
           <text class="label">昵称</text>
-          <input class="input-box" v-model="formData.nickname" placeholder="请输入昵称" />
+          <input class="input-box" v-model="formData.nickname" placeholder="请输入昵称" type="text" />
         </view>
         <view class="form-item">
           <text class="label">个性签名</text>
@@ -38,16 +38,70 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app';
+import { useUserStore } from '@/store/user';
+import { updateProfile, updateInterests } from '@/api/profile/router';
+import type { PostUserDetailsRequest, PostUserInterestsRequest } from '@/types/modules/profile';
+import type { InterestTag } from '@/types/modules/user';
 
+
+
+const userStore = useUserStore();
+const loading = ref(false);
 const formData = ref({
   nickname: '',
   signature: '',
-  tags: ['跑步', '徒步']
+  tags: [] as InterestTag[]
 });
 
-const handleSave = () => {
-  uni.showToast({ title: '保存成功' });
-  setTimeout(() => uni.navigateBack(), 1000);
+onLoad(() => {
+  // 从用户存储中获取当前信息
+  const userInfo = userStore.userInfo;
+  formData.value = {
+    nickname: userInfo.nickname || '',
+    signature: userInfo.introduction || '',
+    tags: userInfo.interestTags ? userInfo.interestTags.map(tag => typeof tag === 'string' ? tag : tag.name) : []
+  };
+});
+
+const handleSave = async () => {
+  loading.value = true;
+  try {
+    // 更新用户详情
+    const profileData: PostUserDetailsRequest = {
+      nickname: formData.value.nickname,
+      introduction: formData.value.signature,
+      avatarUrl: userStore.userInfo.avatarUrl || '',
+      age: userStore.userInfo.age ? Number(userStore.userInfo.age) : 0,
+      gender: userStore.userInfo.gender || ''
+    };
+    
+    const profileResponse = await updateProfile(profileData);
+    
+    // 如果有兴趣标签，更新兴趣标签
+    if (formData.value.tags.length > 0) {
+      const interestsData: PostUserInterestsRequest = {
+        interestTagIds: [] // 暂时空数组，实际应该从标签获取ID
+      };
+      
+      await updateInterests(interestsData);
+    }
+    
+    uni.showToast({ title: '保存成功' });
+    // 更新本地存储的用户信息
+    userStore.updateUserInfo({
+      ...userStore.userInfo,
+      nickname: formData.value.nickname,
+      introduction: formData.value.signature,
+      interestTags: formData.value.tags
+    });
+    setTimeout(() => uni.navigateBack(), 1000);
+  } catch (error) {
+    console.error('保存个人资料失败:', error);
+    uni.showToast({ title: '保存失败，请重试', icon: 'none' });
+  } finally {
+    loading.value = false;
+  }
 };
 
 const toBack = () => {
@@ -61,7 +115,7 @@ const toBack = () => {
 
 .header {
   @include flex(row, space-between, center);
-  padding: $spacing-sm $spacing-md;
+  padding: $spacing-sm 0;
   background: $surface-color;
   border-bottom: 1rpx solid $border-light;
   .title {

@@ -1,5 +1,5 @@
 <template>
-  <CommonLayout headerType="title" title="消息" :showTabBar="true">
+  <CommonLayout headerType="title" title="消息" padding="0 0" :showTabBar="true">
     <view class="content">
 
       <view class="nav-title">
@@ -111,7 +111,7 @@ const viewSystemMsg = () => {
 
   // 消息列表
   .message-list {
-    padding: $spacing-sm;
+    padding: $spacing-md;
     .message-item {
       display: flex;
       padding: $spacing-sm $spacing-md;

@@ -1,5 +1,5 @@
 <template>
-	<CommonLayout headerType="none" title="发布新活动" :showTabBar="true">
+	<CommonLayout headerType="none" title="发布新活动"  :showTabBar="true">
 		<view class="publish-container">
 			<!-- 上传组件 -->
 		<UploadVideo 

@@ -1,44 +1,47 @@
 import { defineStore } from "pinia";
-import type { UserState } from "@/types/modules/user";
+import type { InterestTag, UserInfo } from "@/types/modules/user";
 
 export const useUserStore = defineStore("user", {
-  state: (): UserState => ({
-    user_id: 0,
-    activities_num: 0,
+  state: (): UserInfo => ({
+    userId: 0,
+    activitiesNum: 0,
     age: "",
-    avatar_url: "",
+    avatarUrl: "",
     gender: "",
-    initiate_num: 0,
+    initiateNum: 0,
+    interestTags: [],
     introduction: "",
-    latitude_longitude: "",
+    latitudeLongitude: "",
     nickname: "",
-    qq_email: "",
+    qqEmail: "",
     token: "",
-    refresh_token: "",
+    refreshToken: "",
+    accessToken: "",
   }),
 
   getters: {
-    userInfo(): Partial<UserState> {
+    userInfo(): Partial<UserInfo> {
       return {
-        user_id: this.user_id,
-        activities_num: this.activities_num,
+        userId: this.userId,
+        activitiesNum: this.activitiesNum,
         age: this.age,
-        avatar_url: this.avatar_url,
+        avatarUrl: this.avatarUrl,
         gender: this.gender,
-        initiate_num: this.initiate_num,
+        initiateNum: this.initiateNum,
         introduction: this.introduction,
-        latitude_longitude: this.latitude_longitude,
+        latitudeLongitude: this.latitudeLongitude,
         nickname: this.nickname,
-        qq_email: this.qq_email,
+        qqEmail: this.qqEmail,
+        interestTags: this.interestTags,
       };
     },
 
     isAuthenticated(): boolean {
-      return this.user_id !== 0;
+      return this.userId !== 0;
     },
 
     hasAvatar(): boolean {
-      return !!this.avatar_url;
+      return !!this.avatarUrl;
     },
   },
 
@@ -48,23 +51,21 @@ export const useUserStore = defineStore("user", {
      * @param userData 用户数据
      * @param token 认证令牌
      */
-    login(userData: Partial<UserState>, token: string, refresh_token: string) {
-      this.user_id = userData.user_id || 0;
-      this.activities_num = userData.activities_num || 0;
-      this.age = userData.age || "";
-      this.avatar_url = userData.avatar_url || "";
-      this.gender = userData.gender || "";
-      this.initiate_num = userData.initiate_num || 0;
-      this.introduction = userData.introduction || "";
-      this.latitude_longitude = userData.latitude_longitude || "";
-      this.nickname = userData.nickname || "";
-      this.qq_email = userData.qq_email || "";
-      this.token = token;
-      this.refresh_token = refresh_token;
+    login(
+      userData: Partial<UserInfo>,
+      accessToken: string,
+      refreshToken: string,
+    ) {
+      this.updateUserInfo(userData);
+      this.accessToken = accessToken;
+      this.refreshToken = refreshToken;
+      if (userData.interestTags) {
+        this.setUserInterestTags(userData.interestTags);
+      }
 
       // 存储 token 到本地
-      uni.setStorageSync("token", token);
-      uni.setStorageSync("refresh_token", refresh_token);
+      uni.setStorageSync("accessToken", accessToken);
+      uni.setStorageSync("refreshToken", refreshToken);
 
       // 存储用户信息到本地
       uni.setStorageSync("userInfo", JSON.stringify(this.userInfo));
@@ -75,22 +76,22 @@ export const useUserStore = defineStore("user", {
      */
     logout() {
       // 重置状态
-      this.user_id = 0;
-      this.activities_num = 0;
+      this.userId = 0;
+      this.activitiesNum = 0;
       this.age = "";
-      this.avatar_url = "";
+      this.avatarUrl = "";
       this.gender = "";
-      this.initiate_num = 0;
+      this.initiateNum = 0;
       this.introduction = "";
-      this.latitude_longitude = "";
+      this.latitudeLongitude = "";
       this.nickname = "";
-      this.qq_email = "";
-      this.token = "";
-      this.refresh_token = "";
+      this.qqEmail = "";
+      this.accessToken = "";
+      this.refreshToken = "";
 
       // 清除本地存储
-      uni.removeStorageSync("token");
-      uni.removeStorageSync("refresh_token");
+      uni.removeStorageSync("accessToken");
+      uni.removeStorageSync("refreshToken");
       uni.removeStorageSync("userInfo");
     },
 
@@ -98,18 +99,19 @@ export const useUserStore = defineStore("user", {
      * 更新用户信息
      * @param userData 用户数据
      */
-    updateUserInfo(userData: Partial<UserState>) {
-      this.user_id = userData.user_id || this.user_id;
-      this.activities_num = userData.activities_num || this.activities_num;
+    updateUserInfo(userData: Partial<UserInfo>) {
+      this.userId = userData.userId || this.userId;
+      this.activitiesNum = userData.activitiesNum || this.activitiesNum;
       this.age = userData.age || this.age;
-      this.avatar_url = userData.avatar_url || this.avatar_url;
+      this.avatarUrl = userData.avatarUrl || this.avatarUrl;
       this.gender = userData.gender || this.gender;
-      this.initiate_num = userData.initiate_num || this.initiate_num;
+      this.initiateNum = userData.initiateNum || this.initiateNum;
       this.introduction = userData.introduction || this.introduction;
-      this.latitude_longitude =
-        userData.latitude_longitude || this.latitude_longitude;
+      this.latitudeLongitude =
+        userData.latitudeLongitude || this.latitudeLongitude;
       this.nickname = userData.nickname || this.nickname;
-      this.qq_email = userData.qq_email || this.qq_email;
+      this.qqEmail = userData.qqEmail || this.qqEmail;
+      this.interestTags = userData.interestTags || this.interestTags;
 
       // 更新本地存储
       uni.setStorageSync("userInfo", JSON.stringify(this.userInfo));
@@ -119,25 +121,25 @@ export const useUserStore = defineStore("user", {
      * 从本地存储恢复用户状态
      */
     restoreFromStorage() {
-      const token = uni.getStorageSync("token");
+      const accessToken = uni.getStorageSync("accessToken");
       const userInfoStr = uni.getStorageSync("userInfo");
-      const refresh_token = uni.getStorageSync("refresh_token");
+      const refreshToken = uni.getStorageSync("refreshToken");
 
-      if (token && userInfoStr) {
+      if (accessToken && userInfoStr) {
         try {
           const userInfo = JSON.parse(userInfoStr);
-          this.user_id = userInfo.user_id || 0;
-          this.activities_num = userInfo.activities_num || 0;
+          this.userId = userInfo.userId || 0;
+          this.activitiesNum = userInfo.activitiesNum || 0;
           this.age = userInfo.age || "";
-          this.avatar_url = userInfo.avatar_url || "";
+          this.avatarUrl = userInfo.avatarUrl || "";
           this.gender = userInfo.gender || "";
-          this.initiate_num = userInfo.initiate_num || 0;
+          this.initiateNum = userInfo.initiateNum || 0;
           this.introduction = userInfo.introduction || "";
-          this.latitude_longitude = userInfo.latitude_longitude || "";
+          this.latitudeLongitude = userInfo.latitudeLongitude || "";
           this.nickname = userInfo.nickname || "";
-          this.qq_email = userInfo.qq_email || "";
-          this.token = token;
-          this.refresh_token = refresh_token;
+          this.qqEmail = userInfo.qqEmail || "";
+          this.accessToken = accessToken;
+          this.refreshToken = refreshToken;
         } catch (error) {
           console.error("恢复用户状态失败:", error);
           this.logout();
@@ -149,22 +151,22 @@ export const useUserStore = defineStore("user", {
      * 清除用户状态
      */
     clearUserState() {
-      this.user_id = 0;
-      this.activities_num = 0;
+      this.userId = 0;
+      this.activitiesNum = 0;
       this.age = "";
-      this.avatar_url = "";
+      this.avatarUrl = "";
       this.gender = "";
-      this.initiate_num = 0;
+      this.initiateNum = 0;
       this.introduction = "";
-      this.latitude_longitude = "";
+      this.latitudeLongitude = "";
       this.nickname = "";
-      this.qq_email = "";
-      this.token = "";
-      this.refresh_token = "";
+      this.qqEmail = "";
+      this.accessToken = "";
+      this.refreshToken = "";
 
       // 清除本地存储
-      uni.removeStorageSync("token");
-      uni.removeStorageSync("refresh_token");
+      uni.removeStorageSync("accessToken");
+      uni.removeStorageSync("refreshToken");
       uni.removeStorageSync("userInfo");
     },
 
@@ -173,11 +175,25 @@ export const useUserStore = defineStore("user", {
      * @returns 是否登录
      */
     checkLoginStatus(): boolean {
-      if (!this.user_id || !this.token) {
+      if (!this.userId || !this.accessToken) {
         // 尝试从本地存储恢复
         this.restoreFromStorage();
       }
-      return this.user_id !== 0 && !!this.token;
+      return this.userId !== 0 && !!this.accessToken;
+    },
+    /**
+     * 初始化用户状态
+     */
+    initUserStore() {
+      // 尝试从本地存储恢复
+      this.restoreFromStorage();
+    },
+    /**
+     * 设置用户兴趣标签
+     * @param tags 兴趣标签数组
+     */
+    setUserInterestTags(tags: InterestTag[]) {
+      this.interestTags = tags;
     },
   },
 });

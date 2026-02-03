@@ -1,5 +1,5 @@
 <template>
-  <CommonLayout headerType="none">
+  <CommonLayout headerType="none" padding="0 0">
     <view class="header">
       <wd-icon name="arrow-left" size="48rpx" color="#000" @click="toBack"></wd-icon>
       <view class="title">修改QQ邮箱</view>
