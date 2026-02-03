@@ -134,7 +134,6 @@ const handleToVerify = () => {
 
 .profile-container {
   @include flex(column, flex-start, stretch);
-  min-height: 100%;
 }
 
 /* --- 头部区域 --- */
