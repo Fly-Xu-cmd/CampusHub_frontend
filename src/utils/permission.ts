@@ -8,6 +8,7 @@ const whiteList = [
   "/pages/home/PublicProfile",  // 测试：暂时加上
   "/pages/message/index",   // 测试：暂时加上
   "/pages/message/chat",  // 测试：暂时加上
+  "/pages/message/ChatDetail",  // 测试：暂时加上
   "/pages/message/SystemMsg",   // 测试：暂时加上
   "/pages/login/index",
   "/pages/register/index",

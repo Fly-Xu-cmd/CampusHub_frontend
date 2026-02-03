@@ -29,6 +29,10 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/message/ChatDetail",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/ticket/index",
       "style": { "navigationStyle": "custom" }
     },

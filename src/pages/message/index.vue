@@ -4,7 +4,7 @@
 
       <view class="nav-title">
         <!-- 系统通知卡片 -->
-        <view class="system-notice">
+        <view class="system-notice" @click="viewSystemMsg">
           <view class="notice-icon">
             <wd-icon name="notification" size="45rpx" color="#f97316"></wd-icon>
           </view>
@@ -20,7 +20,7 @@
 
       <!-- 消息列表 -->
       <view class="message-list">
-        <view class="message-item" v-for="value in 2">
+        <view class="message-item" v-for="value in 2" @click="viewChat">
           <view class="message-avatar">
             <image src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
             <view class="avatar-badge">9</view>
@@ -42,7 +42,16 @@
 </template>
 
 <script setup lang="ts">
-// 页面逻辑
+const viewChat = () => {
+  uni.navigateTo({
+    url: `/pages/message/chat`
+  });
+};
+const viewSystemMsg = () => {
+  uni.navigateTo({
+    url: `/pages/message/SystemMsg`
+  });
+};
 </script>
 
 <style scoped lang="scss">
@@ -109,7 +118,7 @@
       background-color: $surface-color;
       border-radius: $border-radius-xl;
       box-shadow: 0 5rpx 12rpx 3rpx rgba(0, 0, 0, 0.05);
-      margin-bottom: $spacing-sm;
+      margin-bottom: $spacing-md;
       .message-avatar {
         position: relative;
         margin-right: $spacing-sm;
