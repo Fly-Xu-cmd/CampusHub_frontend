@@ -23,7 +23,8 @@ const whiteList = [
   "/pages/settings/edit-profile", // 编辑个人信息
   "/pages/settings/security", // 安全设置
   "/pages/settings/change-password", // 更改密码
-  "/pages/settings/change-qqEmail", // 更改 QQ 邮箱
+  "/pages/settings/change-qqEmail",
+  "/pages/publish/index" // 更改 QQ 邮箱
   // '/pages/message/message', // 如果消息列表允许游客看，就加上
 ];
 

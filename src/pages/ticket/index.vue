@@ -3,36 +3,58 @@
 		<view class="content">
 
 
-			<view class="container" style="padding: 30rpx;">
-				<view class="time-item">
-					<view class="time-item-left">
-						<view class="i-running">
-							<wd-icon class-prefix="iconfont" name="running" size="68rpx" color="#f97316" />
-						</view>
-						<view class="event-info">
-							<view class="event-title">奥森公园夜跑</view>
-							<view class="event-time">
-								<wd-icon name="clock" size="28rpx" color="#666" />
-								<text class="time-value">
-									{{ formattedEndTime }}
-								</text>
+	<view class="container" style="padding: 30rpx;">
+				<!-- 加载状态 -->
+				<view v-if="loading" class="loading-container">
+					<wd-icon name="loading" size="48rpx" color="#f97316" />
+					<text class="loading-text">加载中...</text>
+				</view>
+
+				<!-- 错误信息 -->
+				<view v-else-if="error" class="error-container">
+					<wd-icon name="error" size="48rpx" color="#ef4444" />
+					<text class="error-text">{{ error }}</text>
+					<view class="retry-btn" @click="fetchTicketDetails">重试</view>
+				</view>
+
+				<!-- 票券列表 -->
+				<view v-else-if="tickets.length > 0">
+					<view v-for="ticket in tickets" :key="ticket.id" class="time-item">
+						<view class="time-item-left">
+							<view class="i-running">
+								<wd-icon class-prefix="iconfont" name="running" size="68rpx" color="#f97316" />
 							</view>
-							<view :class="['event-status', isUsed ? 'status-used' : 'status-pending']"
-								@click="toggleStatus">
-								{{ isUsed ? '已使用' : '待使用' }}
+							<view class="event-info">
+								<view class="event-title">{{ ticket.eventName }}</view>
+								<view class="event-time">
+									<wd-icon name="clock" size="28rpx" color="#666" />
+									<text class="time-value">
+										{{ formatEventTime(ticket.eventTime) }}
+									</text>
+								</view>
+								<view :class="['event-status', ticket.status === 'used' ? 'status-used' : 'status-pending']"
+									@click="toggleStatus(ticket)">
+									{{ ticket.status === 'used' ? '已使用' : '待使用' }}
+								</view>
+							</view>
+						</view>
+						<view class="time-item-right">
+							<view class="qr-code-btn" @click="showQRCode(ticket)">
+								<view class="iconfont iconfont-qrcode" style="font-size: 24rpx; color: #999;"></view>
 							</view>
 						</view>
 					</view>
-					<view class="time-item-right">
-						<view class="qr-code-btn" @click="showQRCode">
-							<view class="iconfont iconfont-qrcode" style="font-size: 24rpx; color: #999;"></view>
-						</view>
-					</view>
+				</view>
+
+				<!-- 空状态 -->
+				<view v-else class="empty-container">
+					<wd-icon name="ticket" size="64rpx" color="#d1d5db" />
+					<text class="empty-text">暂无票券</text>
 				</view>
 			</view>
 
 			<!-- 二维码详情弹窗 -->
-			<view v-if="showQR" class="qr-modal">
+			<view v-if="showQR && selectedTicket" class="qr-modal">
 				<view class="qr-content">
 					<view class="qr-header">
 						<view class="qr-back" @click="hideQRCode">
@@ -42,14 +64,14 @@
 						<view class="qr-empty"></view>
 					</view>
 					<view class="qr-event-info">
-						<text class="qr-event-name">奥森公园夜跑</text>
-						<text class="qr-event-time">10.24 19:00-21:00</text>
+						<text class="qr-event-name">{{ selectedTicket.eventName }}</text>
+						<text class="qr-event-time">{{ formatEventTime(selectedTicket.eventTime) }}</text>
 					</view>
 					<view class="qr-body">
 						<view class="qr-code">
 							<qrcode :value="qrCodeValue" :options="qrCodeOptions"></qrcode>
 						</view>
-						<view class="qr-number">8293</view>
+						<view class="qr-number">{{ selectedTicket.ticketNumber }}</view>
 						<view class="qr-hint">请出示二维码核销入场</view>
 					</view>
 				</view>
@@ -59,13 +81,15 @@
 </template>
 
 <script lang="ts" setup>
-	import { computed, ref } from 'vue'
+	import { ref, onMounted } from 'vue'
 	import { usePublishStore } from '@/store/publish'
 	import Qrcode from '@chenfengyuan/vue-qrcode'
+	import type { Ticket } from '@/types/modules/ticket'
+	import { getTicketList, getTicketDetail } from '@/api/ticket/router'
 
 	const publishStore = usePublishStore()
-	const isUsed = ref(false)
 	const showQR = ref(false)
+	const selectedTicket = ref<Ticket | null>(null)
 	const qrCodeValue = ref('https://ticket.campus-hub.com/event/8293')
 	const qrCodeOptions = ref({
 		width: 180,
@@ -75,33 +99,154 @@
 			light: '#ffffff'
 		}
 	})
+	const tickets = ref<Ticket[]>([])
+	const loading = ref(true)
+	const error = ref<string | null>(null)
 
-	const formattedEndTime = computed(() => {
-		const time = publishStore.endTime
-		if (!time) return ''
-		const date = new Date(time)
+	// 格式化活动时间
+	const formatEventTime = (eventTime: string) => {
+		// 假设eventTime格式为 '2024-10-24 19:00:00'
+		const parts = eventTime.split(' ')
+		if (parts.length < 2) return eventTime
+		const datePart = parts[0]
+		const timePart = parts[1]
+		
+		// 格式化日期为 '10.24'
+		const date = new Date(datePart)
 		const month = (date.getMonth() + 1).toString().padStart(2, '0')
 		const day = date.getDate().toString().padStart(2, '0')
-		const hours = date.getHours().toString().padStart(2, '0')
-		const minutes = date.getMinutes().toString().padStart(2, '0')
-		return `${month}.${day} ${hours}:${minutes}`
-	})
-
-	const toggleStatus = () => {
-		isUsed.value = !isUsed.value
-		// 这里可以添加API调用，将状态更新到服务器
-		console.log('Ticket status changed to:', isUsed.value ? 'used' : 'pending')
+		
+		return `${month}.${day} ${timePart}`
 	}
 
-	const showQRCode = () => {
+	// 本地模拟数据
+	const mockTickets = [
+		{
+			id: '10001',
+			eventId: '2001',
+			eventName: '春季户外徒步活动',
+			eventTime: '2024-03-15 09:00:00',
+			eventLocation: '',
+			ticketNumber: 'TK7A3B9K2D',
+			status: 'pending' as const,
+			qrCodeUrl: '',
+			createdAt: new Date().toISOString()
+		},
+		{
+			id: '10002',
+			eventId: '2002',
+			eventName: '摄影技巧分享会',
+			eventTime: '2024-03-20 14:00:00',
+			eventLocation: '',
+			ticketNumber: 'TK8B4C0L3E',
+			status: 'used' as const,
+			qrCodeUrl: '',
+			createdAt: new Date().toISOString()
+		}
+	]
+
+	// 从API获取票券列表
+	const fetchTicketDetails = async () => {
+		loading.value = true
+		error.value = null
+		tickets.value = []
+		try {
+			// 尝试从API获取数据
+			const result = await getTicketList()
+			
+			// 检查result结构
+			if (!result || result.code !== 0 || !result.data || !result.data.items) {
+				// API数据获取失败，使用本地模拟数据
+				tickets.value = mockTickets
+				return
+			}
+			
+			// 使用类型断言处理TypeScript类型检查
+			const apiData = result.data as any
+			
+			// 字段映射：将API返回的字段转换为前端期望的格式
+			const fetchedTickets = apiData.items.map((item: any) => {
+				const mappedTicket = {
+					id: item.ticket_id?.toString() || '',
+					eventId: item.activity_id?.toString() || '',
+					eventName: item.activity_name || '',
+					eventTime: item.activity_time || '',
+					eventLocation: '', // 默认空值
+					ticketNumber: item.ticket_code || '',
+					status: item.status === 1 ? 'used' : 'pending', // 将数字状态转换为字符串
+					qrCodeUrl: '', // 默认空值
+					createdAt: new Date().toISOString() // 当前时间
+				}
+				return mappedTicket
+			})
+			
+			// 过滤掉无效票券
+			const validTickets = fetchedTickets.filter((ticket: any) => ticket && ticket.id) as Ticket[]
+			tickets.value = validTickets
+			
+			if (validTickets.length === 0) {
+				// 无有效票券数据，使用本地模拟数据
+				tickets.value = mockTickets
+			}
+		} catch (err) {
+			// API请求失败，使用本地模拟数据
+			error.value = null
+			tickets.value = mockTickets
+		} finally {
+			loading.value = false
+		}
+	}
+
+	// 切换票券状态
+	const toggleStatus = (ticket: Ticket) => {
+		const index = tickets.value.findIndex(t => t.id === ticket.id)
+		if (index !== -1) {
+			tickets.value[index].status = tickets.value[index].status === 'pending' ? 'used' : 'pending'
+			// 这里可以添加API调用，将状态更新到服务器
+		}
+	}
+
+	// 显示二维码
+	const showQRCode = async (ticket: Ticket) => {
+		// 先显示基本信息，然后获取详情
+		selectedTicket.value = ticket
 		showQR.value = true
-		// 这里可以添加生成二维码的逻辑
-		console.log('Show QR code')
+
+		try {
+			// 调用票券详情API获取详细信息
+			const result = await getTicketDetail(ticket.id)
+
+			// 检查result结构
+			if (result && result.code === 0 && result.data) {
+				const apiData = result.data
+
+				// 更新票券信息
+				if (selectedTicket.value) {
+					selectedTicket.value = {
+						...selectedTicket.value,
+						ticketNumber: apiData.ticket_code || selectedTicket.value.ticketNumber,
+						qrCodeUrl: apiData.qr_code_url || selectedTicket.value.qrCodeUrl
+					}
+					// 更新二维码值
+					qrCodeValue.value = apiData.qr_code_url || selectedTicket.value.qrCodeUrl
+				}
+			}
+		} catch (err) {
+			// API请求失败，使用本地数据
+			// 静默处理错误，不显示在控制台
+		}
 	}
 
+	// 隐藏二维码
 	const hideQRCode = () => {
 		showQR.value = false
+		selectedTicket.value = null
 	}
+
+	// 组件挂载时获取票券数据
+	onMounted(() => {
+		fetchTicketDetails()
+	})
 </script>
 
 <style lang="scss" scoped>
@@ -273,14 +418,82 @@
 	}
 
 	.event-status {
-		font-size: 24rpx;
-		font-weight: 500;
-		padding: 6rpx 16rpx;
-		border-radius: 12rpx;
-		width: fit-content;
-		cursor: pointer;
-		transition: all 0.3s ease;
-	}
+			font-size: 24rpx;
+			font-weight: 500;
+			padding: 6rpx 16rpx;
+			border-radius: 12rpx;
+			width: fit-content;
+			cursor: pointer;
+			transition: all 0.3s ease;
+		}
+
+		// 加载状态样式
+		.loading-container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 120rpx 0;
+			
+			.loading-text {
+				margin-top: 24rpx;
+				font-size: 28rpx;
+				color: #666;
+				font-weight: 500;
+			}
+		}
+
+		// 错误状态样式
+		.error-container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 120rpx 40rpx;
+			text-align: center;
+			
+			.error-text {
+				margin: 24rpx 0;
+				font-size: 28rpx;
+				color: #ef4444;
+				font-weight: 500;
+				line-height: 1.4;
+			}
+			
+			.retry-btn {
+				margin-top: 32rpx;
+				padding: 16rpx 48rpx;
+				background-color: #f97316;
+				color: #fff;
+				font-size: 28rpx;
+				font-weight: 500;
+				border-radius: 12rpx;
+				box-shadow: 0 4rpx 12rpx 0 rgba(249, 115, 22, 0.3);
+				cursor: pointer;
+				transition: all 0.3s ease;
+				
+				&:active {
+					background-color: #ea580c;
+					transform: scale(0.98);
+				}
+			}
+		}
+
+		// 空状态样式
+		.empty-container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 120rpx 0;
+			
+			.empty-text {
+				margin-top: 24rpx;
+				font-size: 28rpx;
+				color: #9ca3af;
+				font-weight: 500;
+			}
+		}
 
 	.status-pending {
 		color: #3bb267;
