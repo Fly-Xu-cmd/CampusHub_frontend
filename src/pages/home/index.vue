@@ -2,7 +2,10 @@
   <CommonLayout headerType="home" contentBg="$background-color" :showTabBar="true">
     <view class="content">
       <view class="search-section">
-        <wd-search hide-cancel placeholder="搜索活动..." placeholder-left custom-class="custom-search" />
+        <view class="search-container">
+          <wd-icon name="search" size="32rpx" color="#999999" class="search-icon" />
+          <wd-search hide-cancel placeholder="搜索活动..." placeholder-left custom-class="custom-search" />
+        </view>
       </view>
 
       <!-- 推荐活动标题 -->
@@ -22,7 +25,7 @@
             :class="{ active: activeTag === tag.id }"
             @click="selectTag(tag.id)"
           >
-            <wd-icon v-if="tag.icon" :name="tag.icon" size="30rpx" />
+            <view v-if="tag.icon" class="iconfont" :class="tag.icon" style="font-size: 30rpx;" />
             <text>{{ tag.name }}</text>
           </view>
         </scroll-view>
@@ -31,7 +34,7 @@
       <!-- 活动列表 -->
       <view class="activity-list">
         <view v-if="loading" class="loading">
-          <wd-loading type="circle" />
+          <wd-loading size="100rpx" color="#f97316"/>
         </view>
         <view v-else-if="activities.length === 0" class="empty">
           <text>暂无活动</text>
@@ -48,7 +51,7 @@
               <image :src="activity.image" class="card-image" mode="aspectFill" />
               <!-- 报名状态 -->
               <view class="registration-status">
-                <wd-icon name="" size="25rpx" color="#fff" />
+                <view class="iconfont iconfont-remen" style="font-size: 25rpx;" />
                 <text>报名中</text>
               </view>
               <!-- 人数信息 -->
@@ -68,7 +71,7 @@
                 class="activity-tag"
                 :class="tag.type"
               >
-                <wd-icon :name="tag.icon" size="25rpx" />
+                <view class="iconfont" :class="tag.icon" style="font-size: 25rpx;" />
                 <text>{{ tag.name }}</text>
               </view>
             </view>
@@ -140,15 +143,15 @@ const activeTag = ref<string>('all');
 const loading = ref<boolean>(false);
 
 const tags = ref<Tag[]>([
-  { id: 'all', name: '全部', icon: 'layers' },
-  { id: 'running', name: '跑步', icon: '' },
-  { id: 'basketball', name: '球类', icon: '' },
-  { id: 'hiking', name: '徒步', icon: '' },
-  { id: 'cycling', name: '露营', icon: '' },
-  { id: 'music', name: '音乐', icon: '' },
-  { id: 'reading', name: '读书', icon: '' },
-  { id: 'photography', name: '摄影', icon: '' },
-  { id: 'food', name: '美食', icon: '' },
+  { id: 'all', name: '全部', icon: 'iconfont-quanbu' },
+  { id: 'running', name: '跑步', icon: 'iconfont-running' },
+  { id: 'basketball', name: '球类', icon: 'iconfont-lanqiu' },
+  { id: 'hiking', name: '徒步', icon: 'iconfont-mountain' },
+  { id: 'cycling', name: '露营', icon: 'iconfont-louying' },
+  { id: 'music', name: '音乐', icon: 'iconfont-yinle' },
+  { id: 'reading', name: '读书', icon: 'iconfont-book' },
+  { id: 'photography', name: '摄影', icon: 'iconfont-fenleisheyingshuma' },
+  { id: 'food', name: '美食', icon: 'iconfont-meishi' },
 ]);
 
 const activities = ref<Activity[]>([
@@ -161,8 +164,8 @@ const activities = ref<Activity[]>([
     participants: 15,
     maxParticipants: 20,
     tags: [
-      { name: '跑步', type: 'running', icon: 'run' },
-      { name: '夜跑', type: 'night', icon: 'moon' }
+      { name: '跑步', type: 'running', icon: 'iconfont-running' },
+      { name: '夜跑', type: 'night', icon: 'iconfont-yueliang' }
     ],
     organizer: {
       name: '极客跑团',
@@ -215,15 +218,28 @@ $tag-inactive-color: #111;
 .search-section {
   margin-top: 20rpx;
   padding: 0 $spacing-md;
-  :deep(.custom-search) {
-    background: transparent !important;
-    padding: 0 !important;
-    .wd-search__input {
-      background: #ffffff !important;
-      border: 1rpx solid $border-color;
-      box-shadow: $shadow-sm; 
-      border-radius: 32rpx;
-      height: 100rpx;
+  .search-container {
+    position: relative;
+    width: 100%;
+    .search-icon {
+      position: absolute;
+      left: 30rpx;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 9999 !important;
+    }
+    :deep(.custom-search) {
+      background: transparent !important;
+      padding: 0 !important;
+      width: 100%;
+      .wd-search__input {
+        background: #ffffff !important;
+        border: 1rpx solid $border-color;
+        box-shadow: $shadow-sm; 
+        border-radius: 32rpx;
+        height: 100rpx;
+        padding-left: 80rpx !important;
+      }
     }
   }
 }
@@ -290,13 +306,13 @@ $tag-inactive-color: #111;
 }
 
 .loading {
-  padding: 80rpx 0;
+  padding: 100rpx 0;
   text-align: center;
   color: $text-tertiary;
 }
 
 .empty {
-  padding: 80rpx 0;
+  padding: 100rpx 0;
   text-align: center;
   color: $text-tertiary;
   font-size: $font-size-sm;
@@ -431,7 +447,7 @@ $tag-inactive-color: #111;
   border-radius: $border-radius-md;
 
   .log {
-    width: 5rpx;
+    width: 4rpx;
     height: 22rpx;
     background-color: $text-tertiary;
   }
