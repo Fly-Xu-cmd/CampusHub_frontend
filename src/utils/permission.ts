@@ -4,26 +4,26 @@ import { useUserStore } from "@/store/user";
 const whiteList = [
   "/", // 根路径
   "/pages/home/index",
-  "/pages/home/detail",   // 测试：暂时加上
-  "/pages/home/PublicProfile",  // 测试：暂时加上
-  "/pages/message/index",   // 测试：暂时加上
-  "/pages/message/chat",  // 测试：暂时加上
-  "/pages/message/ChatDetail",  // 测试：暂时加上
-  "/pages/message/SystemMsg",   // 测试：暂时加上
-  "/pages/login/index",
-  "/pages/register/index",
-  "/pages/selectTags/index", // 注册后的标签选择
+  "/pages/home/detail", // 测试：暂时加上
+  "/pages/home/PublicProfile", // 测试：暂时加上
+  "/pages/message/index", // 测试：暂时加上
+  "/pages/message/chat", // 测试：暂时加上
+  "/pages/message/ChatDetail", // 测试：暂时加上
+  "/pages/message/SystemMsg", // 测试：暂时加上
+  // "/pages/login/index",
+  // "/pages/register/index",
+  // "/pages/selectTags/index", // 注册后的标签选择
   "/pages/profile/index", // 用户个人中心
-  "/pages/ticket/index", // 票券
-  "/pages/profile/pending", // 待审核
-  "/pages/profile/history", // 活动历史
-  "/pages/profile/published", // 已发布
-  "/pages/profile/verify", // 验证
-  "/pages/settings/index", // 设置
-  "/pages/settings/edit-profile", // 编辑个人信息
-  "/pages/settings/security", // 安全设置
-  "/pages/settings/change-password", // 更改密码
-  "/pages/settings/change-qqEmail", // 更改 QQ 邮箱
+  // "/pages/ticket/index", // 票券
+  // "/pages/profile/pending", // 待审核
+  // "/pages/profile/history", // 活动历史
+  // "/pages/profile/published", // 已发布
+  // "/pages/profile/verify", // 验证
+  // "/pages/settings/index", // 设置
+  // "/pages/settings/edit-profile", // 编辑个人信息
+  // "/pages/settings/security", // 安全设置
+  // "/pages/settings/change-password", // 更改密码
+  // "/pages/settings/change-qqEmail", // 更改 QQ 邮箱
   // '/pages/message/message', // 如果消息列表允许游客看，就加上
 ];
 
@@ -46,12 +46,20 @@ export default function initPermission() {
 
         // === 核心逻辑 2：检查登录状态 ===
         const userStore = useUserStore();
-
-        // 如果已登录，放行
-        if (userStore.isAuthenticated) {
+        if (url === "/pages/login/index" || url === "/pages/register/index") {
+          if (userStore.checkLoginStatus()) {
+            // 已登录状态下访问登录页或注册页，跳转回首页
+            uni.navigateTo({
+              url: "/pages/home/index",
+            });
+            return false;
+          } else {
+            return true;
+          }
+        }
+        if (userStore.checkLoginStatus()) {
           return true;
         }
-
         // === 核心逻辑 3：未登录拦截 ===
         console.log("⛔ 路由守卫：未登录，拦截跳转 ->", url);
 

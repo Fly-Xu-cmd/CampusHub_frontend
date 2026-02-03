@@ -1,5 +1,5 @@
 <template>
-  <CommonLayout headerType="none">
+  <CommonLayout headerType="none" padding="0 0">
     <view class="header">
       <wd-icon name="arrow-left" size="48rpx" color="#000" @click="toBack"></wd-icon>
       <view class="title">修改密码</view>
@@ -12,10 +12,24 @@
       </view>
 
       <view class="form-section">
-        <view class="input-wrap" v-for="(holder, i) in ['请输入当前密码', '请输入新密码（至少8位）', '请再次输入新密码']" :key="i">
-          <text class="label">{{ ['当前密码', '新密码', '确认新密码'][i] }}</text>
+        <view class="input-wrap">
+          <text class="label">当前密码</text>
           <view class="input-inner">
-            <input class="real-input" :placeholder="holder" password />
+            <input class="real-input" placeholder="请输入当前密码" password v-model="formData.currentPassword" />
+            <wd-icon name="view" size="36rpx" color="#cbd5e1"></wd-icon>
+          </view>
+        </view>
+        <view class="input-wrap">
+          <text class="label">新密码</text>
+          <view class="input-inner">
+            <input class="real-input" placeholder="请输入新密码（至少8位）" password v-model="formData.newPassword" />
+            <wd-icon name="view" size="36rpx" color="#cbd5e1"></wd-icon>
+          </view>
+        </view>
+        <view class="input-wrap">
+          <text class="label">确认新密码</text>
+          <view class="input-inner">
+            <input class="real-input" placeholder="请再次输入新密码" password v-model="formData.confirmPassword" />
             <wd-icon name="view" size="36rpx" color="#cbd5e1"></wd-icon>
           </view>
         </view>
@@ -28,14 +42,56 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+import { updatePassword } from '@/api/profile/router';
+import type { PostUserPasswordRequest } from '@/types/modules/profile';
+
+const loading = ref(false);
+const formData = ref({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+});
+
 const toBack = () => {
   uni.navigateBack();
-}
+};
 
-const handleSave = () => {
-  uni.showToast({ title: '保存成功' });
-  setTimeout(() => uni.navigateBack(), 1000);
-}
+const handleSave = async () => {
+  // 表单验证
+  if (!formData.value.currentPassword || !formData.value.newPassword || !formData.value.confirmPassword) {
+    uni.showToast({ title: '请填写完整信息', icon: 'none' });
+    return;
+  }
+  
+  if (formData.value.newPassword !== formData.value.confirmPassword) {
+    uni.showToast({ title: '两次输入的密码不一致', icon: 'none' });
+    return;
+  }
+  
+  if (formData.value.newPassword.length < 8) {
+    uni.showToast({ title: '新密码至少8位', icon: 'none' });
+    return;
+  }
+  
+  loading.value = true;
+  try {
+    const passwordData: PostUserPasswordRequest = {
+      originPassword: formData.value.currentPassword,
+      oldPassword: formData.value.currentPassword,
+      newPassword: formData.value.newPassword
+    };
+    
+    const response = await updatePassword(passwordData);
+    uni.showToast({ title: '保存成功' });
+    setTimeout(() => uni.navigateBack(), 1000);
+  } catch (error) {
+    console.error('修改密码失败:', error);
+    uni.showToast({ title: '修改密码失败，请重试', icon: 'none' });
+  } finally {
+    loading.value = false;
+  }
+};
 </script>
 
 <style lang="scss" scoped>

@@ -1,12 +1,20 @@
-export interface UserState {
-  activities_num: number; // 参加活动数
+export interface UserInfo {
+  activitiesNum: number;
   age: string;
-  avatar_url: string;
+  avatarUrl: string;
   gender: string;
-  initiate_num: number; // 发起活动数
+  initiateNum: number;
+  interestTags: InterestTag[];
   introduction: string;
   nickname: string;
-  qq_email: string;
-  user_id: number;
+  userId: number;
+  [property: string]: any;
+}
+
+export interface InterestTag {
+  id: number;
+  tagDesc: string;
+  tagIcon: string;
+  tagName: string;
   [property: string]: any;
 }
