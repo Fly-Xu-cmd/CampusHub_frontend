@@ -201,46 +201,12 @@
 			.brand-info {
 				@include flex(column, center, flex-start);
 
-/* --- Standard Header --- */
-.standard-header {
-  background: $surface-color;
-  @include flex(row, flex-start, center);
-  
-  &.border-b {
-    border-bottom: 1px solid $border-light;
-  }
-  
-  .nav-left {
-    height: 100%;
-    @include flex(row, center, center);
-    padding: 0 10rpx;
-    margin-right: $spacing-xs;
-  }
-  
-  .nav-title {
-    font-size: 34rpx;
-    font-weight: $font-weight-bold;
-    color: $text-primary;
-    text-align: center;
-    @include truncate(1); // 使用截断混合器
-  }
-  
-  .nav-right {
-    position: absolute;
-    right: $spacing-xl; // 32px
-    height: 100%;
-    @include flex(row, center, center);
-    
-    .right-text-btn {
-      font-size: 26rpx;
-      color: $theme-color;
-      font-weight: $font-weight-bold;
-      background: #fff7ed;
-      padding: 10rpx 24rpx;
-      border-radius: $border-radius-full;
-    }
-  }
-}
+				.sub-text {
+					font-size: $font-size-xs;
+					color: $text-tertiary;
+					font-weight: $font-weight-medium;
+					margin-bottom: 4rpx;
+				}
 
 				.main-title {
 					@include flex(row, flex-start, center);
@@ -282,47 +248,46 @@
 		}
 	}
 
-	/* --- Standard Header --- */
-	.standard-header {
-		background: $surface-color;
-		@include flex(row, center, center);
-
-		&.border-b {
-			border-bottom: 1px solid $border-light;
-		}
-
-		.nav-left {
-			position: absolute;
-			left: $spacing-lg; // 24px
-			height: 100%;
-			@include flex(row, center, center);
-			padding: 0 10rpx;
-		}
-
-		.nav-title {
-			font-size: 34rpx;
-			font-weight: $font-weight-bold;
-			color: $text-primary;
-			text-align: center;
-			@include truncate(1); // 使用截断混合器
-		}
-
-		.nav-right {
-			position: absolute;
-			right: $spacing-xl; // 32px
-			height: 100%;
-			@include flex(row, center, center);
-
-			.right-text-btn {
-				font-size: 26rpx;
-				color: $theme-color;
-				font-weight: $font-weight-bold;
-				background: #fff7ed;
-				padding: 10rpx 24rpx;
-				border-radius: $border-radius-full;
-			}
-		}
-	}
+/* --- Standard Header --- */
+.standard-header {
+  background: $surface-color;
+  @include flex(row, flex-start, center);
+  
+  &.border-b {
+    border-bottom: 1px solid $border-light;
+  }
+  
+  .nav-left {
+    height: 100%;
+    @include flex(row, center, center);
+    padding: 0 10rpx;
+    margin-right: $spacing-xs;
+  }
+  
+  .nav-title {
+    font-size: 34rpx;
+    font-weight: $font-weight-bold;
+    color: $text-primary;
+    text-align: center;
+    @include truncate(1); // 使用截断混合器
+  }
+  
+  .nav-right {
+    position: absolute;
+    right: $spacing-xl; // 32px
+    height: 100%;
+    @include flex(row, center, center);
+    
+    .right-text-btn {
+      font-size: 26rpx;
+      color: $theme-color;
+      font-weight: $font-weight-bold;
+      background: #fff7ed;
+      padding: 10rpx 24rpx;
+      border-radius: $border-radius-full;
+    }
+  }
+}
 
 	/* --- Transparent Header (玻璃拟态优化) --- */
 	.transparent-header {

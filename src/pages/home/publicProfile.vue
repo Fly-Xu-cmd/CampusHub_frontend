@@ -1,5 +1,5 @@
 <template>
-  <CommonLayout headerType="standard" title="用户详情" showBack>
+  <CommonLayout headerType="standard" title="用户详情">
     <view class="profile-container">
       <!-- 用户信息部分 -->
       <view class="user-info-section">

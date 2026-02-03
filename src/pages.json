@@ -13,11 +13,23 @@
       "style": { "navigationStyle": "custom" }
     },
     {
-      "path": "pages/home/publicProfile",
+      "path": "pages/home/PublicProfile",
       "style": { "navigationStyle": "custom" }
     },
     {
       "path": "pages/message/index",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/message/chat",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/message/SystemMsg",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/message/ChatDetail",
       "style": { "navigationStyle": "custom" }
     },
     {
