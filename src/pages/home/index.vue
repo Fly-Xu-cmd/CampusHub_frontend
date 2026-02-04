@@ -31,7 +31,7 @@
       <!-- 活动列表 -->
       <view class="activity-list">
         <view v-if="loading" class="loading">
-          <wd-loading type="circle" />
+          <AsyncLoading text="加载中..." />
         </view>
         <view v-else-if="activities.length === 0" class="empty">
           <text>暂无活动</text>
@@ -105,6 +105,7 @@
 </template>
 
 <script setup lang="ts">
+import ClientOnly from '@/components/ClientOnly/ClientOnly.vue';
 import { ref, onMounted } from 'vue';
 
 interface Tag {
