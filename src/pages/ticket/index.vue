@@ -1,9 +1,7 @@
 <template>
 	<CommonLayout headerType="title" title="我的票券" :showTabBar="true">
 		<view class="content">
-
-
-	<view class="container" style="padding: 30rpx;">
+			<view class="container" style="padding: 30rpx;">
 				<!-- 加载状态 -->
 				<view v-if="loading" class="loading-container">
 					<wd-icon name="loading" size="48rpx" color="#f97316" />
@@ -73,6 +71,37 @@
 						</view>
 						<view class="qr-number">{{ selectedTicket.ticketNumber }}</view>
 						<view class="qr-hint">请出示二维码核销入场</view>
+
+						<!-- 核销功能 -->
+						<view class="verify-section">
+							<view class="verify-input-container">
+								<text class="verify-label">TOTP验证码：</text>
+								<input 
+									v-model="totpCode" 
+									type="text" 
+									class="verify-input" 
+									placeholder="请输入6位验证码" 
+									placeholder-style="color: #999; font-size: 24rpx;"
+									maxlength="6"
+								/>
+							</view>
+							<view 
+								class="verify-btn" 
+								@click="verifyTicket"
+								:class="{ 'loading': verifyLoading }"
+								:disabled="verifyLoading"
+							>
+								<text v-if="!verifyLoading">确认核销</text>
+								<text v-else>核销中...</text>
+							</view>
+							<view 
+								v-if="verifyResult" 
+								class="verify-result" 
+								:class="{ 'success': verifySuccess, 'error': !verifySuccess }"
+							>
+								{{ verifyResult }}
+							</view>
+						</view>
 					</view>
 				</view>
 			</view>
@@ -82,12 +111,10 @@
 
 <script lang="ts" setup>
 	import { ref, onMounted } from 'vue'
-	import { usePublishStore } from '@/store/publish'
 	import Qrcode from '@chenfengyuan/vue-qrcode'
-	import type { Ticket } from '@/types/modules/ticket'
-	import { getTicketList, getTicketDetail } from '@/api/ticket/router'
+import type { Ticket } from '@/types/modules/ticket'
+import { getTicketList } from '@/api/ticket/router'
 
-	const publishStore = usePublishStore()
 	const showQR = ref(false)
 	const selectedTicket = ref<Ticket | null>(null)
 	const qrCodeValue = ref('https://ticket.campus-hub.com/event/8293')
@@ -102,6 +129,11 @@
 	const tickets = ref<Ticket[]>([])
 	const loading = ref(true)
 	const error = ref<string | null>(null)
+	// 核销功能相关状态
+	const totpCode = ref('')
+	const verifyLoading = ref(false)
+	const verifyResult = ref<string | null>(null)
+	const verifySuccess = ref(false)
 
 	// 格式化活动时间
 	const formatEventTime = (eventTime: string) => {
@@ -207,40 +239,57 @@
 	}
 
 	// 显示二维码
-	const showQRCode = async (ticket: Ticket) => {
-		// 先显示基本信息，然后获取详情
+	const showQRCode = (ticket: Ticket) => {
+		// 显示基本信息
 		selectedTicket.value = ticket
 		showQR.value = true
-
-		try {
-			// 调用票券详情API获取详细信息
-			const result = await getTicketDetail(ticket.id)
-
-			// 检查result结构
-			if (result && result.code === 0 && result.data) {
-				const apiData = result.data
-
-				// 更新票券信息
-				if (selectedTicket.value) {
-					selectedTicket.value = {
-						...selectedTicket.value,
-						ticketNumber: apiData.ticket_code || selectedTicket.value.ticketNumber,
-						qrCodeUrl: apiData.qr_code_url || selectedTicket.value.qrCodeUrl
-					}
-					// 更新二维码值
-					qrCodeValue.value = apiData.qr_code_url || selectedTicket.value.qrCodeUrl
-				}
-			}
-		} catch (err) {
-			// API请求失败，使用本地数据
-			// 静默处理错误，不显示在控制台
-		}
+		// 更新二维码值
+		qrCodeValue.value = `https://ticket.campus-hub.com/event/${ticket.id}`
 	}
 
 	// 隐藏二维码
 	const hideQRCode = () => {
 		showQR.value = false
 		selectedTicket.value = null
+		// 重置核销状态
+		totpCode.value = ''
+		verifyResult.value = null
+		verifySuccess.value = false
+	}
+
+	// 核销票券
+	const verifyTicket = async () => {
+		if (!selectedTicket.value || !totpCode.value) {
+			verifyResult.value = '请输入TOTP验证码'
+			verifySuccess.value = false
+			return
+		}
+
+		verifyLoading.value = true
+		verifyResult.value = null
+
+		try {
+			// 固定TOTP验证码为123456，相同为核销成功，不同为核销失败
+			if (totpCode.value === '123456') {
+				// 模拟核销成功
+				verifyResult.value = '核销成功'
+				verifySuccess.value = true
+				// 更新票券状态为已使用
+				const index = tickets.value.findIndex(t => t.id === selectedTicket.value?.id)
+				if (index !== -1) {
+					tickets.value[index].status = 'used'
+				}
+			} else {
+				// 模拟核销失败
+				verifyResult.value = '核销失败，验证码错误'
+				verifySuccess.value = false
+			}
+		} catch (err) {
+			verifyResult.value = '核销失败，请重试'
+			verifySuccess.value = false
+		} finally {
+			verifyLoading.value = false
+		}
 	}
 
 	// 组件挂载时获取票券数据
@@ -270,6 +319,7 @@
 		background-color: #fff;
 		border-radius: 20rpx;
 		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+		margin-bottom: 20rpx;
 	}
 
 	.time-item-left {
@@ -516,7 +566,94 @@
 	}
 
 	.time-value {
-		font-size: 26rpx;
-		color: #999;
-	}
+			font-size: 26rpx;
+			color: #999;
+		}
+
+		/* 核销功能样式 */
+		.verify-section {
+			width: 100%;
+			margin-top: 40rpx;
+			padding: 0 20rpx;
+			box-sizing: border-box;
+		}
+
+		.verify-input-container {
+			display: flex;
+			align-items: center;
+			margin-bottom: 24rpx;
+			gap: 16rpx;
+		}
+
+		.verify-label {
+			font-size: 24rpx;
+			color: #333;
+			font-weight: 500;
+			min-width: 160rpx;
+		}
+
+		.verify-input {
+			flex: 1;
+			height: 60rpx;
+			padding: 0 16rpx;
+			border: 2rpx solid #e5e7eb;
+			border-radius: 12rpx;
+			font-size: 26rpx;
+			color: #333;
+			background-color: #f9fafb;
+			box-sizing: border-box;
+		}
+
+		.verify-input:focus {
+			outline: none;
+			border-color: #f97316;
+			box-shadow: 0 0 0 3rpx rgba(249, 115, 22, 0.1);
+		}
+
+		.verify-btn {
+			width: 100%;
+			height: 72rpx;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background-color: #f97316;
+			color: #fff;
+			font-size: 28rpx;
+			font-weight: 500;
+			border-radius: 16rpx;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			margin-bottom: 20rpx;
+		}
+
+		.verify-btn:hover {
+			background-color: #ea580c;
+		}
+
+		.verify-btn:active {
+			transform: scale(0.98);
+		}
+
+		.verify-btn.loading {
+			background-color: #fb923c;
+			cursor: not-allowed;
+		}
+
+		.verify-result {
+			padding: 16rpx;
+			border-radius: 12rpx;
+			font-size: 24rpx;
+			text-align: center;
+			margin-top: 16rpx;
+		}
+
+		.verify-result.success {
+			background-color: #dcfce7;
+			color: #15803d;
+		}
+
+		.verify-result.error {
+			background-color: #fee2e2;
+			color: #dc2626;
+		}
 </style>

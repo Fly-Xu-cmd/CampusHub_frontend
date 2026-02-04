@@ -1,6 +1,6 @@
 <template>
 	<view class="upload-section">
-		<wd-upload :file-list="fileList" multiple action="" @change="handleChange">
+		<wd-upload :file-list="fileList" multiple action="" @change="handleChange" >
 			<view class="upload-placeholder custom-upload" :class="{ 'upload-hover': isUploadHover }"
 				@touchstart="isUploadHover = true" @touchend="isUploadHover = false" @touchcancel="isUploadHover = false"
 				@mouseenter="isUploadHover = true" @mouseleave="isUploadHover = false"
@@ -58,6 +58,7 @@ const handleChange = (files: any[]): void => {
 .custom-upload {
 	width: 100%;
 	flex: 1;
+	min-width: 620rpx;
 }
 
 .upload-placeholder {
