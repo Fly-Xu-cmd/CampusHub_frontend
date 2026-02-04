@@ -31,6 +31,13 @@ const whiteList = [
 const interceptList = ["navigateTo", "redirectTo", "reLaunch", "switchTab"];
 
 export default function initPermission() {
+  // 【核心修复代码】
+  // 判断当前是否为 SSR 服务端环境。
+  // 如果是服务端，直接返回，不注册拦截器。
+  // import.meta.env.SSR 是 Vite 提供的环境变量，true 表示在服务端
+  if (import.meta.env.SSR) {
+    return;
+  }
   // 遍历监听所有路由方法
   interceptList.forEach((key) => {
     uni.addInterceptor(key, {

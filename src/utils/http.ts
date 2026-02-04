@@ -51,7 +51,7 @@ const env = process.env.NODE_ENV;
 const BASE_URL =
   env === "production"
     ? "https://api.yourdomain.com"
-    : "http://127.0.0.1:4523/m1/7765867-7511791-default";
+    : "https://m1.apifoxmock.com/m1/7765867-7511791-default";
 
 // 请求拦截器
 const requestInterceptors: Array<(config: RequestOptions) => RequestOptions> = [
