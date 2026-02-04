@@ -89,6 +89,7 @@
 		showBorder ?: boolean;
 		rightText ?: string;
 		contentBg ?: string;
+		padding ?: string; 
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -97,7 +98,7 @@
 		showBack: true,
 		showTabBar: false,
 		showBorder: false,
-		rightText: '提交'
+		rightText: '提交',
 	});
 
 	const emit = defineEmits(['rightClick']);
@@ -120,7 +121,8 @@
 
 	const contentStyle = computed(() => {
 		const style = {
-			backgroundColor: props.contentBg || 'transparent'
+			backgroundColor: props.contentBg || 'transparent',
+			padding: props.padding || '0 32rpx', // 16px
 		}
 		if (props.headerType === 'transparent') {
 			return { height: '100vh', ...style };

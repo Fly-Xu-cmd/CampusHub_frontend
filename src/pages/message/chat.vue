@@ -1,5 +1,5 @@
 <template>
-  <CommonLayout headerType="none">
+  <CommonLayout headerType="none" padding="0 0">
     <!-- 顶部导航栏 -->
     <view class="chat-header">
       <view class="header-left" @click="goBack">

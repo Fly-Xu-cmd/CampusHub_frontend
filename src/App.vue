@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { onLaunch, onShow } from '@dcloudio/uni-app';
 import { useSystemStore } from '@/store/system';
+import { useUserStore } from '@/store/user';
 
 const systemStore = useSystemStore();
+const userStore = useUserStore();
 
 onLaunch(() => {
   // 1. 初始化系统布局信息
   systemStore.initSystemInfo();
+  userStore.initUserStore();
 });
 
 onShow(()=>{
