@@ -1,11 +1,11 @@
 <template>
-  <CommonLayout headerType="none" contentBg="#f6faff" :showTabBar="true">
+  <CommonLayout headerType="none" contentBg="#f6faff" padding="0 0" :showTabBar="true">
     <view class="profile-container">
       <view class="header-section">
         <view class="top-bar">
           <view class="avatar-wrapper">
             <image 
-              :src="hasAvatar ? userInfo.avatar_url : defaultAvatar" 
+              :src="hasAvatar ? userInfoRef.avatarUrl : defaultAvatar" 
               class="avatar-img" 
               mode="aspectFill"
             />
@@ -21,8 +21,8 @@
         </view>
 
         <view class="user-info">
-          <text class="nickname">{{ isAuthenticated ? userInfo.nickname || '默认名' : '请登录' }}</text>
-          <text class="bio">{{ isAuthenticated ? userInfo.bio || '' : '请登录查看简介' }}</text>
+          <text class="nickname">{{ isAuthenticated ? userInfoRef.nickname || '默认名' : '请登录' }}</text>
+          <text class="bio">{{ isAuthenticated ? userInfoRef.introduction || '' : '请登录查看简介' }}</text>
         </view>
 
         <view class="tags-row">
@@ -39,15 +39,16 @@
 
         <view class="stats-row">
           <view class="stat-item" @click="handleToMyPublished">
-            <text class="num">{{ isAuthenticated ? userInfo.published_count || 0 : '?' }}</text>
+            <text class="num">{{ isAuthenticated ? userInfoRef.initiateNum || 0 : '?' }}</text>
             <text class="label">发布</text>
           </view>
           <view class="stat-item" @click="handleToJoined">
-            <text class="num">{{ isAuthenticated ? userInfo.joined_count || 0 : '?' }}</text>
+            <text class="num">{{ isAuthenticated ? userInfoRef.activitiesNum || 0 : '?' }}</text>
+
             <text class="label">参与</text>
           </view>
           <view class="stat-item">
-            <text class="num green">{{ isAuthenticated ? userInfo.credit_score || 0 : '?' }}</text>
+            <text class="num green">{{ isAuthenticated ? userInfoRef.creditScore || 0 : '?' }}</text>
             <text class="label">信用分</text>
           </view>
         </view>
@@ -90,21 +91,43 @@
               <view class="status-tag success">已通过</view>
               </view>
           </view>
-
         </view>
-
       </view>
-
     </view>
   </CommonLayout>
 </template>
 
 <script setup lang="ts">
+import { onShow } from '@dcloudio/uni-app';
+import {ref} from 'vue'
 import { useUserStore } from '@/store/user';
+import { getProfile } from '@/api/profile/router';
 
 const userStore = useUserStore();
 const {isAuthenticated, hasAvatar, userInfo} = userStore;
 const defaultAvatar = '/static/default_avatar.png';
+const userInfoRef = ref(userInfo);
+const loading = ref(false);
+
+onShow(async ()=>{
+  if (isAuthenticated) {
+    loading.value = true;
+    try {
+      const response = await getProfile();
+      if (response.data) {
+        userStore.updateUserInfo(response.data);
+        userInfoRef.value = userStore.userInfo;
+      }
+    } catch (error) {
+      console.error('获取个人资料失败:', error);
+    } finally {
+      loading.value = false;
+    }
+  } else {
+    userStore.restoreFromStorage();
+    userInfoRef.value = userStore.userInfo;
+  }
+})
 
 // --- 导航逻辑 ---
 const handleToSettings = () => {
@@ -146,7 +169,7 @@ const handleToVerify = () => {
 
   .top-bar {
     @include flex(row, space-between, flex-start);
-    padding: 0 $spacing-lg; // 24px -> 48rpx
+    padding: 0 $spacing-md; // 24px -> 48rpx
     margin-bottom: $spacing-lg;
 
     .avatar-wrapper {

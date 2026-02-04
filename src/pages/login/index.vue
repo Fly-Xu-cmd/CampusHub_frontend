@@ -20,8 +20,8 @@
             placeholder="QQ邮箱" 
             placeholder-class="placeholder-style"
             v-model="formData.qqEmail" 
-            type="number"
-            maxlength="11"
+            type="text"
+            required
           />
         </view>
 
@@ -68,6 +68,7 @@ import { reactive, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { useSystemStore } from '@/store/system';
 import { useUserStore } from '@/store/user';
+import { authApi } from '@/api/register/router';
 
 const userStore = useUserStore();
 const passwordPlaceholder = ref('密码');
@@ -79,7 +80,11 @@ const systemStore = useSystemStore();
 
 const formData = reactive({
   qqEmail: '',
-  password: ''
+  password: '',
+  captchaOutput: '',
+  genTime: '',
+  lotNumber: '',
+  passToken: ''
 });
 
 // 登录成功后，判断是否有 redirect 参数
@@ -91,28 +96,46 @@ onLoad((options) => {
   }
 });
 
-const handleLogin = () => {
+const handleLogin = async () => {
   if (!formData.qqEmail || !formData.password) {
     uni.showToast({ title: '请填写完整信息', icon: 'none' });
     return;
   }
-  // 模拟登录
-  uni.showLoading({ title: '登录中...' });
-  setTimeout(() => {
-    uni.hideLoading();
-    // 登录成功，跳转首页
-    userStore.setUserInfo({
-      id: 1,
-      qqEmail: formData.qqEmail,
-      nickname: '用户' + formData.qqEmail.slice(-4),
-      avatar: 'https://example.com/avatar.jpg'
-    });
-    if (redirectUrl.value) {
-      uni.navigateTo({ url: redirectUrl.value });
-    } else {
-      uni.switchTab({ url: '/pages/index/index' });
+  if(isCodeLogin.value) {
+    if(!formData.captchaOutput || !formData.genTime || !formData.lotNumber || !formData.passToken) {
+      uni.showToast({ title: '请填写完整验证码信息', icon: 'none' });
+      return;
     }
-  }, 1500);
+  }
+  uni.showLoading({ title: '登录中...' });
+  try {
+    const response = await authApi.login({
+      qqEmail: formData.qqEmail,
+      password: formData.password,
+      captchaOutput: formData.captchaOutput,
+      genTime: formData.genTime,
+      lotNumber: formData.lotNumber,
+      passToken: formData.passToken
+    });
+    uni.hideLoading();
+    uni.showToast({ title: '登录成功', icon: 'success' });
+    // 登录成功，存储用户信息
+    userStore.login(response.data.userInfo, response.data.accessToken, response.data.refreshToken);
+    // 跳转页面
+    if (redirectUrl.value) {
+      setTimeout(() => {
+        uni.redirectTo({ url: redirectUrl.value });
+      }, 1000);
+    } else {
+      setTimeout(() => {
+        uni.redirectTo({ url: '/pages/index/index' });
+      }, 1000);
+    }
+  } catch (error) {
+    uni.hideLoading();
+    uni.showToast({ title: '登录失败，请重试', icon: 'none' });
+    console.error('登录失败:', error);
+  }
 };
 
 const goToRegister = () => {
