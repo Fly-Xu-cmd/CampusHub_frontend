@@ -1,7 +1,9 @@
 import { get } from "@/utils/http";
-import type { TicketListResponse } from "@/types/modules/ticket";
-import type { TicketDetailResponse } from "@/types/modules/ticket-detail";
+import type { TicketListResponse } from "@/types/modules/ticket/ticket";
+import type { TicketDetailResponse } from "@/types/modules/ticket/ticket-detail";
 import { post } from "@/utils/http";
+import type { Response } from "@/types/modules/ticket/post-ticket";
+import type { Request } from "@/types/modules/ticket/post-ticket";
 
 const apiUrls = {
     getTicketList: "/api/v1/activity/tickets",
@@ -20,6 +22,6 @@ export const getTicketList = () => {
 };
 
 // 核销二维码
-export const postVerifyTicket = (data: { activity_id: number; ticket_code: string; totp_code: string }) => {
-    return post(apiUrls.postVerifyTicket, data);
+export const postVerifyTicket = (data: Request) => {
+    return post<Response>(apiUrls.postVerifyTicket, data);
 };
