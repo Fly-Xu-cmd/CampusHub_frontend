@@ -3,13 +3,33 @@
     {
       "path": "pages/home/index",
       "style": {
-        "navigationBarTitleText": "CampusHub",
+        "navigationStyle": "custom",
         "enablePullDownRefresh": false,
         "onReachBottomDistance": 50
       }
     },
     {
+      "path": "pages/home/detail",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/home/PublicProfile",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/message/index",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/message/chat",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/message/SystemMsg",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/message/ChatDetail",
       "style": { "navigationStyle": "custom" }
     },
     {
@@ -21,7 +41,64 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/profile/history",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
+    },
+    {
+      "path": "pages/profile/pending",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
+    },
+    {
+      "path": "pages/profile/published",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
+    },
+    {
+      "path": "pages/settings/index",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
+    },
+    {
+      "path": "pages/selectTags/index",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
+    },
+    {
       "path": "pages/publish/index",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/register/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/verify",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/settings/edit-profile",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/settings/security",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/settings/change-password",
+      "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/settings/change-qqEmail",
       "style": { "navigationStyle": "custom" }
     }
   ],
@@ -32,8 +109,7 @@
     "backgroundColor": "#F8F8F8",
     "backgroundTextStyle": "dark",
     "enablePullDownRefresh": false,
-    "onReachBottomDistance": 50,
-    "navigationStyle": "custom"
+    "onReachBottomDistance": 50
   },
   "platformStyle": {
     "h5": {

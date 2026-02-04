@@ -1,13 +1,30 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="UTF-8" />
+    <style>
+      /* 关键样式：初始化时隐藏 body */
+      body {
+        opacity: 0;
+        /* 添加一个过渡，让显示更自然 */
+        transition: opacity 0.3s ease-in-out;
+        /* 防止背景色闪烁 */
+        background-color: #f8f8f8;
+      }
+
+      /* 可选：如果你想显示一个居中的 Loading 而不是白屏 */
+      /* 这里可以写一个简单的 CSS loading 样式 */
+    </style>
     <script>
-      var coverSupport = 'CSS' in window && typeof CSS.supports === 'function' && (CSS.supports('top: env(a)') ||
-        CSS.supports('top: constant(a)'))
+      var coverSupport =
+        "CSS" in window &&
+        typeof CSS.supports === "function" &&
+        (CSS.supports("top: env(a)") || CSS.supports("top: constant(a)"));
       document.write(
         '<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0' +
-        (coverSupport ? ', viewport-fit=cover' : '') + '" />')
+          (coverSupport ? ", viewport-fit=cover" : "") +
+          '" />',
+      );
     </script>
     <title></title>
     <!--preload-links-->

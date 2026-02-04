@@ -7,10 +7,28 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+
+# System Files
 .DS_Store
-dist
 *.local
+
+# Build Output (Web)
+dist
+
+# --- 核心补充建议 (UniApp & HBuilderX) ---
+
+# 1. 鸿蒙运行配置 (包含本地SDK路径和签名，必须忽略)
+harmony-configs/
+
+# 2. HBuilderX 编辑器配置 (个人偏好设置，必须忽略)
+.hbuilderx/
+
+# 3. UniApp 编译目录 (非常重要！存放小程序/App的打包产物，体积大且冲突多)
+unpackage/
+
+# -------------------------------------
 
 # Editor directories and files
 .idea

@@ -51,7 +51,7 @@ const env = process.env.NODE_ENV;
 const BASE_URL =
   env === "production"
     ? "https://api.yourdomain.com"
-    : "https://dev-api.yourdomain.com";
+    : "https://m1.apifoxmock.com/m1/7765867-7511791-default";
 
 // 请求拦截器
 const requestInterceptors: Array<(config: RequestOptions) => RequestOptions> = [
@@ -98,6 +98,22 @@ const errorInterceptors: Array<(error: any) => any> = [
         title: "网络连接失败",
         icon: "none",
       });
+    }
+    // 处理 401 错误（token 过期）
+    if (error.statusCode === 401) {
+      uni.showToast({
+        title: "登录过期，请重新登录",
+        icon: "none",
+      });
+      // 清除过期 token
+      uni.removeStorageSync("accessToken");
+      uni.removeStorageSync("refreshToken");
+      // 跳转到登录页
+      setTimeout(() => {
+        uni.navigateTo({
+          url: "/pages/login/index",
+        });
+      }, 1000);
     }
     return error;
   },
