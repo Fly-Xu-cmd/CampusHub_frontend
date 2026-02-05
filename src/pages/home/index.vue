@@ -211,7 +211,7 @@ const search = async () => {
 
 const viewDetail = (activityId: number) => {
   uni.navigateTo({
-    url: `/pages/home/detail`
+    url: `/pages/home/detail?id=${activityId}`
   });
 };
 </script>

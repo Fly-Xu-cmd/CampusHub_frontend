@@ -20,19 +20,19 @@
 
       <!-- 消息列表 -->
       <view class="message-list">
-        <view class="message-item" v-for="value in 2" @click="viewChat">
+        <view class="message-item" v-for="group in groups" @click="viewChat">
           <view class="message-avatar">
             <image src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
-            <view class="avatar-badge">9</view>
+            <view class="avatar-badge">{{ group.member_count }}</view>
           </view>
           <view class="message-content">
             <view class="message-header">
-              <view class="message-title">周五羽毛球核心群</view>
-              <view class="message-time">14:20</view>
+              <view class="message-title">{{ group.name }}</view>
+              <view class="message-time">{{ group.last_message_at }}</view>
             </view>
             <view class="message-text">
-              <view class="message-sender">Kevin:</view>
-              <view class="message-artical"> 谁带了多余的球拍吗？</view>
+              <view class="message-sender">{{ group.owner_id }}:</view>
+              <view class="message-artical">{{ group.last_message }}</view>
             </view>
           </view>
         </view>
@@ -42,6 +42,20 @@
 </template>
 
 <script setup lang="ts">
+import { getGroups } from "@/api/message/router";
+import { onMounted, ref } from "vue";
+
+// 群聊列表
+const groups = ref()
+
+onMounted(() => {
+  getGroups().then(res => {
+    groups.value = res.data.groups
+  });
+});
+
+
+
 const viewChat = () => {
   uni.navigateTo({
     url: `/pages/message/chat`
@@ -147,7 +161,7 @@ const viewSystemMsg = () => {
           right: -8rpx;
           min-width: 40rpx;
           height: 40rpx;
-          padding: 0 12rpx;
+          padding: 0 10rpx;
           background-color: $accent-color;
           color: $text-light;
           font-size: $font-size-xs;

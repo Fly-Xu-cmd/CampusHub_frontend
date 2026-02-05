@@ -3,14 +3,16 @@
     
     <!-- 活动图片 -->
     <view class="activity-image-container">
-      <image class="activity-image" src="https://picsum.photos/800/600?random=1" mode="aspectFill" />
+      <image class="activity-image" 
+        :src="activityDetail.cover_url" 
+        mode="aspectFill" />
       <!-- 报名状态标签 -->
       <view class="status-tag">
-        <text class="status-text">报名中</text>
+        <text class="status-text">{{ activityDetail.status_text }}</text>
       </view>
       <!-- 活动标题 -->
       <view class="activity-title">
-        <text>奥森公园 5km 荧光夜跑</text>
+        <text>{{ activityDetail.title }}</text>
       </view>
     </view>
     
@@ -18,10 +20,11 @@
     <view class="activity-content">
       
       <!-- 发起人信息 -->
-      <view class="organizer-info" @click="viewPubilcProfil">
-        <image class="organizer-avatar" src="https://picsum.photos/50?random=100" />
+      <view class="organizer-info" @click="viewPubilcProfil(activityDetail.organizer_id)">
+        <image class="organizer-avatar" 
+          :src="activityDetail.organizer_avatar" />
         <view class="organizer-text">
-          <text class="organizer-name">极客跑团</text>
+          <text class="organizer-name">{{ activityDetail.organizer_name }}</text>
           <text class="organizer-detail">点击查看发起人详情</text>
         </view>
         <wd-icon name="arrow-right" size="35rpx" color="#999" />
@@ -35,7 +38,7 @@
         </view>
         <view class="info-card location-card">
           <text class="info-label">LOCATION</text>
-          <text class="info-value">奥森南门</text>
+          <text class="info-value">{{ activityDetail.location }}</text>
         </view>
       </view>
       
@@ -45,7 +48,7 @@
           <text class="details-title">活动详情</text>
         </view>
         <view class="details-content">
-          <text class="details-text">欢迎参加我们的周五夜跑活动！我们将提供荧光手环和饮用水。跑完后会有30分钟的新手飞盘教学。</text>
+          <text class="details-text">{{ activityDetail.content }}</text>
         </view>
       </view>
     </view>
@@ -60,9 +63,26 @@
 </template>
 
 <script setup lang="ts">
-const viewPubilcProfil = () => {
+import { getActivityDetail } from "@/api/home/router";
+import { onMounted, ref } from "vue";
+import { useRoute } from 'vue-router'
+// 获取传入的活动ID参数
+const route = useRoute()
+const activityId = Number(route.query.id)
+
+// 活动详情数据
+const activityDetail = ref()
+
+onMounted(() => {
+  getActivityDetail(activityId).then(res => {
+    activityDetail.value = res.data
+  })
+})
+
+
+const viewPubilcProfil = (id: number) => {
   uni.navigateTo({
-    url: `/pages/home/PublicProfile`
+    url: `/pages/home/PublicProfile?id=${id}`
   });
 }
 </script>
