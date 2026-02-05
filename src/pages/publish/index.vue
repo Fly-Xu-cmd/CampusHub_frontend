@@ -1,5 +1,19 @@
 <template>
-	<CommonLayout headerType="none" title="发布新活动"  :showTabBar="true">
+	<CommonLayout headerType="none"  padding="0 0" :showTabBar="true">
+		<view class="header-container">
+			<view class="header-content">
+				<view class="header-left">
+					<view class="close-btn" @click="goBackHome">×</view>
+				</view>
+				<view class="header-title">
+					发布新活动
+				</view>
+				<view class="header-right">
+					<button class="submit-btn-header" @click="submitForm">提交</button>
+				</view>
+			</view>
+		</view>
+
 		<view class="publish-container">
 			<!-- 上传组件 -->
 		<UploadVideo 
@@ -97,6 +111,7 @@ import { usePublishStore } from '@/store/publish'
 import TimeSelect from '@/components/TimeSelect/TimeSelect.vue'
 import LocationSelect from '@/components/LocationSelect/LocationSelect.vue'
 import UploadVideo from '@/components/UploadVideo/UploadVideo.vue'
+import { postPublish } from '@/api/publish/router'
 
 	const toast = useToast()
 	const publishStore = usePublishStore()
@@ -133,12 +148,154 @@ watch(endValue, (newValue) => {
 	publishStore.setEndTime(newValue)
 })
 
+// 提交表单
+const submitForm = async () => {
+	// 验证表单
+	if (!activityTitle.value) {
+		toast.error('请输入活动标题')
+		return
+	}
+	
+	if (!activityDetail.value) {
+		toast.error('请输入活动详情')
+		return
+	}
+	
+	if (fileList.value.length === 0) {
+		toast.error('请上传活动封面/视频')
+		return
+	}
+	
+	if (locationName.value === '选择线下地点') {
+		toast.error('请选择活动地点')
+		return
+	}
+	
+	try {
+		// 准备数据
+		const formData = {
+			activity_end_time: new Date(endValue.value).toISOString(),
+			activity_start_time: new Date(startValue.value).toISOString(),
+			address_detail: locationAddress.value,
+			category_id: 1, // 默认分类，可根据实际情况修改
+			contact_phone: '', // 联系电话，可根据实际情况添加输入框
+			content: activityDetail.value,
+			cover_type: 0, // 0为图片，1为视频
+			cover_url: fileList.value[0].url || '',
+			is_draft: false,
+			latitude: locationLatitude.value,
+			location: locationName.value,
+			longitude: locationLongitude.value,
+			max_participants: peopleLimit.value,
+			min_credit_score: 0,
+			register_end_time: new Date(signupEndValue.value).toISOString(),
+			register_start_time: new Date(signupStartValue.value).toISOString(),
+			require_approval: false,
+			require_student_verify: false,
+			tag_ids: [], // 标签ID，可根据实际情况修改
+			title: activityTitle.value
+		} as any
+		
+		// 提交数据
+		const response = await postPublish(formData)
+		
+		if (response.code === 200) {
+			toast.success('发布成功')
+			// 重置表单
+			activityTitle.value = ''
+			activityDetail.value = ''
+			fileList.value = []
+			peopleLimit.value = 20
+			locationName.value = '选择线下地点'
+			locationAddress.value = ''
+			locationLatitude.value = 0
+			locationLongitude.value = 0
+		} else {
+			toast.error(response.message || '发布失败')
+		}
+	} catch (error) {
+		console.error('发布失败:', error)
+		toast.error('发布失败，请稍后重试')
+	}
+}
+
 // 上传相关的变量和逻辑已移至UploadVideo组件
 
-	// 地点选择相关的变量和逻辑已移至LocationSelect组件
+// 地点选择相关的变量和逻辑已移至LocationSelect组件
+
+// 返回首页
+const goBackHome = () => {
+	uni.redirectTo({
+		url: '/pages/home/index'
+	})
+}
 </script>
 
 <style>
+	/* 头部容器 */
+	.header-container {
+		background-color: #fff;
+		padding: 20rpx 30rpx;
+		border-bottom: 1rpx solid #f0f0f0;
+		position: sticky;
+		top: 0;
+		z-index: 100;
+	}
+
+	/* 头部内容 */
+	.header-content {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		height: 80rpx;
+	}
+
+	/* 左侧关闭按钮 */
+	.header-left {
+		flex: 0 0 60rpx;
+		display: flex;
+		align-items: center;
+	}
+
+	/* 关闭按钮 */
+	.close-btn {
+		font-size: 40rpx;
+		color: #333;
+		font-weight: bold;
+	}
+
+	/* 中间标题 */
+	.header-title {
+		flex: 1;
+		text-align: center;
+		font-size: 32rpx;
+		font-weight: 600;
+		color: #333;
+	}
+
+	/* 右侧提交按钮 */
+	.header-right {
+		flex: 0 0 120rpx;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+	}
+
+	/* 头部提交按钮 */
+	.submit-btn-header {
+		padding: 12rpx 24rpx;
+		font-size: 26rpx;
+		font-weight: 500;
+		background-color: #fff7ed;
+		color: #f97316;
+		border-radius: 20rpx;
+		border: none;
+	}
+
+	.submit-btn-header::after {
+		border: none;
+	}
+
 	/* 发布页面容器 */
 	.publish-container {
 		width: 100%;
