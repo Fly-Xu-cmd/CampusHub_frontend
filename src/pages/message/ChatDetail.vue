@@ -1,5 +1,5 @@
 <template>
-  <CommonLayout headerType="standard" title="群聊详情">
+  <CommonLayout headerType="standard" title="群聊详情" padding="0 0">
     <view class="content">
       <!-- 群聊信息区域 -->
       <view class="group-info">

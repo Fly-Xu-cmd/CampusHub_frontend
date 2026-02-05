@@ -1,5 +1,5 @@
 <template>
-  <CommonLayout headerType="transparent">
+  <CommonLayout headerType="transparent" padding="0 0">
     
     <!-- 活动图片 -->
     <view class="activity-image-container">

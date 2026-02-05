@@ -72,6 +72,12 @@ const viewSystemMsg = () => {
     padding: $spacing-md;
     border-radius: $border-radius-lg;
     box-shadow: 0 5rpx 12rpx 3rpx rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    
+    &:active {
+      transform: translateY(2rpx);
+      box-shadow: $shadow-sm;
+    }
     .notice-icon {
       margin-right: $spacing-md;
       width: 80rpx;
@@ -119,6 +125,12 @@ const viewSystemMsg = () => {
       border-radius: $border-radius-xl;
       box-shadow: 0 5rpx 12rpx 3rpx rgba(0, 0, 0, 0.05);
       margin-bottom: $spacing-md;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      
+      &:active {
+        transform: translateY(2rpx);
+        box-shadow: $shadow-sm;
+      }
       .message-avatar {
         position: relative;
         margin-right: $spacing-sm;

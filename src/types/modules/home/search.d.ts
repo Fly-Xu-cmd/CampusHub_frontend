@@ -30,3 +30,12 @@ export interface List {
   title?: string;
   [property: string]: any;
 }
+
+export interface SearchRequest {
+  category_id?: number;
+  page?: number;
+  page_size?: number;
+  q?: string;
+  sort?: string;
+  [property: string]: any;
+}

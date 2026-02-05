@@ -1,6 +1,6 @@
 <template>
-  <CommonLayout headerType="standard" title="用户详情">
-    <view class="profile-container">
+  <CommonLayout headerType="standard" title="用户详情" padding="0 8rpx">
+    <view class="profile-container">  
       <!-- 用户信息部分 -->
       <view class="user-info-section">
         <view class="avatar-wrapper">

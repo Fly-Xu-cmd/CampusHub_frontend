@@ -1,5 +1,5 @@
 <template>
-  <CommonLayout headerType="standard" title="系统消息">
+  <CommonLayout headerType="standard" title="系统消息" padding="0 0">
     <!-- 系统通知列表 -->
     <view class="message-list">
       <view class="message-item" v-for="value in 2">   
