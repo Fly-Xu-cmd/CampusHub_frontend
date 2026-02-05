@@ -110,154 +110,129 @@
 </template>
 
 <script lang="ts" setup>
-	import { ref, onMounted } from 'vue'
-	import Qrcode from '@chenfengyuan/vue-qrcode'
+import { ref, onMounted } from 'vue'
+import Qrcode from '@chenfengyuan/vue-qrcode'
 import type { Ticket } from '@/types/modules/ticket/ticket'
 import { getTicketList, postVerifyTicket } from '@/api/ticket/router'
 
-	const showQR = ref(false)
-	const selectedTicket = ref<Ticket | null>(null)
-	const qrCodeValue = ref('https://ticket.campus-hub.com/event/8293')
-	const qrCodeOptions = ref({
-		width: 180,
-		margin: 10,
-		color: {
-			dark: '#1e293b',
-			light: '#ffffff'
-		}
-	})
-	const tickets = ref<Ticket[]>([])
-	const loading = ref(true)
-	const error = ref<string | null>(null)
-	// 核销功能相关状态
-	const totpCode = ref('')
-	const verifyLoading = ref(false)
-	const verifyResult = ref<string | null>(null)
-	const verifySuccess = ref(false)
-
-	// 格式化活动时间
-	const formatEventTime = (eventTime: string) => {
-		// 假设eventTime格式为 '2024-10-24 19:00:00'
-		const parts = eventTime.split(' ')
-		if (parts.length < 2) return eventTime
-		const datePart = parts[0]
-		const timePart = parts[1]
-		
-		// 格式化日期为 '10.24'
-		const date = new Date(datePart)
-		const month = (date.getMonth() + 1).toString().padStart(2, '0')
-		const day = date.getDate().toString().padStart(2, '0')
-		
-		return `${month}.${day} ${timePart}`
+const showQR = ref(false)
+const selectedTicket = ref<Ticket | null>(null)
+const qrCodeValue = ref('https://ticket.campus-hub.com/event/8293')
+const qrCodeOptions = ref({
+	width: 180,
+	margin: 10,
+	color: {
+		dark: '#1e293b',
+		light: '#ffffff'
 	}
+})
+const tickets = ref<Ticket[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
 
-	// 本地模拟数据
-	const mockTickets = [
-		{
-			id: '10001',
-			eventId: '2001',
-			eventName: '春季户外徒步活动',
-			eventTime: '2024-03-15 09:00:00',
-			eventLocation: '',
-			ticketNumber: 'TK7A3B9K2D',
-			status: 'pending' as const,
-			qrCodeUrl: '',
-			createdAt: new Date().toISOString()
-		},
-		{
-			id: '10002',
-			eventId: '2002',
-			eventName: '摄影技巧分享会',
-			eventTime: '2024-03-20 14:00:00',
-			eventLocation: '',
-			ticketNumber: 'TK8B4C0L3E',
-			status: 'used' as const,
-			qrCodeUrl: '',
-			createdAt: new Date().toISOString()
+// 核销功能相关状态
+const totpCode = ref('')
+const verifyLoading = ref(false)
+const verifyResult = ref<string | null>(null)
+const verifySuccess = ref(false)
+
+// 格式化活动时间
+const formatEventTime = (eventTime: string) => {
+	// 假设eventTime格式为 '2024-10-24 19:00:00'
+	const parts = eventTime.split(' ')
+	if (parts.length < 2) return eventTime
+	const datePart = parts[0]
+	const timePart = parts[1]
+	
+	// 格式化日期为 '10.24'
+	const date = new Date(datePart)
+	const month = (date.getMonth() + 1).toString().padStart(2, '0')
+	const day = date.getDate().toString().padStart(2, '0')
+	
+	return `${month}.${day} ${timePart}`
+}
+
+// 从API获取票券列表
+const fetchTicketDetails = async () => {
+	loading.value = true
+	error.value = null
+	tickets.value = []
+	
+	try {
+		// 尝试从API获取数据
+		const result = await getTicketList()
+		
+		// 检查result结构
+		if (!result || result.code !== 0 || !result.data || !result.data.items) {
+			// API数据获取失败
+			error.value = '获取票券列表失败'
+			return
 		}
-	]
-
-	// 从API获取票券列表
-	const fetchTicketDetails = async () => {
-		loading.value = true
-		error.value = null
-		tickets.value = []
-		try {
-			// 尝试从API获取数据
-			const result = await getTicketList()
-			
-			// 检查result结构
-			if (!result || result.code !== 0 || !result.data || !result.data.items) {
-				// API数据获取失败，使用本地模拟数据
-				tickets.value = mockTickets
-				return
+		
+		// 使用类型断言处理TypeScript类型检查
+		const apiData = result.data as any
+		
+		// 字段映射：将API返回的字段转换为前端期望的格式
+		const fetchedTickets = apiData.items.map((item: any) => {
+			const mappedTicket = {
+				id: item.ticket_id?.toString() || '',
+				eventId: item.activity_id?.toString() || '',
+				eventName: item.activity_name || '',
+				eventTime: item.activity_time || '',
+				eventLocation: '', // 默认空值
+				ticketNumber: item.ticket_code || '',
+				status: item.status === 1 ? 'used' : 'pending', // 将数字状态转换为字符串
+				qrCodeUrl: '', // 默认空值
+				createdAt: new Date().toISOString() // 当前时间
 			}
-			
-			// 使用类型断言处理TypeScript类型检查
-			const apiData = result.data as any
-			
-			// 字段映射：将API返回的字段转换为前端期望的格式
-			const fetchedTickets = apiData.items.map((item: any) => {
-				const mappedTicket = {
-					id: item.ticket_id?.toString() || '',
-					eventId: item.activity_id?.toString() || '',
-					eventName: item.activity_name || '',
-					eventTime: item.activity_time || '',
-					eventLocation: '', // 默认空值
-					ticketNumber: item.ticket_code || '',
-					status: item.status === 1 ? 'used' : 'pending', // 将数字状态转换为字符串
-					qrCodeUrl: '', // 默认空值
-					createdAt: new Date().toISOString() // 当前时间
-				}
-				return mappedTicket
-			})
-			
-			// 过滤掉无效票券
-			const validTickets = fetchedTickets.filter((ticket: any) => ticket && ticket.id) as Ticket[]
-			tickets.value = validTickets
-			
-			if (validTickets.length === 0) {
-				// 无有效票券数据，使用本地模拟数据
-				tickets.value = mockTickets
-			}
-		} catch (err) {
-			// API请求失败，使用本地模拟数据
+			return mappedTicket
+		})
+		
+		// 过滤掉无效票券
+		const validTickets = fetchedTickets.filter((ticket: any) => ticket && ticket.id) as Ticket[]
+		tickets.value = validTickets
+		
+		if (validTickets.length === 0) {
+			// 无有效票券数据
 			error.value = null
-			tickets.value = mockTickets
-		} finally {
-			loading.value = false
 		}
+	} catch (err) {
+		// API请求失败
+		error.value = '网络请求失败，请重试'
+	} finally {
+		loading.value = false
 	}
+}
 
-	// 切换票券状态
-	const toggleStatus = (ticket: Ticket) => {
-		const index = tickets.value.findIndex(t => t.id === ticket.id)
-		if (index !== -1) {
-			tickets.value[index].status = tickets.value[index].status === 'pending' ? 'used' : 'pending'
-			// 这里可以添加API调用，将状态更新到服务器
-		}
+// 切换票券状态
+const toggleStatus = (ticket: Ticket) => {
+	const index = tickets.value.findIndex(t => t.id === ticket.id)
+	if (index !== -1) {
+		tickets.value[index].status = tickets.value[index].status === 'pending' ? 'used' : 'pending'
+		// 这里可以添加API调用，将状态更新到服务器
 	}
+}
 
-	// 显示二维码
-	const showQRCode = (ticket: Ticket) => {
-		// 显示基本信息
-		selectedTicket.value = ticket
-		showQR.value = true
-		// 更新二维码值
-		qrCodeValue.value = `https://ticket.campus-hub.com/event/${ticket.id}`
-	}
+// 显示二维码
+const showQRCode = (ticket: Ticket) => {
+	// 显示基本信息
+	selectedTicket.value = ticket
+	showQR.value = true
+	// 更新二维码值
+	qrCodeValue.value = `https://ticket.campus-hub.com/event/${ticket.id}`
+}
 
-	// 隐藏二维码
-	const hideQRCode = () => {
-		showQR.value = false
-		selectedTicket.value = null
-		// 重置核销状态
-		totpCode.value = ''
-		verifyResult.value = null
-		verifySuccess.value = false
-	}
+// 隐藏二维码
+const hideQRCode = () => {
+	showQR.value = false
+	selectedTicket.value = null
+	// 重置核销状态
+	totpCode.value = ''
+	verifyResult.value = null
+	verifySuccess.value = false
+}
 
-	// 简化的随机文本检测正则表达式
+// 简化的随机文本检测正则表达式
 const RANDOM_TEXT_REGEX = /\b(lorem|ipsum|dolor|sit|amet|consectetur|adipisicing|elit|sed|do|eiusmod|tempor|incididunt|ut|labore|et|dolore|magna|aliqua)\b/i
 
 // 检查是否为随机文本
@@ -322,368 +297,368 @@ const verifyTicket = async () => {
 	}
 }
 
-	// 组件挂载时获取票券数据
-	onMounted(() => {
-		fetchTicketDetails()
-	})
+// 组件挂载时获取票券数据
+onMounted(() => {
+	fetchTicketDetails()
+})
 </script>
 
 <style lang="scss" scoped>
-	.nav-title {
-		font-size: 32rpx;
-		font-weight: bold;
-		color: #333;
-	}
+.nav-title {
+	font-size: 32rpx;
+	font-weight: bold;
+	color: #333;
+}
 
-	.container {
-		box-sizing: border-box;
-	}
+.container {
+	box-sizing: border-box;
+}
 
-	.time-item {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		width: 100%;
-		height: 180rpx;
-		padding: 25rpx 5%;
-		background-color: #fff;
-		border-radius: 20rpx;
-		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
-		margin-bottom: 20rpx;
-	}
+.time-item {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	width: 100%;
+	height: 180rpx;
+	padding: 25rpx 5%;
+	background-color: #fff;
+	border-radius: 20rpx;
+	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+	margin-bottom: 20rpx;
+}
 
-	.time-item-left {
-		display: flex;
-		align-items: flex-start;
-		gap: 20rpx;
-		margin-top: 10rpx;
-	}
+.time-item-left {
+	display: flex;
+	align-items: flex-start;
+	gap: 20rpx;
+	margin-top: 10rpx;
+}
 
-	.time-item-right {
-		display: flex;
-		align-items: center;
-		margin-top: 35rpx;
-	}
+.time-item-right {
+	display: flex;
+	align-items: center;
+	margin-top: 35rpx;
+}
 
-	.qr-code-btn {
-		padding: 10rpx;
-		cursor: pointer;
-		border-radius: 8rpx;
-		transition: background-color 0.3s ease;
-	}
+.qr-code-btn {
+	padding: 10rpx;
+	cursor: pointer;
+	border-radius: 8rpx;
+	transition: background-color 0.3s ease;
+}
 
-	.qr-code-btn:hover {
-		background-color: #f3f4f6;
-	}
+.qr-code-btn:hover {
+	background-color: #f3f4f6;
+}
 
-	/* 二维码详情弹窗样式 */
-	.qr-modal {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: #1e293b;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 1000;
-	}
+/* 二维码详情弹窗样式 */
+.qr-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #1e293b;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+}
 
-	.qr-content {
-		background-color: #fff;
-		border-radius: 20rpx;
-		width: 90%;
-		max-width: 500rpx;
-		overflow: hidden;
-		box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.3);
-	}
+.qr-content {
+	background-color: #fff;
+	border-radius: 20rpx;
+	width: 90%;
+	max-width: 500rpx;
+	overflow: hidden;
+	box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.3);
+}
 
-	.qr-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 30rpx;
-		background-color: #1e293b;
-	}
+.qr-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 30rpx;
+	background-color: #1e293b;
+}
 
-	.qr-back {
-		padding: 10rpx;
-	}
+.qr-back {
+	padding: 10rpx;
+}
 
-	.qr-title {
+.qr-title {
+	font-size: 28rpx;
+	font-weight: bold;
+	color: #fff;
+}
+
+.qr-empty {
+	width: 44rpx;
+}
+
+.qr-event-info {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 30rpx;
+	background-color: #f97316;
+	color: #fff;
+	gap: 10rpx;
+}
+
+.qr-event-name {
+	font-size: 32rpx;
+	font-weight: bold;
+}
+
+.qr-event-time {
+	font-size: 24rpx;
+	opacity: 0.9;
+}
+
+.qr-body {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 60rpx 30rpx;
+	gap: 40rpx;
+}
+
+.qr-code {
+	width: 280rpx;
+	height: 280rpx;
+	background-color: #f3f4f6;
+	border-radius: 16rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20rpx;
+}
+
+.qr-number {
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #333;
+	letter-spacing: 8rpx;
+}
+
+.qr-hint {
+	font-size: 22rpx;
+	color: #6b7280;
+	text-align: center;
+	line-height: 1.4;
+}
+
+.event-info {
+	display: flex;
+	flex-direction: column;
+	gap: 8rpx;
+}
+
+.event-title {
+	font-size: 25rpx;
+	font-weight: bold;
+	color: #333;
+	font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+	letter-spacing: 2rpx;
+	text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.05);
+}
+
+.event-time {
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+}
+
+.event-status {
+	font-size: 24rpx;
+	font-weight: 500;
+	padding: 6rpx 16rpx;
+	border-radius: 12rpx;
+	width: fit-content;
+	cursor: pointer;
+	transition: all 0.3s ease;
+}
+
+/* 加载状态样式 */
+.loading-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 120rpx 0;
+	
+	.loading-text {
+		margin-top: 24rpx;
 		font-size: 28rpx;
-		font-weight: bold;
-		color: #fff;
+		color: #666;
+		font-weight: 500;
 	}
+}
 
-	.qr-empty {
-		width: 44rpx;
-	}
-
-	.qr-event-info {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 30rpx;
-		background-color: #f97316;
-		color: #fff;
-		gap: 10rpx;
-	}
-
-	.qr-event-name {
-		font-size: 32rpx;
-		font-weight: bold;
-	}
-
-	.qr-event-time {
-		font-size: 24rpx;
-		opacity: 0.9;
-	}
-
-	.qr-body {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 60rpx 30rpx;
-		gap: 40rpx;
-	}
-
-	.qr-code {
-		width: 280rpx;
-		height: 280rpx;
-		background-color: #f3f4f6;
-		border-radius: 16rpx;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 20rpx;
-	}
-
-	.qr-number {
-		font-size: 36rpx;
-		font-weight: bold;
-		color: #333;
-		letter-spacing: 8rpx;
-	}
-
-	.qr-hint {
-		font-size: 22rpx;
-		color: #6b7280;
-		text-align: center;
+/* 错误状态样式 */
+.error-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 120rpx 40rpx;
+	text-align: center;
+	
+	.error-text {
+		margin: 24rpx 0;
+		font-size: 28rpx;
+		color: #ef4444;
+		font-weight: 500;
 		line-height: 1.4;
 	}
-
-	.event-info {
-		display: flex;
-		flex-direction: column;
-		gap: 8rpx;
-	}
-
-	.event-title {
-		font-size: 25rpx;
-		font-weight: bold;
-		color: #333;
-		font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-		letter-spacing: 2rpx;
-		text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.05);
-	}
-
-	.event-time {
-		display: flex;
-		align-items: center;
-		gap: 12rpx;
-	}
-
-	.event-status {
-			font-size: 24rpx;
-			font-weight: 500;
-			padding: 6rpx 16rpx;
-			border-radius: 12rpx;
-			width: fit-content;
-			cursor: pointer;
-			transition: all 0.3s ease;
-		}
-
-		// 加载状态样式
-		.loading-container {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			padding: 120rpx 0;
-			
-			.loading-text {
-				margin-top: 24rpx;
-				font-size: 28rpx;
-				color: #666;
-				font-weight: 500;
-			}
-		}
-
-		// 错误状态样式
-		.error-container {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			padding: 120rpx 40rpx;
-			text-align: center;
-			
-			.error-text {
-				margin: 24rpx 0;
-				font-size: 28rpx;
-				color: #ef4444;
-				font-weight: 500;
-				line-height: 1.4;
-			}
-			
-			.retry-btn {
-				margin-top: 32rpx;
-				padding: 16rpx 48rpx;
-				background-color: #f97316;
-				color: #fff;
-				font-size: 28rpx;
-				font-weight: 500;
-				border-radius: 12rpx;
-				box-shadow: 0 4rpx 12rpx 0 rgba(249, 115, 22, 0.3);
-				cursor: pointer;
-				transition: all 0.3s ease;
-				
-				&:active {
-					background-color: #ea580c;
-					transform: scale(0.98);
-				}
-			}
-		}
-
-		// 空状态样式
-		.empty-container {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			padding: 120rpx 0;
-			
-			.empty-text {
-				margin-top: 24rpx;
-				font-size: 28rpx;
-				color: #9ca3af;
-				font-weight: 500;
-			}
-		}
-
-	.status-pending {
-		color: #3bb267;
-		background-color: #dcfce7;
-	}
-
-	.status-used {
-		color: #6b7280;
-		background-color: #f3f4f6;
-	}
-
-	.i-running {
-		width: 120rpx;
-		height: 120rpx;
-		background-color: #ffedd5;
-		border-radius: 16rpx;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.time-value {
-			font-size: 26rpx;
-			color: #999;
-		}
-
-		/* 核销功能样式 */
-		.verify-section {
-			width: 100%;
-			margin-top: 40rpx;
-			padding: 0 20rpx;
-			box-sizing: border-box;
-		}
-
-		.verify-input-container {
-			display: flex;
-			align-items: center;
-			margin-bottom: 24rpx;
-			gap: 16rpx;
-		}
-
-		.verify-label {
-			font-size: 24rpx;
-			color: #333;
-			font-weight: 500;
-			min-width: 160rpx;
-		}
-
-		.verify-input {
-			flex: 1;
-			height: 60rpx;
-			padding: 0 16rpx;
-			border: 2rpx solid #e5e7eb;
-			border-radius: 12rpx;
-			font-size: 26rpx;
-			color: #333;
-			background-color: #f9fafb;
-			box-sizing: border-box;
-		}
-
-		.verify-input:focus {
-			outline: none;
-			border-color: #f97316;
-			box-shadow: 0 0 0 3rpx rgba(249, 115, 22, 0.1);
-		}
-
-		.verify-btn {
-			width: 100%;
-			height: 72rpx;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			background-color: #f97316;
-			color: #fff;
-			font-size: 28rpx;
-			font-weight: 500;
-			border-radius: 16rpx;
-			cursor: pointer;
-			transition: all 0.3s ease;
-			margin-bottom: 20rpx;
-		}
-
-		.verify-btn:hover {
+	
+	.retry-btn {
+		margin-top: 32rpx;
+		padding: 16rpx 48rpx;
+		background-color: #f97316;
+		color: #fff;
+		font-size: 28rpx;
+		font-weight: 500;
+		border-radius: 12rpx;
+		box-shadow: 0 4rpx 12rpx 0 rgba(249, 115, 22, 0.3);
+		cursor: pointer;
+		transition: all 0.3s ease;
+		
+		&:active {
 			background-color: #ea580c;
-		}
-
-		.verify-btn:active {
 			transform: scale(0.98);
 		}
+	}
+}
 
-		.verify-btn.loading {
-			background-color: #fb923c;
-			cursor: not-allowed;
-		}
+/* 空状态样式 */
+.empty-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 120rpx 0;
+	
+	.empty-text {
+		margin-top: 24rpx;
+		font-size: 28rpx;
+		color: #9ca3af;
+		font-weight: 500;
+	}
+}
 
-		.verify-result {
-			padding: 16rpx;
-			border-radius: 12rpx;
-			font-size: 24rpx;
-			text-align: center;
-			margin-top: 16rpx;
-		}
+.status-pending {
+	color: #3bb267;
+	background-color: #dcfce7;
+}
 
-		.verify-result.success {
-			background-color: #dcfce7;
-			color: #15803d;
-		}
+.status-used {
+	color: #6b7280;
+	background-color: #f3f4f6;
+}
 
-		.verify-result.error {
-			background-color: #fee2e2;
-			color: #dc2626;
-		}
+.i-running {
+	width: 120rpx;
+	height: 120rpx;
+	background-color: #ffedd5;
+	border-radius: 16rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.time-value {
+	font-size: 26rpx;
+	color: #999;
+}
+
+/* 核销功能样式 */
+.verify-section {
+	width: 100%;
+	margin-top: 40rpx;
+	padding: 0 20rpx;
+	box-sizing: border-box;
+}
+
+.verify-input-container {
+	display: flex;
+	align-items: center;
+	margin-bottom: 24rpx;
+	gap: 16rpx;
+}
+
+.verify-label {
+	font-size: 24rpx;
+	color: #333;
+	font-weight: 500;
+	min-width: 160rpx;
+}
+
+.verify-input {
+	flex: 1;
+	height: 60rpx;
+	padding: 0 16rpx;
+	border: 2rpx solid #e5e7eb;
+	border-radius: 12rpx;
+	font-size: 26rpx;
+	color: #333;
+	background-color: #f9fafb;
+	box-sizing: border-box;
+}
+
+.verify-input:focus {
+	outline: none;
+	border-color: #f97316;
+	box-shadow: 0 0 0 3rpx rgba(249, 115, 22, 0.1);
+}
+
+.verify-btn {
+	width: 100%;
+	height: 72rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: #f97316;
+	color: #fff;
+	font-size: 28rpx;
+	font-weight: 500;
+	border-radius: 16rpx;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	margin-bottom: 20rpx;
+}
+
+.verify-btn:hover {
+	background-color: #ea580c;
+}
+
+.verify-btn:active {
+	transform: scale(0.98);
+}
+
+.verify-btn.loading {
+	background-color: #fb923c;
+	cursor: not-allowed;
+}
+
+.verify-result {
+	padding: 16rpx;
+	border-radius: 12rpx;
+	font-size: 24rpx;
+	text-align: center;
+	margin-top: 16rpx;
+}
+
+.verify-result.success {
+	background-color: #dcfce7;
+	color: #15803d;
+}
+
+.verify-result.error {
+	background-color: #fee2e2;
+	color: #dc2626;
+}
 </style>
