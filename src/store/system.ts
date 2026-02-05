@@ -54,6 +54,7 @@ export const useSystemStore = defineStore("system", {
         // 3. 处理 H5 逻辑
         // #ifdef H5
         this.navBarHeight = 44;
+        this.statusBarHeight = 20; // 【新增】H5 默认状态栏高度（当作top padding）
         // H5 端如果是在普通浏览器，safeAreaInsetsBottom 可能是 0
         // 但如果是在 Safari PWA 模式下，可能需要读取 env(safe-area-inset-bottom)
         // 这里暂时保持 API 读取的值，通常足够使用

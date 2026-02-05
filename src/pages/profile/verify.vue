@@ -8,8 +8,7 @@
       </view>
 
       <view v-if="loading" class="loading-section">
-        <wd-loading type="spinner" size="48rpx" color="#3b82f6"></wd-loading>
-        <text class="loading-text">加载中...</text>
+        <AsyncLoading text="加载中..." />
       </view>
 
       <view v-else-if="authStatus === 'completed'" class="status-section success">

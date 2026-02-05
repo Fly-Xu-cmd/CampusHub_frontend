@@ -2,6 +2,7 @@ import { createSSRApp } from "vue";
 import { createPinia } from "pinia";
 import App from "./App.vue";
 import "@/styles/iconfont.css";
+
 import initPermission from "@/utils/permission";
 /**
  * 创建应用实例
