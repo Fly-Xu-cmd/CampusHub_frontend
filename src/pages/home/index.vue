@@ -118,7 +118,6 @@
 </template>
 
 <script setup lang="ts">
-import ClientOnly from '@/components/ClientOnly/ClientOnly.vue';
 import { ref, onMounted } from 'vue';
 import { getActivityCategoryList, getActivityList, searchActivity } from '@/api/home/router';
 
@@ -128,18 +127,14 @@ onMounted(async () => {
   getCategories();
 
   // 获取活动列表
-  getActivities();
+  // getActivities();
 });
 
 const tags = ref(); // 活动分类列表
 // 获取活动分类列表
 const getCategories = async () => {
-  const { data: { list: Categories } } = await getActivityCategoryList();
-  tags.value = Categories.map(item => ({
-    id: item.id,
-    name: item.name,
-    icon: item.icon
-  }));
+  const { list: Categories } = await getActivityCategoryList();
+  tags.value = Categories
 }
 
 const activeTag = ref<number>(0); // 当前选中的标签
