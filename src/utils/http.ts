@@ -45,13 +45,13 @@ const cacheStore = new Map<string, { data: any; timestamp: number }>();
 const CACHE_EXPIRY = 5 * 60 * 1000;
 
 // 环境配置
-const env = process.env.NODE_ENV;
+const env = import.meta.env.MODE;
 
 // 根据环境设置 BASE_URL
 const BASE_URL =
   env === "production"
-    ? "https://api.yourdomain.com"
-    : "https://m1.apifoxmock.com/m1/7765867-7511791-default";
+    ? import.meta.env.VITE_PROD_BASE_URL || "https://api.yourdomain.com"
+    : import.meta.env.VITE_BASE_URL || "http://192.168.10.9:8888";
 
 // 请求拦截器
 const requestInterceptors: Array<(config: RequestOptions) => RequestOptions> = [
