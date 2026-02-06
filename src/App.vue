@@ -11,6 +11,17 @@ onLaunch(() => {
   // 1. 初始化系统布局信息
   systemStore.initSystemInfo();
   userStore.initUserStore();
+  userStore.login({
+    userId: 10001,
+    username: "张三",
+    avatarUrl: "https://example.com/avatar.jpg",
+    interestTags: [{
+      id: 1,
+      tagName: "运动",
+      tagIcon: "icon-sport",
+      tagDesc: "喜欢运动",
+    }],
+  }, "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4MzMzNTQ0MDksImlhdCI6MTc3MDI4MjQwOSwicm9sZSI6InVzZXIiLCJ1c2VySWQiOjEwMDAxfQ.maVHN2C1P2yGx0kuTM72JKXVyDeXvIgh7IrjK618D-Q", "refreshToken");
 });
 
 onShow(()=>{
