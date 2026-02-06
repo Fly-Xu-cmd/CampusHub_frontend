@@ -6,6 +6,13 @@ import {
   Request as RefreshTokenRequest,
   Data as RefreshTokenData,
 } from "./refresh_token";
+import { CaptchaConfigData, VerifyCaptchaRequest } from "./captcha";
+import {
+  QQCodeRegisterRequest,
+  QQCodeForgotPasswordRequest,
+  QQCodeDeleteUserRequest,
+} from "./qq";
+import { ForgotPasswordRequest } from "./password";
 
 export type {
   LoginRequest,
@@ -17,4 +24,10 @@ export type {
   LogoffRequest,
   RefreshTokenRequest,
   RefreshTokenData,
+  CaptchaConfigData,
+  VerifyCaptchaRequest,
+  QQCodeRegisterRequest,
+  QQCodeForgotPasswordRequest,
+  QQCodeDeleteUserRequest,
+  ForgotPasswordRequest,
 };
