@@ -10,7 +10,7 @@
             placeholder="搜索活动..." 
             placeholder-left 
             custom-class="custom-search"
-            @confirm="search"
+            @search="search"
           />
         </view>
       </view>
