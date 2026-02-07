@@ -23,9 +23,14 @@
 			<!-- 上传组件 -->
 
 			<!-- 活动标题 -->
-			<view class="form-item title-item">
-				<input type="text" v-model="activityTitle" placeholder="活动标题" class="title-input" placeholder-style="color: #999;">
-			</view>
+		<view class="form-item title-item">
+			<input type="text" v-model="activityTitle" placeholder="活动标题" class="title-input" placeholder-style="color: #999;">
+		</view>
+
+		<!-- 联系电话 -->
+		<view class="form-item title-item">
+			<input type="text" v-model="contactPhone" placeholder="联系电话" class="title-input" placeholder-style="color: #999;">
+		</view>
 
 			<!-- 活动信息容器（白色背景） -->
 			<view class="form-info-container">
@@ -123,6 +128,8 @@ const locationName = ref<string>('选择线下地点')
 const locationAddress = ref<string>('')
 const locationLatitude = ref<number>(0)
 const locationLongitude = ref<number>(0)
+const contactPhone = ref<string>('')
+const selectedTags = ref<number[]>([1, 2, 3]) // 默认标签ID，可根据实际选择修改
 // 日期选择相关的变量和逻辑已移至TimeSelect组件
 const startValue = ref<number>(Date.now())
 const endValue = ref<number>(Date.now())
@@ -171,30 +178,35 @@ const submitForm = async () => {
 		return
 	}
 	
+	if (!contactPhone.value) {
+		toast.error('请输入联系电话')
+		return
+	}
+	
 	try {
-		// 准备数据
-		const formData = {
-			activity_end_time: new Date(endValue.value).toISOString(),
-			activity_start_time: new Date(startValue.value).toISOString(),
-			address_detail: locationAddress.value,
-			category_id: 1, // 默认分类，可根据实际情况修改
-			contact_phone: '', // 联系电话，可根据实际情况添加输入框
-			content: activityDetail.value,
-			cover_type: 0, // 0为图片，1为视频
-			cover_url: fileList.value[0].url || '',
-			is_draft: false,
-			latitude: locationLatitude.value,
-			location: locationName.value,
-			longitude: locationLongitude.value,
-			max_participants: peopleLimit.value,
-			min_credit_score: 0,
-			register_end_time: new Date(signupEndValue.value).toISOString(),
-			register_start_time: new Date(signupStartValue.value).toISOString(),
-			require_approval: false,
-			require_student_verify: false,
-			tag_ids: [], // 标签ID，可根据实际情况修改
-			title: activityTitle.value
-		} as any
+			// 准备数据
+			const formData = {
+				title: activityTitle.value,
+				coverUrl: fileList.value[0].url || '',
+				coverType: 1, // 默认视频类型，可根据实际情况修改
+				content: `<p>${activityDetail.value}</p>`, // 包装为HTML格式
+				categoryId: 1, // 默认分类，可根据实际情况修改
+				contactPhone: contactPhone.value,
+				registerStartTime: 1738934400,
+				registerEndTime: 1738992000,
+				activityStartTime: 1739078400,
+				activityEndTime: 1739164800,
+				location: locationName.value,
+				addressDetail: locationAddress.value,
+				longitude: locationLongitude.value,
+				latitude: locationLatitude.value,
+				maxParticipants: peopleLimit.value,
+				requireApproval: false,
+				requireStudentVerify: true,
+				minCreditScore: 60,
+				tagIds: selectedTags.value,
+				isDraft: false
+			} as any
 		
 		// 提交数据
 		const response = await postPublish(formData)
@@ -210,6 +222,7 @@ const submitForm = async () => {
 			locationAddress.value = ''
 			locationLatitude.value = 0
 			locationLongitude.value = 0
+			contactPhone.value = ''
 		} else {
 			toast.error(response.message || '发布失败')
 		}

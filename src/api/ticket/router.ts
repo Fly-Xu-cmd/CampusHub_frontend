@@ -17,8 +17,8 @@ export const getTicketDetail = (ticketId: string) => {
 };
 
 // 获取票券列表
-export const getTicketList = () => {
-    return get<TicketListResponse>(apiUrls.getTicketList);
+export const getTicketList = (page: number = 1, pageSize: number = 10) => {
+    return get<TicketListResponse>(`${apiUrls.getTicketList}?page=${page}&pageSize=${pageSize}`);
 };
 
 // 核销二维码

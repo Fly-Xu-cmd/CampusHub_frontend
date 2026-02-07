@@ -20,13 +20,15 @@ export interface TicketListResponse {
   data: {
     total: number;
     items: Array<{
-      ticket_id: number;
-      ticket_code?: string;
-      activity_id: number;
-      activity_name: string;
-      activity_time: string;
-      activity_image_url?: string;
+      ticketId: number;
+      ticketCode?: string;
+      activityId: number;
+      activityName: string;
+      activityTime: string;
+      activityImageUrl?: string;
       status: number;
     }>;
+    page: number;
+    pageSize: number;
   };
 }

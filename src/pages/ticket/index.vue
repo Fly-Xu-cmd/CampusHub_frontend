@@ -113,7 +113,7 @@
 import { ref, onMounted } from 'vue'
 import Qrcode from '@chenfengyuan/vue-qrcode'
 import type { Ticket } from '@/types/modules/ticket/ticket'
-import { getTicketList, postVerifyTicket } from '@/api/ticket/router'
+import { getTicketList, getTicketDetail, postVerifyTicket } from '@/api/ticket/router'
 
 const showQR = ref(false)
 const selectedTicket = ref<Ticket | null>(null)
@@ -160,32 +160,28 @@ const fetchTicketDetails = async () => {
 	
 	try {
 		// 尝试从API获取数据
-		const result = await getTicketList()
+		const result = await getTicketList(1, 10)
 		
 		// 检查result结构
-		if (!result || result.code !== 0 || !result.data || !result.data.items) {
+		if (!result || !result.data || !result.data.items) {
 			// API数据获取失败
 			error.value = '获取票券列表失败'
 			return
 		}
 		
-		// 使用类型断言处理TypeScript类型检查
-		const apiData = result.data as any
-		
-		// 字段映射：将API返回的字段转换为前端期望的格式
-		const fetchedTickets = apiData.items.map((item: any) => {
-			const mappedTicket = {
-				id: item.ticket_id?.toString() || '',
-				eventId: item.activity_id?.toString() || '',
-				eventName: item.activity_name || '',
-				eventTime: item.activity_time || '',
+		// 直接使用后端返回的数据，进行必要的类型转换
+		const fetchedTickets = result.data.items.map((item: any) => {
+			return {
+				id: item.ticketId?.toString() || '',
+				eventId: item.activityId?.toString() || '',
+				eventName: item.activityName || '',
+				eventTime: item.activityTime || '',
 				eventLocation: '', // 默认空值
-				ticketNumber: item.ticket_code || '',
+				ticketNumber: item.ticketCode || '',
 				status: item.status === 1 ? 'used' : 'pending', // 将数字状态转换为字符串
 				qrCodeUrl: '', // 默认空值
 				createdAt: new Date().toISOString() // 当前时间
 			}
-			return mappedTicket
 		})
 		
 		// 过滤掉无效票券
@@ -214,12 +210,38 @@ const toggleStatus = (ticket: Ticket) => {
 }
 
 // 显示二维码
-const showQRCode = (ticket: Ticket) => {
-	// 显示基本信息
-	selectedTicket.value = ticket
-	showQR.value = true
-	// 更新二维码值
-	qrCodeValue.value = `https://ticket.campus-hub.com/event/${ticket.id}`
+const showQRCode = async (ticket: Ticket) => {
+	try {
+		// 从后端获取票券详情
+		const detailResult = await getTicketDetail(ticket.id)
+		if (detailResult && detailResult.data) {
+			// 使用后端返回的详情数据
+			selectedTicket.value = {
+				id: detailResult.data.ticketId?.toString() || ticket.id,
+				eventId: detailResult.data.activityId?.toString() || ticket.eventId,
+				eventName: detailResult.data.activityName || ticket.eventName,
+				eventTime: detailResult.data.activityTime || ticket.eventTime,
+				eventLocation: ticket.eventLocation,
+				ticketNumber: detailResult.data.ticketCode || ticket.ticketNumber,
+				status: ticket.status,
+				qrCodeUrl: detailResult.data.qrCodeUrl || ticket.qrCodeUrl,
+				createdAt: ticket.createdAt
+			}
+			// 更新二维码值
+			qrCodeValue.value = detailResult.data.qrCodeUrl || `https://ticket.campus-hub.com/event/${ticket.id}`
+		} else {
+			// 如果获取详情失败，使用列表中的数据
+			selectedTicket.value = ticket
+			qrCodeValue.value = `https://ticket.campus-hub.com/event/${ticket.id}`
+		}
+		showQR.value = true
+	} catch (error) {
+		console.error('获取票券详情失败:', error)
+		// 如果获取详情失败，使用列表中的数据
+		selectedTicket.value = ticket
+		qrCodeValue.value = `https://ticket.campus-hub.com/event/${ticket.id}`
+		showQR.value = true
+	}
 }
 
 // 隐藏二维码

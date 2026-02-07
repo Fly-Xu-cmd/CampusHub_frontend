@@ -113,7 +113,7 @@ const hide = (): void => {
 	emit('update:isShowPicker', false)
 }
 
-// 时间选择回调：添加日期验证逻辑
+// 时间选择回调：移除日期验证逻辑
 const onStartChange = (event: any): void => {
 	// 处理不同格式的事件参数
 	const value = event.value || event.detail?.value || event
@@ -121,18 +121,9 @@ const onStartChange = (event: any): void => {
 	const numericValue = typeof value === 'number' ? value : Number(value) || Date.now()
 	localStartValue.value = numericValue
 	emit('update:startValue', numericValue)
-	
-	// 确保结束日期不早于开始日期
-	if (localEndValue.value < localStartValue.value) {
-		const errorMsg = '开始时间不能在结束时间之后'
-		localErrorMessage.value = errorMsg
-		emit('update:errorMessage', errorMsg)
-		localEndValue.value = localStartValue.value
-		emit('update:endValue', localStartValue.value)
-	} else {
-		localErrorMessage.value = ''
-		emit('update:errorMessage', '')
-	}
+	// 清除错误信息
+	localErrorMessage.value = ''
+	emit('update:errorMessage', '')
 }
 
 const onEndChange = (event: any): void => {
@@ -141,17 +132,7 @@ const onEndChange = (event: any): void => {
 	// 确保value是number类型
 	const numericValue = typeof value === 'number' ? value : Number(value) || Date.now()
 	
-	// 确保结束日期不早于开始日期
-	if (numericValue < localStartValue.value) {
-		const errorMsg = '开始时间不能在结束时间之后'
-		localErrorMessage.value = errorMsg
-		emit('update:errorMessage', errorMsg)
-		// 重置为开始日期
-		localEndValue.value = localStartValue.value
-		emit('update:endValue', localStartValue.value)
-		return
-	}
-	
+	// 清除错误信息
 	localErrorMessage.value = ''
 	emit('update:errorMessage', '')
 	localEndValue.value = numericValue
