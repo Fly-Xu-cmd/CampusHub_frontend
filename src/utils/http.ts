@@ -19,6 +19,8 @@ interface Response {
   errno?: number;
 }
 
+import { authApi } from "@/api/register/router";
+
 // 错误码映射表
 const ErrorCodeMap: Record<number | string, string> = {
   400: "请求参数错误",
@@ -108,7 +110,7 @@ const logger = {
 const requestInterceptors: Array<(config: RequestOptions) => RequestOptions> = [
   (config) => {
     // 添加 token
-    const token = uni.getStorageSync("token");
+    const token = uni.getStorageSync("accessToken");
     if (token) {
       config.header = {
         ...config.header,
@@ -167,20 +169,26 @@ const errorInterceptors: Array<(error: any) => any> = [
 
     // 处理 401 错误（token 过期）
     if (error.statusCode === 401) {
-      uni.showToast({
-        title: "登录过期，请重新登录",
-        icon: "none",
-      });
-      // 清除过期 token
-      uni.removeStorageSync("accessToken");
-      uni.removeStorageSync("refreshToken");
-      uni.removeStorageSync("token"); // 确保清除所有可能的 token key
-      // 跳转到登录页
-      setTimeout(() => {
-        uni.navigateTo({
-          url: "/pages/login/index",
+      const refreshToken = uni.getStorageSync("refreshToken");
+      if (refreshToken) {
+        uni.showToast({
+          title: "登录过期，正在尝试刷新",
+          icon: "none",
         });
-      }, 1000);
+      } else {
+        uni.showToast({
+          title: "登录过期，请重新登录",
+          icon: "none",
+        });
+        uni.removeStorageSync("accessToken");
+        uni.removeStorageSync("refreshToken");
+        uni.removeStorageSync("userInfo");
+        setTimeout(() => {
+          uni.navigateTo({
+            url: "/pages/login/index",
+          });
+        }, 1000);
+      }
     }
 
     // 统一返回格式化的错误对象
@@ -191,11 +199,40 @@ const errorInterceptors: Array<(error: any) => any> = [
   },
 ];
 
+// 刷新令牌管理
+let refreshPromise: Promise<string> | null = null;
+const attemptTokenRefresh = (): Promise<string> => {
+  if (refreshPromise) return refreshPromise;
+  const refreshToken = uni.getStorageSync("refreshToken");
+  if (!refreshToken) {
+    return Promise.reject(new Error("No refresh token"));
+  }
+  refreshPromise = authApi
+    .refreshToken({ refreshToken })
+    .then((resp: any) => {
+      const newAccessToken = resp?.data?.accessToken ?? resp?.accessToken ?? "";
+      if (!newAccessToken) {
+        throw new Error("Failed to obtain new access token");
+      }
+      uni.setStorageSync("accessToken", newAccessToken);
+      return newAccessToken;
+    })
+    .catch((err) => {
+      uni.removeStorageSync("accessToken");
+      uni.removeStorageSync("refreshToken");
+      throw err;
+    })
+    .finally(() => {
+      refreshPromise = null;
+    });
+  return refreshPromise;
+};
+
 // 应用请求拦截器
 const applyRequestInterceptors = (config: RequestOptions): RequestOptions => {
   return requestInterceptors.reduce(
     (prev, interceptor) => interceptor(prev),
-    config,
+    config
   );
 };
 
@@ -203,7 +240,7 @@ const applyRequestInterceptors = (config: RequestOptions): RequestOptions => {
 const applyResponseInterceptors = (response: Response): Response => {
   return responseInterceptors.reduce(
     (prev, interceptor) => interceptor(prev),
-    response,
+    response
   );
 };
 
@@ -211,7 +248,7 @@ const applyResponseInterceptors = (response: Response): Response => {
 const applyErrorInterceptors = (error: any): any => {
   return errorInterceptors.reduce(
     (prev, interceptor) => interceptor(prev),
-    error,
+    error
   );
 };
 
@@ -250,7 +287,7 @@ const generateCacheKey = (options: RequestOptions): string => {
 
 export const http = <T>(
   options: RequestOptions,
-  retryCount = 0,
+  retryCount = 0
 ): Promise<T> => {
   // 应用请求拦截器
   const config = applyRequestInterceptors(options);
@@ -320,6 +357,38 @@ export const http = <T>(
           }
           resolve(processedResponse.data as T);
         } else {
+          // 401 尝试刷新并重试原请求
+          if (
+            processedResponse.statusCode === 401 &&
+            !(config as any).__isRetryAfterRefresh
+          ) {
+            const refreshToken = uni.getStorageSync("refreshToken");
+            if (refreshToken) {
+              attemptTokenRefresh()
+                .then((newToken) => {
+                  const retryConfig = {
+                    ...(config as any),
+                    __isRetryAfterRefresh: true,
+                  };
+                  retryConfig.header = {
+                    ...retryConfig.header,
+                    Authorization: `Bearer ${newToken}`,
+                  };
+                  http<T>(retryConfig, retryCount)
+                    .then(resolve)
+                    .catch((err) => {
+                      const processedErr = applyErrorInterceptors(err);
+                      reject(processedErr);
+                    });
+                })
+                .catch(() => {
+                  const processedErr =
+                    applyErrorInterceptors(processedResponse);
+                  reject(processedErr);
+                });
+              return;
+            }
+          }
           // 处理业务/HTTP错误
           const error = applyErrorInterceptors(processedResponse);
 
@@ -329,7 +398,7 @@ export const http = <T>(
             logger.info(
               `Retry attempt ${
                 retryCount + 1
-              } for ${requestUrl} after ${delay}ms`,
+              } for ${requestUrl} after ${delay}ms`
             );
             setTimeout(() => {
               http<T>(config, retryCount + 1)
@@ -350,7 +419,7 @@ export const http = <T>(
         if (config.retry && retryCount < config.retry) {
           const delay = (config.retryDelay || 1000) * Math.pow(2, retryCount); // 指数退避
           logger.info(
-            `Retry attempt ${retryCount + 1} for ${requestUrl} after ${delay}ms`,
+            `Retry attempt ${retryCount + 1} for ${requestUrl} after ${delay}ms`
           );
           setTimeout(() => {
             http<T>(config, retryCount + 1)
@@ -387,7 +456,7 @@ export const getCacheSize = () => {
 // 快捷方法
 export const get = <T>(
   url: string,
-  options?: Omit<RequestOptions, "url" | "method">,
+  options?: Omit<RequestOptions, "url" | "method">
 ): Promise<T> => {
   return http<T>({ ...options, url, method: "GET" });
 };
@@ -395,7 +464,7 @@ export const get = <T>(
 export const post = <T>(
   url: string,
   data?: any,
-  options?: Omit<RequestOptions, "url" | "method" | "data">,
+  options?: Omit<RequestOptions, "url" | "method" | "data">
 ): Promise<T> => {
   return http<T>({ ...options, url, method: "POST", data });
 };
@@ -403,14 +472,14 @@ export const post = <T>(
 export const put = <T>(
   url: string,
   data?: any,
-  options?: Omit<RequestOptions, "url" | "method" | "data">,
+  options?: Omit<RequestOptions, "url" | "method" | "data">
 ): Promise<T> => {
   return http<T>({ ...options, url, method: "PUT", data });
 };
 
 export const del = <T>(
   url: string,
-  options?: Omit<RequestOptions, "url" | "method">,
+  options?: Omit<RequestOptions, "url" | "method">
 ): Promise<T> => {
   return http<T>({ ...options, url, method: "DELETE" });
 };
