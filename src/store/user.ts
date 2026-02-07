@@ -54,8 +54,9 @@ export const useUserStore = defineStore("user", {
     login(
       userData: Partial<UserInfo>,
       accessToken: string,
-      refreshToken: string,
+      refreshToken: string
     ) {
+      console.log("login", userData, accessToken, refreshToken);
       this.updateUserInfo(userData);
       this.accessToken = accessToken;
       this.refreshToken = refreshToken;

@@ -237,7 +237,7 @@ const handleLogin = async () => {
     );
 
     // 跳转页面
-    const targetUrl = redirectUrl.value || "/pages/index/index";
+    const targetUrl = redirectUrl.value || "/pages/home/index";
     setTimeout(() => {
       // 使用 reLaunch 确保清空页面栈，避免返回到登录页
       uni.reLaunch({ url: targetUrl });
