@@ -15,7 +15,26 @@ interface Response {
   statusCode: number;
   data: any;
   header: any;
+  errMsg?: string;
+  errno?: number;
 }
+
+// 错误码映射表
+const ErrorCodeMap: Record<number | string, string> = {
+  400: "请求参数错误",
+  401: "未授权，请登录",
+  403: "拒绝访问",
+  404: "请求资源不存在",
+  408: "请求超时",
+  500: "服务器内部错误",
+  501: "服务未实现",
+  502: "网关错误",
+  503: "服务不可用",
+  504: "网关超时",
+  505: "HTTP版本不受支持",
+  "request:fail": "网络请求失败",
+  timeout: "请求超时",
+};
 
 class CancelToken {
   private cancelFn: ((reason: string) => void) | null = null;
@@ -53,6 +72,38 @@ const BASE_URL =
     ? import.meta.env.VITE_PROD_BASE_URL || "https://api.yourdomain.com"
     : import.meta.env.VITE_BASE_URL || "http://192.168.10.9:8888";
 
+// 获取系统信息用于 User-Agent
+let systemInfo: UniApp.GetSystemInfoResult;
+try {
+  systemInfo = uni.getSystemInfoSync();
+} catch (e) {
+  systemInfo = {
+    osName: "unknown",
+    osVersion: "unknown",
+    uniPlatform: "unknown",
+    deviceBrand: "unknown",
+    deviceModel: "unknown",
+  } as any;
+}
+
+const userAgent = `CampusHub/${import.meta.env.VITE_APP_VERSION || "1.0.0"} (${
+  systemInfo.uniPlatform
+}; ${systemInfo.osName} ${systemInfo.osVersion}; ${systemInfo.deviceBrand} ${
+  systemInfo.deviceModel
+})`;
+
+// 日志工具
+const logger = {
+  info: (msg: string, data?: any) => {
+    if (import.meta.env.VITE_DEBUG === "true") {
+      console.log(`[HTTP INFO] ${msg}`, data || "");
+    }
+  },
+  error: (msg: string, err?: any) => {
+    console.error(`[HTTP ERROR] ${msg}`, err || "");
+  },
+};
+
 // 请求拦截器
 const requestInterceptors: Array<(config: RequestOptions) => RequestOptions> = [
   (config) => {
@@ -67,9 +118,11 @@ const requestInterceptors: Array<(config: RequestOptions) => RequestOptions> = [
     return config;
   },
   (config) => {
-    // 添加默认 header
+    // 添加默认 header 和 User-Agent
     config.header = {
       "Content-Type": "application/json",
+      "X-Client-Info": userAgent, // 自定义 UA
+      // 移除 Accept-Encoding 头，因为浏览器不允许客户端脚本设置此头
       ...config.header,
     };
     return config;
@@ -87,18 +140,31 @@ const responseInterceptors: Array<(response: Response) => Response> = [
 // 错误拦截器
 const errorInterceptors: Array<(error: any) => any> = [
   (error) => {
-    // 处理网络错误
-    if (error.errMsg && error.errMsg.includes("timeout")) {
-      uni.showToast({
-        title: "网络请求超时",
-        icon: "none",
-      });
-    } else if (error.errMsg && error.errMsg.includes("network")) {
-      uni.showToast({
-        title: "网络连接失败",
-        icon: "none",
-      });
+    logger.error("Request Error Intercepted", error);
+
+    let errorMsg = "网络请求异常";
+
+    // 处理 uni.request 返回的错误格式
+    if (error.errMsg) {
+      if (error.errMsg.includes("timeout")) {
+        errorMsg = ErrorCodeMap["timeout"];
+      } else if (error.errMsg.includes("request:fail")) {
+        errorMsg = ErrorCodeMap["request:fail"];
+      }
     }
+
+    // 处理 HTTP 状态码错误
+    if (error.statusCode && ErrorCodeMap[error.statusCode]) {
+      errorMsg = ErrorCodeMap[error.statusCode];
+    }
+
+    // 提示错误
+    uni.showToast({
+      title: errorMsg,
+      icon: "none",
+      duration: 3000,
+    });
+
     // 处理 401 错误（token 过期）
     if (error.statusCode === 401) {
       uni.showToast({
@@ -108,6 +174,7 @@ const errorInterceptors: Array<(error: any) => any> = [
       // 清除过期 token
       uni.removeStorageSync("accessToken");
       uni.removeStorageSync("refreshToken");
+      uni.removeStorageSync("token"); // 确保清除所有可能的 token key
       // 跳转到登录页
       setTimeout(() => {
         uni.navigateTo({
@@ -115,7 +182,12 @@ const errorInterceptors: Array<(error: any) => any> = [
         });
       }, 1000);
     }
-    return error;
+
+    // 统一返回格式化的错误对象
+    return {
+      ...error,
+      message: errorMsg,
+    };
   },
 ];
 
@@ -193,22 +265,28 @@ export const http = <T>(
     const cacheKey = generateCacheKey(config);
     const cachedData = checkCache(cacheKey);
     if (cachedData) {
+      logger.info(`Cache Hit: ${config.url}`);
       return Promise.resolve(cachedData as T);
     }
   }
 
-  // SSR 环境下处理完整路径
+  // 根据环境处理路径
   let requestUrl = config.url;
-  if (typeof window === "undefined") {
-    requestUrl = config.url.startsWith("http")
-      ? config.url
-      : BASE_URL + config.url;
-  } else {
-    // 浏览器环境下处理路径
-    requestUrl = config.url.startsWith("http")
-      ? config.url
-      : BASE_URL + config.url;
+  // 简单判断是否已经是绝对路径
+  if (!config.url.startsWith("http")) {
+    // 检查是否为 H5 环境
+    const isH5 =
+      typeof window !== "undefined" && systemInfo.uniPlatform === "web";
+    if (isH5) {
+      // H5 环境使用相对路径，避免跨域
+      requestUrl = config.url;
+    } else {
+      // 其他环境使用完整路径
+      requestUrl = BASE_URL + config.url;
+    }
   }
+
+  logger.info(`Request: ${config.method || "GET"} ${requestUrl}`, config.data);
 
   return new Promise((resolve, reject) => {
     // 处理取消请求
@@ -224,7 +302,10 @@ export const http = <T>(
       data: config.data,
       header: config.header,
       timeout: config.timeout || 30000, // 默认 30 秒超时
-      success: (res) => {
+      success: (res: any) => {
+        // uni.request success callback arg is any in some typings
+        logger.info(`Response: ${res.statusCode}`, res.data);
+
         // 应用响应拦截器
         const processedResponse = applyResponseInterceptors(res);
 
@@ -239,12 +320,17 @@ export const http = <T>(
           }
           resolve(processedResponse.data as T);
         } else {
-          // 处理错误
+          // 处理业务/HTTP错误
           const error = applyErrorInterceptors(processedResponse);
 
           // 处理重试
           if (config.retry && retryCount < config.retry) {
-            const delay = config.retryDelay || 1000;
+            const delay = (config.retryDelay || 1000) * Math.pow(2, retryCount); // 指数退避
+            logger.info(
+              `Retry attempt ${
+                retryCount + 1
+              } for ${requestUrl} after ${delay}ms`,
+            );
             setTimeout(() => {
               http<T>(config, retryCount + 1)
                 .then(resolve)
@@ -256,12 +342,16 @@ export const http = <T>(
         }
       },
       fail: (err) => {
+        logger.error(`Network Fail: ${requestUrl}`, err);
         // 应用错误拦截器
         const processedError = applyErrorInterceptors(err);
 
         // 处理重试
         if (config.retry && retryCount < config.retry) {
-          const delay = config.retryDelay || 1000;
+          const delay = (config.retryDelay || 1000) * Math.pow(2, retryCount); // 指数退避
+          logger.info(
+            `Retry attempt ${retryCount + 1} for ${requestUrl} after ${delay}ms`,
+          );
           setTimeout(() => {
             http<T>(config, retryCount + 1)
               .then(resolve)
