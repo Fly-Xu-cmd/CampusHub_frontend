@@ -14,7 +14,8 @@ const whiteList = [
   // "/pages/register/index",
   // "/pages/selectTags/index", // 注册后的标签选择
   "/pages/profile/index", // 用户个人中心
-  // "/pages/ticket/index", // 票券
+  "/pages/ticket/index", // 票券
+  "/pages/publish/index", // 发布活动
   // "/pages/profile/pending", // 待审核
   // "/pages/profile/history", // 活动历史
   // "/pages/profile/published", // 已发布

@@ -1,5 +1,19 @@
 <template>
-	<CommonLayout headerType="none" title="发布新活动"  :showTabBar="true">
+	<CommonLayout headerType="none"  padding="0 0" :showTabBar="true">
+		<view class="header-container">
+			<view class="header-content">
+				<view class="header-left">
+					<view class="close-btn" @click="goBackHome">×</view>
+				</view>
+				<view class="header-title">
+					发布新活动
+				</view>
+				<view class="header-right">
+					<button class="submit-btn-header" @click="submitForm">提交</button>
+				</view>
+			</view>
+		</view>
+
 		<view class="publish-container">
 			<!-- 上传组件 -->
 		<UploadVideo 
@@ -9,9 +23,14 @@
 			<!-- 上传组件 -->
 
 			<!-- 活动标题 -->
-			<view class="form-item title-item">
-				<input type="text" v-model="activityTitle" placeholder="活动标题" class="title-input" placeholder-style="color: #999;">
-			</view>
+		<view class="form-item title-item">
+			<input type="text" v-model="activityTitle" placeholder="活动标题" class="title-input" placeholder-style="color: #999;">
+		</view>
+
+		<!-- 联系电话 -->
+		<view class="form-item title-item">
+			<input type="text" v-model="contactPhone" placeholder="联系电话" class="title-input" placeholder-style="color: #999;">
+		</view>
 
 			<!-- 活动信息容器（白色背景） -->
 			<view class="form-info-container">
@@ -97,6 +116,7 @@ import { usePublishStore } from '@/store/publish'
 import TimeSelect from '@/components/TimeSelect/TimeSelect.vue'
 import LocationSelect from '@/components/LocationSelect/LocationSelect.vue'
 import UploadVideo from '@/components/UploadVideo/UploadVideo.vue'
+import { postPublish } from '@/api/publish/router'
 
 	const toast = useToast()
 	const publishStore = usePublishStore()
@@ -108,6 +128,8 @@ const locationName = ref<string>('选择线下地点')
 const locationAddress = ref<string>('')
 const locationLatitude = ref<number>(0)
 const locationLongitude = ref<number>(0)
+const contactPhone = ref<string>('')
+const selectedTags = ref<number[]>([1, 2, 3]) // 默认标签ID，可根据实际选择修改
 // 日期选择相关的变量和逻辑已移至TimeSelect组件
 const startValue = ref<number>(Date.now())
 const endValue = ref<number>(Date.now())
@@ -133,12 +155,160 @@ watch(endValue, (newValue) => {
 	publishStore.setEndTime(newValue)
 })
 
+// 提交表单
+const submitForm = async () => {
+	// 验证表单
+	if (!activityTitle.value) {
+		toast.error('请输入活动标题')
+		return
+	}
+	
+	if (!activityDetail.value) {
+		toast.error('请输入活动详情')
+		return
+	}
+	
+	if (fileList.value.length === 0) {
+		toast.error('请上传活动封面/视频')
+		return
+	}
+	
+	if (locationName.value === '选择线下地点') {
+		toast.error('请选择活动地点')
+		return
+	}
+	
+	if (!contactPhone.value) {
+		toast.error('请输入联系电话')
+		return
+	}
+	
+	try {
+			// 准备数据
+			const formData = {
+				title: activityTitle.value,
+				coverUrl: fileList.value[0].url || '',
+				coverType: 1, // 默认视频类型，可根据实际情况修改
+				content: `<p>${activityDetail.value}</p>`, // 包装为HTML格式
+				categoryId: 1, // 默认分类，可根据实际情况修改
+				contactPhone: contactPhone.value,
+				registerStartTime: 1738934400,
+				registerEndTime: 1738992000,
+				activityStartTime: 1739078400,
+				activityEndTime: 1739164800,
+				location: locationName.value,
+				addressDetail: locationAddress.value,
+				longitude: locationLongitude.value,
+				latitude: locationLatitude.value,
+				maxParticipants: peopleLimit.value,
+				requireApproval: false,
+				requireStudentVerify: true,
+				minCreditScore: 60,
+				tagIds: selectedTags.value,
+				isDraft: false
+			} as any
+		
+		// 提交数据
+		const response = await postPublish(formData)
+		
+		if (response.code === 200) {
+			toast.success('发布成功')
+			// 重置表单
+			activityTitle.value = ''
+			activityDetail.value = ''
+			fileList.value = []
+			peopleLimit.value = 20
+			locationName.value = '选择线下地点'
+			locationAddress.value = ''
+			locationLatitude.value = 0
+			locationLongitude.value = 0
+			contactPhone.value = ''
+		} else {
+			toast.error(response.message || '发布失败')
+		}
+	} catch (error) {
+		console.error('发布失败:', error)
+		toast.error('发布失败，请稍后重试')
+	}
+}
+
 // 上传相关的变量和逻辑已移至UploadVideo组件
 
-	// 地点选择相关的变量和逻辑已移至LocationSelect组件
+// 地点选择相关的变量和逻辑已移至LocationSelect组件
+
+// 返回首页
+const goBackHome = () => {
+	uni.redirectTo({
+		url: '/pages/home/index'
+	})
+}
 </script>
 
 <style>
+	/* 头部容器 */
+	.header-container {
+		background-color: #fff;
+		padding: 20rpx 30rpx;
+		border-bottom: 1rpx solid #f0f0f0;
+		position: sticky;
+		top: 0;
+		z-index: 100;
+	}
+
+	/* 头部内容 */
+	.header-content {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		height: 80rpx;
+	}
+
+	/* 左侧关闭按钮 */
+	.header-left {
+		flex: 0 0 60rpx;
+		display: flex;
+		align-items: center;
+	}
+
+	/* 关闭按钮 */
+	.close-btn {
+		font-size: 40rpx;
+		color: #333;
+		font-weight: bold;
+	}
+
+	/* 中间标题 */
+	.header-title {
+		flex: 1;
+		text-align: center;
+		font-size: 32rpx;
+		font-weight: 600;
+		color: #333;
+	}
+
+	/* 右侧提交按钮 */
+	.header-right {
+		flex: 0 0 120rpx;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+	}
+
+	/* 头部提交按钮 */
+	.submit-btn-header {
+		padding: 12rpx 24rpx;
+		font-size: 26rpx;
+		font-weight: 500;
+		background-color: #fff7ed;
+		color: #f97316;
+		border-radius: 20rpx;
+		border: none;
+	}
+
+	.submit-btn-header::after {
+		border: none;
+	}
+
 	/* 发布页面容器 */
 	.publish-container {
 		width: 100%;

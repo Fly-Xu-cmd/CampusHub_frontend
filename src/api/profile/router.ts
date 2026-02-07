@@ -101,3 +101,4 @@ export const getQqCode = (params: PostQqCodeRequest) => {
 export const postQqCodeConfirm = (data: PostQqCodeConfirmRequest) => {
   return post<Response<PostQqCodeConfirmData>>(apiUrls.QqCode, data);
 };
+
