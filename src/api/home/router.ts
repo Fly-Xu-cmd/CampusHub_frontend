@@ -7,7 +7,7 @@ import type { detail } from "@/types/modules/home/detail";
 const apiUrls = {
   getActivityCategoryList: "/api/v1/activity/categories",
   getActivityList: "/api/v1/activity/lists",
-  searchActivity: "/api/v1/activitity/search",
+  searchActivity: "/api/v1/activity/search",
   getActivityDetail: "/api/v1/activity",
   getNotifications: "/api/notifications",
 };

@@ -4,7 +4,7 @@ import { useUserStore } from "@/store/user";
 const whiteList = [
   "/", // 根路径
   "/pages/home/index",
-  // "/pages/home/detail", // 测试：暂时加上 
+  "/pages/home/detail", // 测试：暂时加上 
   // "/pages/home/PublicProfile", // 测试：暂时加上
   "/pages/message/index", // 测试：暂时加上
   // "/pages/message/chat", // 测试：暂时加上
