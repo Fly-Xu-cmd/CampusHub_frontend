@@ -136,7 +136,7 @@ const initCaptcha = async () => {
     if (window.initGeetest4) {
       window.initGeetest4(
         {
-          captchaId: config.data.captchaId,
+          captchaId: config.data.captchaId || import.meta.env.VITE_GEETEST_ID,
           product: "float",
           nativeButton: {
             width: "100%",
