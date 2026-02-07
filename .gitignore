@@ -37,3 +37,10 @@ unpackage/
 *.njsproj
 *.sln
 *.sw?
+
+# AI Editors
+.trae/
+.cursor/
+.windsurf/
+.vscode/
+.claude/

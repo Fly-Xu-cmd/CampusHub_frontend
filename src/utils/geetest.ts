@@ -47,7 +47,7 @@ declare global {
   interface Window {
     initGeetest4?: (
       config: GeetestConfig,
-      handler: (captchaObj: GeetestCaptchaObj) => void
+      handler: (captchaObj: GeetestCaptchaObj) => void,
     ) => void;
   }
 }
@@ -64,6 +64,7 @@ export const loadGeetestScript = (): Promise<void> => {
     }
 
     if (window.initGeetest4) {
+      console.log("Geetest v4 SDK already loaded");
       resolve();
       return;
     }
@@ -83,7 +84,7 @@ export const loadGeetestScript = (): Promise<void> => {
           // 最多等待 2秒 (20 * 100ms)
           clearInterval(checkInterval);
           reject(
-            new Error("Geetest script loaded but initGeetest4 is not defined")
+            new Error("Geetest script loaded but initGeetest4 is not defined"),
           );
         }
       }, 100);

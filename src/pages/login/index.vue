@@ -141,7 +141,7 @@ const initCaptcha = async () => {
     if (window.initGeetest4) {
       window.initGeetest4(
         {
-          captchaId: "0994061370afc43d00014ffb8b5822c4",
+          captchaId: config.data.captchaId,
           product: "float",
           nativeButton: {
             width: "100%",

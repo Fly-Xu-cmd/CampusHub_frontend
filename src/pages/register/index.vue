@@ -32,8 +32,7 @@
               placeholder="QQ邮箱"
               placeholder-class="placeholder-style"
               v-model="formData.qqEmail"
-              type="number"
-              maxlength="11"
+              type="text"
             />
           </view>
 
@@ -134,11 +133,10 @@ const initCaptcha = async () => {
   try {
     await loadGeetestScript();
     const config = await authApi.getCaptchaConfig();
-
     if (window.initGeetest4) {
       window.initGeetest4(
         {
-          captchaId: config.captchaId,
+          captchaId: config.data.captchaId,
           product: "float",
           nativeButton: {
             width: "100%",
