@@ -122,8 +122,7 @@ const requestInterceptors: Array<(config: RequestOptions) => RequestOptions> = [
     config.header = {
       "Content-Type": "application/json",
       "X-Client-Info": userAgent, // 自定义 UA
-      // 显式告知服务端接受 gzip (uni.request 底层通常会自动处理，但明确声明是个好习惯)
-      "Accept-Encoding": "gzip, deflate, br",
+      // 移除 Accept-Encoding 头，因为浏览器不允许客户端脚本设置此头
       ...config.header,
     };
     return config;
@@ -196,7 +195,7 @@ const errorInterceptors: Array<(error: any) => any> = [
 const applyRequestInterceptors = (config: RequestOptions): RequestOptions => {
   return requestInterceptors.reduce(
     (prev, interceptor) => interceptor(prev),
-    config
+    config,
   );
 };
 
@@ -204,7 +203,7 @@ const applyRequestInterceptors = (config: RequestOptions): RequestOptions => {
 const applyResponseInterceptors = (response: Response): Response => {
   return responseInterceptors.reduce(
     (prev, interceptor) => interceptor(prev),
-    response
+    response,
   );
 };
 
@@ -212,7 +211,7 @@ const applyResponseInterceptors = (response: Response): Response => {
 const applyErrorInterceptors = (error: any): any => {
   return errorInterceptors.reduce(
     (prev, interceptor) => interceptor(prev),
-    error
+    error,
   );
 };
 
@@ -251,7 +250,7 @@ const generateCacheKey = (options: RequestOptions): string => {
 
 export const http = <T>(
   options: RequestOptions,
-  retryCount = 0
+  retryCount = 0,
 ): Promise<T> => {
   // 应用请求拦截器
   const config = applyRequestInterceptors(options);
@@ -271,11 +270,20 @@ export const http = <T>(
     }
   }
 
-  // SSR 环境下处理完整路径
+  // 根据环境处理路径
   let requestUrl = config.url;
   // 简单判断是否已经是绝对路径
   if (!config.url.startsWith("http")) {
-    requestUrl = BASE_URL + config.url;
+    // 检查是否为 H5 环境
+    const isH5 =
+      typeof window !== "undefined" && systemInfo.uniPlatform === "web";
+    if (isH5) {
+      // H5 环境使用相对路径，避免跨域
+      requestUrl = config.url;
+    } else {
+      // 其他环境使用完整路径
+      requestUrl = BASE_URL + config.url;
+    }
   }
 
   logger.info(`Request: ${config.method || "GET"} ${requestUrl}`, config.data);
@@ -321,7 +329,7 @@ export const http = <T>(
             logger.info(
               `Retry attempt ${
                 retryCount + 1
-              } for ${requestUrl} after ${delay}ms`
+              } for ${requestUrl} after ${delay}ms`,
             );
             setTimeout(() => {
               http<T>(config, retryCount + 1)
@@ -342,7 +350,7 @@ export const http = <T>(
         if (config.retry && retryCount < config.retry) {
           const delay = (config.retryDelay || 1000) * Math.pow(2, retryCount); // 指数退避
           logger.info(
-            `Retry attempt ${retryCount + 1} for ${requestUrl} after ${delay}ms`
+            `Retry attempt ${retryCount + 1} for ${requestUrl} after ${delay}ms`,
           );
           setTimeout(() => {
             http<T>(config, retryCount + 1)
@@ -379,7 +387,7 @@ export const getCacheSize = () => {
 // 快捷方法
 export const get = <T>(
   url: string,
-  options?: Omit<RequestOptions, "url" | "method">
+  options?: Omit<RequestOptions, "url" | "method">,
 ): Promise<T> => {
   return http<T>({ ...options, url, method: "GET" });
 };
@@ -387,7 +395,7 @@ export const get = <T>(
 export const post = <T>(
   url: string,
   data?: any,
-  options?: Omit<RequestOptions, "url" | "method" | "data">
+  options?: Omit<RequestOptions, "url" | "method" | "data">,
 ): Promise<T> => {
   return http<T>({ ...options, url, method: "POST", data });
 };
@@ -395,14 +403,14 @@ export const post = <T>(
 export const put = <T>(
   url: string,
   data?: any,
-  options?: Omit<RequestOptions, "url" | "method" | "data">
+  options?: Omit<RequestOptions, "url" | "method" | "data">,
 ): Promise<T> => {
   return http<T>({ ...options, url, method: "PUT", data });
 };
 
 export const del = <T>(
   url: string,
-  options?: Omit<RequestOptions, "url" | "method">
+  options?: Omit<RequestOptions, "url" | "method">,
 ): Promise<T> => {
   return http<T>({ ...options, url, method: "DELETE" });
 };
