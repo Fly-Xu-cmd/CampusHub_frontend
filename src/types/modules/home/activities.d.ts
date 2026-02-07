@@ -12,27 +12,30 @@ export interface Data {
 }
 
 export interface List {
-  activity_start_time?: string;
-  category_name?: string;
-  cover_type?: number;
-  cover_url?: string;
-  current_participants?: number;
   id?: number;
-  location?: string;
-  max_participants?: number;
-  organizer_avatar?: string;
-  organizer_name?: string;
-  status?: number;
-  status_text?: string;
-  tags?: Tag[];
   title?: string;
+  coverUrl?: string;
+  coverType?: number;
+  categoryName?: string;
+  organizerName?: string;
+  organizerAvatar?: string;
+  activityStartTime?: string;
+  location?: string;
+  currentParticipants?: number;
+  maxParticipants?: number;
+  status?: number;
+  statusText?: string;
+  tags?: Tag[];
+  
+  viewCount?: number;
+  createdAt?: number;
   [property: string]: any;
 }
 
 export interface Tag {
-  color?: string;
   id?: number;
   name?: string;
+  color?: string; 
   [property: string]: any;
 }
 
@@ -40,15 +43,15 @@ export interface Pagination {
   page: number;
   page_size: number;
   total: number;
-  total_pages: number;
+  totalPages: number;
   [property: string]: any;
 }
 
 export interface ActivitiesRequest {
-  category_id?: number;
-  organizer_id?: number;
+  categoryId?: number;
+  organizerId?: number;
   page?: number;
-  page_size?: number;
+  pageSize?: number;
   sort?: string;
   status?: number;
   [property: string]: any;

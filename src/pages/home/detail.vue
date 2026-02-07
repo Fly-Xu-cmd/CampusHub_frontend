@@ -4,11 +4,11 @@
     <!-- 活动图片 -->
     <view class="activity-image-container">
       <image class="activity-image" 
-        :src="activityDetail.cover_url" 
+        :src="activityDetail.coverUrl" 
         mode="aspectFill" />
       <!-- 报名状态标签 -->
       <view class="status-tag">
-        <text class="status-text">{{ activityDetail.status_text }}</text>
+        <text class="status-text">{{ activityDetail.statusText }}</text>
       </view>
       <!-- 活动标题 -->
       <view class="activity-title">
@@ -20,11 +20,11 @@
     <view class="activity-content">
       
       <!-- 发起人信息 -->
-      <view class="organizer-info" @click="viewPubilcProfil(activityDetail.organizer_id)">
+      <view class="organizer-info" @click="viewPubilcProfil(activityDetail.organizerId)">
         <image class="organizer-avatar" 
-          :src="activityDetail.organizer_avatar" />
+          :src="activityDetail.organizerAvatar" />
         <view class="organizer-text">
-          <text class="organizer-name">{{ activityDetail.organizer_name }}</text>
+          <text class="organizer-name">{{ activityDetail.organizerName }}</text>
           <text class="organizer-detail">点击查看发起人详情</text>
         </view>
         <wd-icon name="arrow-right" size="35rpx" color="#999" />
@@ -34,11 +34,11 @@
       <view class="info-cards">
         <view class="info-card time-card">
           <text class="info-label">TIME</text>
-          <text class="info-value">10.24 19:00</text>
+          <text class="info-value">{{ activityDetail.activityStartTime }}</text>
         </view>
         <view class="info-card location-card">
           <text class="info-label">LOCATION</text>
-          <text class="info-value">{{ activityDetail.location }}</text>
+          <text class="info-value">{{ activityDetail.addressDetail }}</text>
         </view>
       </view>
       
@@ -68,14 +68,14 @@ import { onMounted, ref } from "vue";
 import { useRoute } from 'vue-router'
 // 获取传入的活动ID参数
 const route = useRoute()
-const activityId = Number(route.query.id)
+const activityId = route.query.id as string
 
 // 活动详情数据
 const activityDetail = ref()
 
 onMounted(() => {
   getActivityDetail(activityId).then(res => {
-    activityDetail.value = res.data
+    activityDetail.value = res.data.activity
   })
 })
 

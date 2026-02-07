@@ -8,34 +8,37 @@ export interface search {
 
 export interface Data {
   list: List[];
-  query_time_ms: number;
+  queryTimeMs: number;
   total: number;
   [property: string]: any;
 }
 
 export interface List {
-  activity_start_time?: string;
-  category_name?: string;
-  cover_type?: number;
-  cover_url?: string;
-  current_participants?: number;
   id?: number;
-  location?: string;
-  max_participants?: number;
-  organizer_avatar?: string;
-  organizer_name?: string;
-  status?: number;
-  status_text?: string;
-  tags?: string[];
   title?: string;
+  coverUrl?: string;
+  coverType?: number;
+  categoryName?: string;
+  organizerName?: string;
+  organizerAvatar?: string;
+  activityStartTime?: string;
+  location?: string;
+  currentParticipants?: number;
+  maxParticipants?: number;
+  status?: number;
+  statusText?: string;
+  tags?: Tag[];
+  
+  viewCount?: number;
+  createdAt?: number;
   [property: string]: any;
 }
 
 export interface SearchRequest {
-  category_id?: number;
+  categoryId?: number;
   page?: number;
-  page_size?: number;
-  q?: string;
+  pageSize?: number;
+  keyword?: string;
   sort?: string;
   [property: string]: any;
 }

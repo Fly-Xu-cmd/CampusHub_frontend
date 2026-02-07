@@ -6,43 +6,45 @@ export interface detail {
 }
 
 export interface Data {
-  activity_end_time: string;
-  activity_start_time: string;
-  address_detail: string;
-  category_id: number;
-  category_name: string;
-  contact_phone: string;
+  activityEndTime: string;
+  activityStartTime: string;
+  addressDetail: string;
+  categoryId: number;
+  categoryName: string;
+  contactPhone: string;
   content: string;
-  cover_type: number;
-  cover_url: string;
-  created_at: string;
-  current_participants: number;
+  coverType: number;
+  coverUrl: string;
+  currentParticipants: number;
   id: number;
   latitude: number;
   location: string;
   longitude: number;
-  max_participants: number;
-  min_credit_score: number;
-  organizer_avatar: string;
-  organizer_id: number;
-  organizer_name: string;
-  register_end_time: string;
-  register_start_time: string;
-  reject_reason: string;
-  require_approval: boolean;
-  require_student_verify: boolean;
+  maxParticipants: number;
+  minCreditScore: number;
+  organizerAvatar: string;
+  organizerId: number;
+  organizerName: string;
+  registerEndTime: string;
+  registerStartTime: string;
+  rejectReason: string;
+  requireApproval: boolean;
+  requireStudentVerify: boolean;
   status: number;
-  status_text: string;
+  statusText: string;
   tags: Tag[];
   title: string;
-  updated_at: string;
-  view_count: number;
+  updatedAt: string;
+  createdAt: string;
+  viewCount: number;
+  likeCount: number;
+  version: number;
   [property: string]: any;
 }
 
 export interface Tag {
-  color: string;
   id: number;
   name: string;
+  color: string;
   [property: string]: any;
 }

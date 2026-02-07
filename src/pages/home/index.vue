@@ -26,6 +26,15 @@
       <view class="tag-row">
         <scroll-view scroll-x class="tag-scroll" show-scrollbar="false">
           <view 
+            key="0" 
+            class="tag-item"
+            :class="{ active: activeTag === 0 }"
+            @click="selectTag(0)"
+          >
+            <view class="iconfont" style="font-size: 30rpx;" />
+            <text>全部类型</text>
+          </view>
+          <view 
             v-for="tag in tags" 
             :key="tag.id" 
             class="tag-item"
@@ -55,16 +64,16 @@
           >
             <!-- 活动图片 -->
             <view class="card-image-container">
-              <image :src="activity.image" class="card-image" mode="aspectFill" />
+              <image :src="activity.coverUrl" class="card-image" mode="aspectFill" />
               <!-- 报名状态 -->
               <view class="registration-status">
                 <view class="iconfont iconfont-remen" style="font-size: 25rpx;" />
-                <text>{{ activity.status_text }}</text>
+                <text>{{ activity.statusText }}</text>
               </view>
               <!-- 人数信息 -->
               <view class="participant-count">
                 <text>
-                  {{ activity.participants }}/{{ activity.maxParticipants }}人
+                  {{ activity.currentParticipants }}/{{ activity.maxParticipants }}人
                 </text>
               </view>
             </view>
@@ -90,7 +99,7 @@
             <view class="activity-info">
               <view class="info-item">
                 <wd-icon name="time" size="28rpx" color="#999" />
-                <text>{{ activity.time }}</text>
+                <text>{{ activity.activityStartTime }}</text>
               </view>
               <view class="log"></view>
               <view class="info-item">
@@ -102,8 +111,8 @@
             <!-- 底部信息 -->
             <view class="card-footer">
               <view class="organizer">
-                <image :src="activity.organizer_avatar" class="organizer-avatar" />
-                <text>{{ activity.organizer_name }}</text>
+                <image :src="activity.organizerAvatar" class="organizer-avatar" />
+                <text>{{ activity.organizerName }}</text>
               </view>
               <view class="action-button">
                 <text>查看详情</text>
@@ -127,14 +136,14 @@ onMounted(async () => {
   getCategories();
 
   // 获取活动列表
-  // getActivities();
+  getActivities();
 });
 
 const tags = ref(); // 活动分类列表
 // 获取活动分类列表
 const getCategories = async () => {
-  const { list: Categories } = await getActivityCategoryList();
-  tags.value = Categories
+  const { data: { list: Categories } } = await getActivityCategoryList();
+  tags.value = Categories;
 }
 
 const activeTag = ref<number>(0); // 当前选中的标签
@@ -150,26 +159,10 @@ const activities = ref(); // 活动列表
 const getActivities = async () => {
   loading.value = true;
   const { data: { list: Activities } } = await getActivityList({
-    category_id: activeTag.value,
+    categoryId: activeTag.value,
   });
   loading.value = false;
-  activities.value = Activities.map(item => ({
-    id: item.id,
-    title: item.title,
-    image: item.cover_url,
-    type: item.cover_type,
-    name: item.category_name,
-    organizer_name: item.organizer_name,
-    organizer_avatar: item.organizer_avatar,
-    time: item.activity_start_time,
-    location: item.location,
-    participants: item.current_participants,
-    maxParticipants: item.max_participants,
-    status: item.status,
-    status_text: item.status_text,
-    tags: item.tags,
-    
-  }));
+  activities.value = Activities;
 }
 
 const searchQuery = ref(''); // 搜索框的值
@@ -182,26 +175,10 @@ const search = async () => {
   }
   loading.value = true;
   const { data: { list: Activities } } = await searchActivity({
-    q: keyword,
+    keyword: keyword,
   });
   loading.value = false;
-  activities.value = Activities.map(item => ({
-    id: item.id,
-    title: item.title,
-    image: item.cover_url,
-    type: item.cover_type,
-    name: item.category_name,
-    organizer_name: item.organizer_name,
-    organizer_avatar: item.organizer_avatar,
-    time: item.activity_start_time,
-    location: item.location,
-    participants: item.current_participants,
-    maxParticipants: item.max_participants,
-    status: item.status,
-    status_text: item.status_text,
-    tags: item.tags,
-    
-  }));
+  activities.value = Activities;
 }
 
 const viewDetail = (activityId: number) => {
