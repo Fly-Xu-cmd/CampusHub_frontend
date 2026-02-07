@@ -1,6 +1,6 @@
 <template>
-  <CommonLayout headerType="standard" title="用户详情">
-    <view class="profile-container">
+  <CommonLayout headerType="standard" title="用户详情" padding="0 8rpx">
+    <view class="profile-container">  
       <!-- 用户信息部分 -->
       <view class="user-info-section">
         <view class="avatar-wrapper">
@@ -70,8 +70,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { getWaitList } from '@/api/home/router';
 
+onMounted(() => {
+  getWaitList({ type: '待参加' }).then(res => {
+    joinedActivities.value = res.data.items;
+  });
+});
 // 模拟用户数据
 const userInfo = ref({
   avatar: 'https://picsum.photos/200/200?random=1',
@@ -83,7 +89,7 @@ const userInfo = ref({
   ]
 });
 
-// 模拟发布的活动
+// 我发布的活动
 const publishedActivities = ref([
   {
     id: 1,
@@ -93,16 +99,8 @@ const publishedActivities = ref([
   }
 ]);
 
-// 模拟参加的活动
-const joinedActivities = ref([
-  {
-    id: 2,
-    title: '读书会',
-    time: '10.10',
-    status: '已结束',
-    image: 'https://picsum.photos/400/300?random=3'
-  }
-]);
+// 已参加的活动
+const joinedActivities = ref();
 
 </script>
 

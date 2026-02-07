@@ -1,16 +1,18 @@
 <template>
-  <CommonLayout headerType="transparent">
+  <CommonLayout headerType="transparent" padding="0 0">
     
     <!-- 活动图片 -->
     <view class="activity-image-container">
-      <image class="activity-image" src="https://picsum.photos/800/600?random=1" mode="aspectFill" />
+      <image class="activity-image" 
+        :src="activityDetail.coverUrl" 
+        mode="aspectFill" />
       <!-- 报名状态标签 -->
       <view class="status-tag">
-        <text class="status-text">报名中</text>
+        <text class="status-text">{{ activityDetail.statusText }}</text>
       </view>
       <!-- 活动标题 -->
       <view class="activity-title">
-        <text>奥森公园 5km 荧光夜跑</text>
+        <text>{{ activityDetail.title }}</text>
       </view>
     </view>
     
@@ -18,10 +20,11 @@
     <view class="activity-content">
       
       <!-- 发起人信息 -->
-      <view class="organizer-info" @click="viewPubilcProfil">
-        <image class="organizer-avatar" src="https://picsum.photos/50?random=100" />
+      <view class="organizer-info" @click="viewPubilcProfil(activityDetail.organizerId)">
+        <image class="organizer-avatar" 
+          :src="activityDetail.organizerAvatar" />
         <view class="organizer-text">
-          <text class="organizer-name">极客跑团</text>
+          <text class="organizer-name">{{ activityDetail.organizerName }}</text>
           <text class="organizer-detail">点击查看发起人详情</text>
         </view>
         <wd-icon name="arrow-right" size="35rpx" color="#999" />
@@ -31,11 +34,11 @@
       <view class="info-cards">
         <view class="info-card time-card">
           <text class="info-label">TIME</text>
-          <text class="info-value">10.24 19:00</text>
+          <text class="info-value">{{ activityDetail.activityStartTime }}</text>
         </view>
         <view class="info-card location-card">
           <text class="info-label">LOCATION</text>
-          <text class="info-value">奥森南门</text>
+          <text class="info-value">{{ activityDetail.addressDetail }}</text>
         </view>
       </view>
       
@@ -45,24 +48,91 @@
           <text class="details-title">活动详情</text>
         </view>
         <view class="details-content">
-          <text class="details-text">欢迎参加我们的周五夜跑活动！我们将提供荧光手环和饮用水。跑完后会有30分钟的新手飞盘教学。</text>
+          <text class="details-text">{{ activityDetail.content }}</text>
         </view>
       </view>
     </view>
     
     <!-- 底部报名按钮 -->
     <view class="bottom-button">
-      <button class="register-button">
+      <button v-if="!isSigned" class="register-button" @click="sign">
         <text class="register-text">立即报名</text>
+      </button>
+      <button v-else class="register-button cancel" @click="unSign">
+        <text class="register-text">取消报名</text>
       </button>
     </view>
   </CommonLayout>
 </template>
 
 <script setup lang="ts">
-const viewPubilcProfil = () => {
+import { getActivityDetail, signActivity, cancelSign, getWaitList } from "@/api/home/router";
+import { onMounted, ref } from "vue";
+import { useRoute } from 'vue-router'
+// 获取传入的活动ID参数
+const route = useRoute()
+const activityId = route.query.id
+console.log(activityId)
+// 活动详情数据
+const activityDetail = ref()
+
+onMounted(() => {
+  getActivityDetail(String(activityId)).then(res => {
+    activityDetail.value = res.data.activity
+  })
+
+  WaitList()
+})
+
+// 记录是否报名
+const isSigned = ref(false)
+const WaitList = async() => {
+  const { data: { items } } = await getWaitList({
+    type: "待参加",
+  })
+  // 检查是否报名
+  isSigned.value = items?.some(item => item.id == Number(activityId))
+}
+
+// 报名活动
+const sign = () => {
+  signActivity(Number(activityId)).then(res => {
+    if (res.data.result == "success") {
+      uni.showToast({
+        title: "报名成功",
+        icon: "success",
+      })
+      isSigned.value = true
+    }else {
+      uni.showToast({
+        title: res.data.reason,
+        icon: "error",
+      })
+    }
+  })
+}
+
+// 取消报名
+const unSign = () => {
+  cancelSign(Number(activityId)).then(res => {
+    if (res.data.result == "success") {
+      uni.showToast({
+        title: "取消报名成功",
+        icon: "success",
+      })
+      isSigned.value = false
+    }else {
+      uni.showToast({
+        title: "取消报名失败",
+        icon: "error",
+      })
+    }
+  })
+}
+
+const viewPubilcProfil = (id: number) => {
   uni.navigateTo({
-    url: `/pages/home/PublicProfile`
+    url: `/pages/home/PublicProfile?id=${id}`
   });
 }
 </script>
@@ -228,6 +298,9 @@ const viewPubilcProfil = () => {
     display: flex;
     align-items: center;
     justify-content: center;
+    &.cancel {
+      background-color: #e74c3c;
+    }
   }
 }
 </style>

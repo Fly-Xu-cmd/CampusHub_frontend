@@ -1,8 +1,18 @@
 <template>
-  <CommonLayout headerType="home" contentBg="$background-color" :showTabBar="true">
+  <CommonLayout headerType="home" contentBg="$background-color" :showTabBar="true" padding="0 8rpx">
     <view class="content">
       <view class="search-section">
-        <wd-search hide-cancel placeholder="搜索活动..." placeholder-left custom-class="custom-search" />
+        <view class="search-container">
+          <wd-icon name="search" size="32rpx" color="#999999" class="search-icon" />
+          <wd-search 
+            v-model="searchQuery"
+            hide-cancel 
+            placeholder="搜索活动..." 
+            placeholder-left 
+            custom-class="custom-search"
+            @search="search"
+          />
+        </view>
       </view>
 
       <!-- 推荐活动标题 -->
@@ -16,13 +26,22 @@
       <view class="tag-row">
         <scroll-view scroll-x class="tag-scroll" show-scrollbar="false">
           <view 
+            key="0" 
+            class="tag-item"
+            :class="{ active: activeTag === 0 }"
+            @click="selectTag(0)"
+          >
+            <view class="iconfont" style="font-size: 30rpx;" />
+            <text>全部类型</text>
+          </view>
+          <view 
             v-for="tag in tags" 
             :key="tag.id" 
             class="tag-item"
             :class="{ active: activeTag === tag.id }"
             @click="selectTag(tag.id)"
           >
-            <wd-icon v-if="tag.icon" :name="tag.icon" size="30rpx" />
+            <view v-if="tag.icon" class="iconfont" :class="tag.icon" style="font-size: 30rpx;" />
             <text>{{ tag.name }}</text>
           </view>
         </scroll-view>
@@ -33,7 +52,7 @@
         <view v-if="loading" class="loading">
           <AsyncLoading text="加载中..." />
         </view>
-        <view v-else-if="activities.length === 0" class="empty">
+        <view v-else-if="activities?.length === 0" class="empty">
           <text>暂无活动</text>
         </view>
         <view v-else>
@@ -45,15 +64,17 @@
           >
             <!-- 活动图片 -->
             <view class="card-image-container">
-              <image :src="activity.image" class="card-image" mode="aspectFill" />
+              <image :src="activity.coverUrl" class="card-image" mode="aspectFill" />
               <!-- 报名状态 -->
               <view class="registration-status">
-                <wd-icon name="" size="25rpx" color="#fff" />
-                <text>报名中</text>
+                <view class="iconfont iconfont-remen" style="font-size: 25rpx;" />
+                <text>{{ activity.statusText }}</text>
               </view>
               <!-- 人数信息 -->
               <view class="participant-count">
-                <text>{{ activity.participants }}/{{ activity.maxParticipants }}人</text>
+                <text>
+                  {{ activity.currentParticipants }}/{{ activity.maxParticipants }}人
+                </text>
               </view>
             </view>
             
@@ -63,12 +84,13 @@
             <!-- 活动标签 -->
             <view class="activity-tags">
               <view 
-                v-for="(tag, index) in activity.tags" 
-                :key="index" 
+                v-for="tag in activity.tags" 
+                :key="tag.id" 
                 class="activity-tag"
-                :class="tag.type"
+                :class="tag.color"
+
               >
-                <wd-icon :name="tag.icon" size="25rpx" />
+                <view class="iconfont" :class="tag.icon" style="font-size: 25rpx;" />
                 <text>{{ tag.name }}</text>
               </view>
             </view>
@@ -77,7 +99,7 @@
             <view class="activity-info">
               <view class="info-item">
                 <wd-icon name="time" size="28rpx" color="#999" />
-                <text>{{ activity.time }}</text>
+                <text>{{ activity.activityStartTime }}</text>
               </view>
               <view class="log"></view>
               <view class="info-item">
@@ -89,12 +111,12 @@
             <!-- 底部信息 -->
             <view class="card-footer">
               <view class="organizer">
-                <image :src="activity.organizer.avatar" class="organizer-avatar" />
-                <text>{{ activity.organizer.name }}</text>
+                <image :src="activity.organizerAvatar" class="organizer-avatar" />
+                <text>{{ activity.organizerName }}</text>
               </view>
               <view class="action-button">
                 <text>查看详情</text>
-                
+                <wd-icon name="arrow-right1" size="28rpx" style="font-weight: 600;"/>
               </view>
             </view>
           </view>
@@ -105,95 +127,63 @@
 </template>
 
 <script setup lang="ts">
-import ClientOnly from '@/components/ClientOnly/ClientOnly.vue';
 import { ref, onMounted } from 'vue';
+import { getActivityCategoryList, getActivityList, searchActivity } from '@/api/home/router';
 
-interface Tag {
-  id: string;
-  name: string;
-  icon?: string;
-}
 
-interface ActivityTag {
-  name: string;
-  type: string;
-  icon: string;
-}
+onMounted(async () => {
+  // 获取活动分类列表
+  getCategories();
 
-interface Organizer {
-  name: string;
-  avatar: string;
-}
-
-interface Activity {
-  id: number;
-  title: string;
-  image: string;
-  time: string;
-  location: string;
-  participants: number;
-  maxParticipants: number;
-  tags: ActivityTag[];
-  organizer: Organizer;
-}
-
-const activeTag = ref<string>('all');
-const loading = ref<boolean>(false);
-
-const tags = ref<Tag[]>([
-  { id: 'all', name: '全部', icon: 'layers' },
-  { id: 'running', name: '跑步', icon: '' },
-  { id: 'basketball', name: '球类', icon: '' },
-  { id: 'hiking', name: '徒步', icon: '' },
-  { id: 'cycling', name: '露营', icon: '' },
-  { id: 'music', name: '音乐', icon: '' },
-  { id: 'reading', name: '读书', icon: '' },
-  { id: 'photography', name: '摄影', icon: '' },
-  { id: 'food', name: '美食', icon: '' },
-]);
-
-const activities = ref<Activity[]>([
-  {
-    id: 1,
-    title: '周五晚·奥森公园 5km荧光夜跑',
-    image: 'https://picsum.photos/800/600?random=1',
-    time: '周五 19:00',
-    location: '奥森南门',
-    participants: 15,
-    maxParticipants: 20,
-    tags: [
-      { name: '跑步', type: 'running', icon: 'run' },
-      { name: '夜跑', type: 'night', icon: 'moon' }
-    ],
-    organizer: {
-      name: '极客跑团',
-      avatar: 'https://picsum.photos/50?random=100'
-    }
-  },
-]);
-
-onMounted(() => {
-  fetchActivities();
+  // 获取活动列表
+  getActivities();
 });
 
-const fetchActivities = async () => {
-  loading.value = true;
-  try {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  } catch (error) {
-    console.error('Failed to fetch activities:', error);
-  } finally {
-    loading.value = false;
-  }
+const tags = ref(); // 活动分类列表
+// 获取活动分类列表
+const getCategories = async () => {
+  const { data: { list: Categories } } = await getActivityCategoryList();
+  tags.value = Categories;
+}
+
+const activeTag = ref<number>(0); // 当前选中的标签
+// 选择标签
+const selectTag = (tagId: number) => {
+  activeTag.value = tagId;
+  getActivities();
 };
 
-const selectTag = (tagId: string) => {
-  activeTag.value = tagId;
-};
+const loading = ref<boolean>(false);
+const activities = ref(); // 活动列表
+// 获取活动列表
+const getActivities = async () => {
+  loading.value = true;
+  const { data: { list: Activities } } = await getActivityList({
+    categoryId: activeTag.value,
+  });
+  loading.value = false;
+  activities.value = Activities;
+}
+
+const searchQuery = ref(''); // 搜索框的值
+// 搜索活动
+const search = async () => {
+  const keyword = searchQuery.value.trim()
+  if (!keyword){
+    // 非空判断
+    return
+  }
+  loading.value = true;
+  const { data: { list: Activities } } = await searchActivity({
+    keyword: keyword,
+  });
+  loading.value = false;
+  activities.value = Activities;
+}
 
 const viewDetail = (activityId: number) => {
   uni.navigateTo({
-    url: `/pages/home/detail`
+    url: `/pages/home/detail?id=${activityId}`
   });
 };
 </script>
@@ -216,15 +206,28 @@ $tag-inactive-color: #111;
 .search-section {
   margin-top: 20rpx;
   padding: 0 $spacing-md;
-  :deep(.custom-search) {
-    background: transparent !important;
-    padding: 0 !important;
-    .wd-search__input {
-      background: #ffffff !important;
-      border: 1rpx solid $border-color;
-      box-shadow: $shadow-sm; 
-      border-radius: 32rpx;
-      height: 100rpx;
+  .search-container {
+    position: relative;
+    width: 100%;
+    .search-icon {
+      position: absolute;
+      left: 30rpx;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 9999 !important;
+    }
+    :deep(.custom-search) {
+      background: transparent !important;
+      padding: 0 !important;
+      width: 100%;
+      .wd-search__input {
+        background: #ffffff !important;
+        border: 1rpx solid $border-color;
+        box-shadow: $shadow-sm; 
+        border-radius: 32rpx;
+        height: 100rpx;
+        padding-left: 80rpx !important;
+      }
     }
   }
 }
@@ -291,13 +294,13 @@ $tag-inactive-color: #111;
 }
 
 .loading {
-  padding: 80rpx 0;
+  padding: 100rpx 0;
   text-align: center;
   color: $text-tertiary;
 }
 
 .empty {
-  padding: 80rpx 0;
+  padding: 100rpx 0;
   text-align: center;
   color: $text-tertiary;
   font-size: $font-size-sm;
@@ -308,7 +311,7 @@ $tag-inactive-color: #111;
   margin-bottom: 50rpx;
   border-radius: $border-radius-xl;
   overflow: hidden;
-  box-shadow: 0 10rpx 10rpx 4rpx rgba(249, 115, 22, 0.05);
+  box-shadow: 0 8rpx 10rpx 10rpx rgba(249, 115, 22, 0.05);
   background-color: $surface-color;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   padding: 25rpx;
@@ -325,7 +328,7 @@ $tag-inactive-color: #111;
 /* 卡片图片容器 */
 .card-image-container {
   position: relative;
-  height: 360rpx;
+  height: 400rpx;
   
   .card-image {
     width: 100%;
@@ -366,7 +369,7 @@ $tag-inactive-color: #111;
 /* 活动标题 */
 .activity-title {
   display: block;
-  font-size: 35rpx;
+  font-size: 40rpx;
   font-weight: $font-weight-bold;
   color: #000;
   margin: 20rpx;
@@ -389,32 +392,32 @@ $tag-inactive-color: #111;
     font-size: 20rpx;
     font-weight: $font-weight-medium;
     
-    &.running {
+    &.orange {
       background-color: #f8eaea;
       color: $accent-color;
     }
     
-    &.hiking {
+    &.blue {
       background-color: #f0f9ff;
       color: #0ea5e9;
     }
     
-    &.night {
+    &.green {
       background-color: #f0fdf4;
       color: #22c55e;
     }
     
-    &.outdoor {
+    &.yellow {
       background-color: #fefce8;
       color: #eab308;
     }
     
-    &.basketball {
+    &.pink {
       background-color: #fdf2f8;
       color: #ec4899;
     }
     
-    &.friendly {
+    &.black {
       background-color: #f8fafc;
       color: #64748b;
     }
@@ -432,7 +435,7 @@ $tag-inactive-color: #111;
   border-radius: $border-radius-md;
 
   .log {
-    width: 5rpx;
+    width: 4rpx;
     height: 22rpx;
     background-color: $text-tertiary;
   }
@@ -470,13 +473,16 @@ $tag-inactive-color: #111;
   }
   
   .action-button {
-    padding: 20rpx 60rpx;
+    @include flex(row, center, center);
+    gap: 12rpx;
+    padding: 20rpx 50rpx;
     background-color: #111;
     color: #fff;
     border-radius: $border-radius-full;
     font-size: 24rpx;
     font-weight: $font-weight-bold;
     box-shadow: $shadow-md;
+    
   }
 }
 </style>

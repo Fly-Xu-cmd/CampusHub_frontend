@@ -1,14 +1,14 @@
 <template>
-  <CommonLayout headerType="standard" title="系统消息">
+  <CommonLayout headerType="standard" title="系统消息" padding="0 0">
     <!-- 系统通知列表 -->
     <view class="message-list">
-      <view class="message-item" v-for="value in 2">   
+      <view class="message-item" v-for="notification in notifications">   
           <view class="message-header">
-            <view class="message-title">审核通过</view>
-            <view class="message-time">刚刚</view>
+            <view class="message-title">{{ notification.title }}</view>
+            <view class="message-time">{{ notification.created_at }}</view>
           </view>
           <view class="message-text">
-            你报名参加的“奥森公园夜跑”已通过发起人审核，请准时参加。
+            {{ notification.content }}
           </view>
       </view>
     </view>
@@ -17,7 +17,17 @@
 </template>
 
 <script setup lang="ts">
+import { getNotifications } from "@/api/message/router";
+import { onMounted, ref } from "vue";
 
+// 系统通知列表
+const notifications = ref()
+
+onMounted(() => {
+  getNotifications().then(res => {
+    notifications.value = res.data.notifications
+  })
+})
 </script>
 
 <style scoped lang="scss">
