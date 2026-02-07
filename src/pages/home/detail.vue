@@ -55,30 +55,80 @@
     
     <!-- 底部报名按钮 -->
     <view class="bottom-button">
-      <button class="register-button">
+      <button v-if="!isSigned" class="register-button" @click="sign">
         <text class="register-text">立即报名</text>
+      </button>
+      <button v-else class="register-button cancel" @click="unSign">
+        <text class="register-text">取消报名</text>
       </button>
     </view>
   </CommonLayout>
 </template>
 
 <script setup lang="ts">
-import { getActivityDetail } from "@/api/home/router";
+import { getActivityDetail, signActivity, cancelSign, getWaitList } from "@/api/home/router";
 import { onMounted, ref } from "vue";
 import { useRoute } from 'vue-router'
 // 获取传入的活动ID参数
 const route = useRoute()
-const activityId = route.query.id as string
-
+const activityId = route.query.id
+console.log(activityId)
 // 活动详情数据
 const activityDetail = ref()
 
 onMounted(() => {
-  getActivityDetail(activityId).then(res => {
+  getActivityDetail(String(activityId)).then(res => {
     activityDetail.value = res.data.activity
   })
+
+  WaitList()
 })
 
+// 记录是否报名
+const isSigned = ref(false)
+const WaitList = async() => {
+  const { data: { items } } = await getWaitList({
+    type: "待参加",
+  })
+  // 检查是否报名
+  isSigned.value = items?.some(item => item.id == Number(activityId))
+}
+
+// 报名活动
+const sign = () => {
+  signActivity(Number(activityId)).then(res => {
+    if (res.data.result == "success") {
+      uni.showToast({
+        title: "报名成功",
+        icon: "success",
+      })
+      isSigned.value = true
+    }else {
+      uni.showToast({
+        title: res.data.reason,
+        icon: "error",
+      })
+    }
+  })
+}
+
+// 取消报名
+const unSign = () => {
+  cancelSign(Number(activityId)).then(res => {
+    if (res.data.result == "success") {
+      uni.showToast({
+        title: "取消报名成功",
+        icon: "success",
+      })
+      isSigned.value = false
+    }else {
+      uni.showToast({
+        title: "取消报名失败",
+        icon: "error",
+      })
+    }
+  })
+}
 
 const viewPubilcProfil = (id: number) => {
   uni.navigateTo({
@@ -248,6 +298,9 @@ const viewPubilcProfil = (id: number) => {
     display: flex;
     align-items: center;
     justify-content: center;
+    &.cancel {
+      background-color: #e74c3c;
+    }
   }
 }
 </style>
