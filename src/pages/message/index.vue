@@ -20,7 +20,9 @@
 
       <!-- 消息列表 -->
       <view class="message-list">
-        <view class="message-item" v-for="group in groups" @click="viewChat">
+        <view class="message-item" v-for="group in groups" 
+            :key="group.group_id"
+            @click="viewChat(group.group_id)">
           <view class="message-avatar">
             <image src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
             <view class="avatar-badge">{{ group.member_count }}</view>
@@ -44,21 +46,23 @@
 <script setup lang="ts">
 import { getGroups } from "@/api/message/router";
 import { onMounted, ref } from "vue";
+import { useUserStore } from "@/store/user";
+const userStore = useUserStore(); // 个人信息
 
 // 群聊列表
 const groups = ref()
 
 onMounted(() => {
-  getGroups().then(res => {
+  getGroups(userStore.userId).then(res => {
     groups.value = res.data.groups
   });
 });
 
 
 
-const viewChat = () => {
+const viewChat = (group_id: string) => {
   uni.navigateTo({
-    url: `/pages/message/chat`
+    url: `/pages/message/chat?group_id=${group_id}`
   });
 };
 const viewSystemMsg = () => {

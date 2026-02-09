@@ -34,7 +34,7 @@
       <view class="info-cards">
         <view class="info-card time-card">
           <text class="info-label">TIME</text>
-          <text class="info-value">{{ activityDetail.activityStartTime }}</text>
+          <text class="info-value">{{ formatDate(activityDetail.activityStartTime) }}</text>
         </view>
         <view class="info-card location-card">
           <text class="info-label">LOCATION</text>
@@ -69,6 +69,17 @@
 import { getActivityDetail, signActivity, cancelSign, getWaitList } from "@/api/home/router";
 import { onMounted, ref } from "vue";
 import { useRoute } from 'vue-router'
+
+// 时间格式化函数：将10位时间戳转换为"10.24 19:00"格式
+const formatDate = (timestamp: number) => {
+  const date = new Date(timestamp * 1000); // 转换为毫秒
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${month}.${day} ${hours}:${minutes}`;
+};
+
 // 获取传入的活动ID参数
 const route = useRoute()
 const activityId = route.query.id

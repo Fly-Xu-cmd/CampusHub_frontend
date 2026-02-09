@@ -14,7 +14,7 @@ export interface Data {
 }
 
 export interface Group {
-  activity_id?: string;
+  activity_id?: number;
   group_id?: string;
   joined_at?: string;
   /**
@@ -24,7 +24,7 @@ export interface Group {
   last_message_at?: string;
   member_count?: number;
   name?: string;
-  owner_id?: string;
+  owner_id?: number;
   role?: string;
   /**
    * 1-正常 2-已解散

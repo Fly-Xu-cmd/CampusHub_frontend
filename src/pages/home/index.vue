@@ -99,7 +99,7 @@
             <view class="activity-info">
               <view class="info-item">
                 <wd-icon name="time" size="28rpx" color="#999" />
-                <text>{{ activity.activityStartTime }}</text>
+                <text>{{ formatTime(activity.activityStartTime) }}</text>
               </view>
               <view class="log"></view>
               <view class="info-item">
@@ -129,6 +129,17 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getActivityCategoryList, getActivityList, searchActivity } from '@/api/home/router';
+
+// 时间格式化函数：将10位时间戳转换为"周五 19:00"格式
+const formatTime = (timestamp: number) => {
+  const date = new Date(timestamp * 1000); // 转换为毫秒
+  const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const weekDay = weekDays[date.getDay()];
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${weekDay} ${hours}:${minutes}`;
+};
+
 
 
 onMounted(async () => {

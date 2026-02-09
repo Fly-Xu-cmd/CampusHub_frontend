@@ -16,6 +16,7 @@ const apiUrls = {
   signActivity: "/api/v1/activity/register",
   cancelSign: "/api/v1/activity/cancel",
   getWaitList: "/api/v1/activity/list",
+  createdActivities: "/api/v1/activity/my/created",
 };
 
 // 获取活动分类列表
@@ -57,4 +58,10 @@ export const cancelSign = (id: number) => {
 export const getWaitList = (params: WaitRequest) => {
   return get<wait>(`${apiUrls.getWaitList}?type=${params.type}&page=1&pageSize=12`);
 };
+
+// 获取创建的活动列表
+export const createdActivities = () => {
+  return get<activities>(`${apiUrls.createdActivities}?page=1&pageSize=12`);
+};
+
 

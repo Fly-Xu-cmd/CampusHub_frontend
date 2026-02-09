@@ -6,8 +6,8 @@
         <view class="group-avatar">
           <image src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=200&h=200&fit=crop&crop=face" mode="aspectFill"></image>
         </view>
-        <view class="group-name">周五羽毛球核心群</view>
-        <view class="group-member-count">14名成员</view>
+        <view class="group-name">{{ params.name }}</view>
+        <view class="group-member-count">{{ params.member_count }}名成员</view>
       </view>
 
       <!-- 群公告 -->
@@ -17,7 +17,7 @@
           <view class="notice-more">查看全部</view>
         </view>
         <view class="notice-content">
-          每周五晚7点，羽毛球馆不见不散！请大家准时参加，自带球拍和水杯。
+          暂无
         </view>
       </view>
 
@@ -25,7 +25,7 @@
       <view class="group-members">
         <view class="members-header">
           <view class="members-title">群成员</view>
-          <view class="members-count">14人</view>
+          <view class="members-count">{{ params.member_count }}人</view>
         </view>
         <view class="members-list">
           <!-- 群主 -->
@@ -109,7 +109,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+// 从URL参数获取群ID
+import { useRoute } from 'vue-router';
+const route = useRoute();
+const params = route.query;
 
 // 模拟群成员数据
 const members = ref([

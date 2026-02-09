@@ -19,12 +19,14 @@
 <script setup lang="ts">
 import { getNotifications } from "@/api/message/router";
 import { onMounted, ref } from "vue";
+import { useUserStore } from "@/store/user";
+const userStore = useUserStore(); // 个人信息
 
 // 系统通知列表
 const notifications = ref()
 
 onMounted(() => {
-  getNotifications().then(res => {
+  getNotifications(userStore.userId).then(res => {
     notifications.value = res.data.notifications
   })
 })
