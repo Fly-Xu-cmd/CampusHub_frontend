@@ -50,6 +50,21 @@ export const updateProfile = (data: PostUserDetailsRequest) => {
   return post<Response<UserDetailsData>>(apiUrls.updateProfile, data);
 };
 
+// 更新用户详情（带头像上传）
+export const updateProfileWithAvatar = (data: PostUserDetailsRequest) => {
+  const formData = {
+    nickname: data.nickname,
+    introduction: data.introduction,
+    age: data.age,
+    gender: data.gender,
+    avatar_image: data.avatar_image,
+  };
+
+  return upload<Response<UserDetailsData>>(apiUrls.updateProfile, formData, [
+    "avatar_image",
+  ]);
+};
+
 // 更新用户兴趣标签
 export const updateInterests = (data: PostUserInterestsRequest) => {
   return post<Response<PostUserInterestsData>>(apiUrls.updateInterests, data);
@@ -68,6 +83,25 @@ export const getAuthProgress = () => {
 // 提交学生认证申请
 export const postStudentAuth = (data: PostStudentAuthRequest) => {
   return post<Response<PostStudentAuthData>>(apiUrls.postStudentAuth, data);
+};
+
+// 提交学生认证申请（带文件上传）
+export const postStudentAuthWithFiles = (data: PostStudentAuthRequest) => {
+  const formData = {
+    real_name: data.real_name,
+    school_name: data.school_name,
+    department: data.department,
+    admission_year: data.admission_year,
+    student_id: data.student_id,
+    front_image: data.front_image,
+    back_image: data.back_image,
+  };
+
+  return upload<Response<PostStudentAuthData>>(
+    apiUrls.postStudentAuth,
+    formData,
+    ["front_image", "back_image"],
+  );
 };
 
 // 确认学生认证申请
@@ -117,4 +151,3 @@ export const getQqCodeDeleteUser = (params: PostQqCodeRequest) => {
     data: params,
   });
 };
-

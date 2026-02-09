@@ -121,7 +121,7 @@
 import { ref, computed, nextTick } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useUserStore } from "@/store/user";
-import { updateProfile } from "@/api/profile/router";
+import { updateProfile, updateProfileWithAvatar } from "@/api/profile/router";
 import type { PostUserDetailsRequest } from "@/types/modules/profile";
 
 const userStore = useUserStore();
@@ -181,6 +181,7 @@ const chooseAvatar = () => {
       const tempFilePath = res.tempFilePaths[0];
       newAvatarPath.value = tempFilePath;
       hasNewAvatar.value = true;
+      console.log("选择的头像路径:", tempFilePath);
     },
     fail: (err) => {
       console.error("选择图片失败:", err);
@@ -220,7 +221,7 @@ const handleSave = async () => {
     };
 
     // 使用支持头像上传的接口
-    const response = await updateProfile(requestData);
+    const response = await updateProfileWithAvatar(requestData);
 
     uni.hideLoading();
     uni.showToast({ title: "保存成功", icon: "success" });
@@ -240,7 +241,7 @@ const handleSave = async () => {
     hasNewAvatar.value = false;
     newAvatarPath.value = "";
 
-    setTimeout(() => uni.navigateBack(), 1000);
+    setTimeout(() => uni.navigateBack({ delta: 1 }), 1000);
   } catch (error) {
     uni.hideLoading();
     console.error("保存个人资料失败:", error);
@@ -251,7 +252,9 @@ const handleSave = async () => {
 };
 
 const toBack = () => {
-  uni.navigateBack();
+  uni.navigateBack({
+    delta: 1,
+  });
 };
 </script>
 

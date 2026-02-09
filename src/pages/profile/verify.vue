@@ -414,6 +414,7 @@ import {
   postStudentAuth,
   postStudentAuthConfirm,
   postStudentAuthCancel,
+  postStudentAuthWithFiles,
 } from "@/api/profile/router";
 import type {
   GetStudentAuthProgressData,
@@ -498,17 +499,20 @@ onMounted(async () => {
 });
 
 // 后端 need_action 中文描述到前端枚举值的映射
-const mapNeedActionToEnum = (action: string | undefined): NeedAction => {
+const mapNeedActionToEnum = (action: number | undefined): NeedAction => {
   if (!action) return NeedAction.Apply;
 
   // 根据后端返回的中文描述映射到前端枚举值
   const actionMap: Record<string, NeedAction> = {
-    请填写认证信息: NeedAction.Apply,
-    等待OCR识别: NeedAction.WaitOcr,
-    请确认识别信息: NeedAction.Confirm,
-    等待人工审核: NeedAction.WaitManual,
-    认证已完成: NeedAction.Done,
-    认证被拒绝: NeedAction.Rejected,
+    0: NeedAction.Apply,
+    1: NeedAction.WaitOcr,
+    2: NeedAction.Confirm,
+    3: NeedAction.WaitManual,
+    4: NeedAction.Done,
+    5: NeedAction.Rejected,
+    6: NeedAction.Rejected,
+    7: NeedAction.Rejected,
+    8: NeedAction.Rejected,
     // 同时支持直接返回枚举值的情况
     apply: NeedAction.Apply,
     wait_ocr: NeedAction.WaitOcr,
@@ -528,7 +532,7 @@ const fetchAuthProgress = async () => {
     const response = await getAuthProgress();
     if (response.data) {
       // 映射 need_action 从中文描述到枚举值
-      const mappedAction = mapNeedActionToEnum(response.data.need_action);
+      const mappedAction = mapNeedActionToEnum(response.data.status);
 
       authProgress.value = {
         ...authProgress.value,
@@ -566,37 +570,6 @@ const onModifyYearChange = (e: any) => {
 
 // 上传图片
 const handleUpload = (type: "front" | "back") => {
-  // #ifdef H5
-  // H5 环境：使用 input[type=file]
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/jpeg,image/jpg,image/png";
-  input.onchange = (e: any) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // 检查文件大小（5MB限制）
-    if (file.size > 5 * 1024 * 1024) {
-      uni.showToast({ title: "图片大小不能超过5MB", icon: "none" });
-      return;
-    }
-
-    // 创建预览URL
-    const previewUrl = URL.createObjectURL(file);
-
-    if (type === "front") {
-      formData.value.frontImage = file; // 直接存储 File 对象
-      formData.value.frontImagePreview = previewUrl; // 用于预览
-    } else {
-      formData.value.backImage = file;
-      formData.value.backImagePreview = previewUrl;
-    }
-  };
-  input.click();
-  // #endif
-
-  // #ifndef H5
-  // 小程序/App 环境：使用 uni.chooseImage
   uni.chooseImage({
     count: 1,
     sizeType: ["compressed"],
@@ -621,7 +594,6 @@ const handleUpload = (type: "front" | "back") => {
       }
     },
   });
-  // #endif
 };
 
 // 删除图片
@@ -691,7 +663,7 @@ const handleSubmit = async () => {
     };
 
     // 使用支持文件上传的方法（multipart/form-data 格式）
-    await postStudentAuth(authData);
+    await postStudentAuthWithFiles(authData);
     uni.showToast({ title: "提交成功，正在识别", icon: "success" });
 
     // 重新获取进度
@@ -1229,7 +1201,7 @@ const handleBack = () => {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 9999;
+  z-index: 999;
   @include flex(row, center, center);
   animation: fadeIn 0.2s;
 }
@@ -1306,6 +1278,7 @@ const handleBack = () => {
 
     .custom-input {
       width: 100%;
+      height: 88rpx;
       background: #f9fafb;
       border: 1rpx solid $border-light;
       border-radius: $border-radius-lg;
