@@ -1,4 +1,4 @@
-import { get, post } from "@/utils/http";
+import { get, post, upload } from "@/utils/http";
 import type {
   GetStudentAuthProgressData,
   PostUserDetailsRequest,
@@ -31,9 +31,13 @@ const apiUrls = {
   postStudentAuth: "/api/v1/verify/student/apply",
   postStudentAuthConfirm: "/api/v1/verify/student/confirm",
   postStudentAuthCancel: "/api/v1/verify/student/cancel",
+  uploadImage: "/api/v1/verify/student/apply",
   getCaptchaConfig: "/api/v1/captcha/config",
   postCaptcha: "/api/v1/captcha",
-  QqCode: "/api/v1/qq_code",
+  getQqCodeRegister: "/api/v1/qq_code/register",
+  getQqCodeForgotPassword: "/api/v1/qq_code/forgot_password",
+  getQqCodeDeleteUser: "/api/v1/qq_code/delete_user",
+  getActivityList: "/api/v1/activity/list",
 };
 
 // 获取用户详情
@@ -92,13 +96,25 @@ export const postCaptcha = (data: PostCaptchaRequest) => {
   return post<Response<PostCaptchaData>>(apiUrls.postCaptcha, data);
 };
 
-// 获取QQ验证码
-export const getQqCode = (params: PostQqCodeRequest) => {
-  return get<Response<PostQqCodeData>>(apiUrls.QqCode, { data: params });
+// 获取QQ注册验证码
+export const getQqCodeRegister = (params: PostQqCodeRequest) => {
+  return get<Response<PostQqCodeData>>(apiUrls.getQqCodeRegister, {
+    data: params,
+  });
 };
 
-// 提交QQ验证码
-export const postQqCodeConfirm = (data: PostQqCodeConfirmRequest) => {
-  return post<Response<PostQqCodeConfirmData>>(apiUrls.QqCode, data);
+// 获取QQ忘记密码验证码
+export const getQqCodeForgotPassword = (params: PostQqCodeRequest) => {
+  return post<Response<PostQqCodeConfirmData>>(
+    apiUrls.getQqCodeForgotPassword,
+    { data: params },
+  );
+};
+
+// 获取QQ删除用户验证码
+export const getQqCodeDeleteUser = (params: PostQqCodeRequest) => {
+  return post<Response<PostQqCodeConfirmData>>(apiUrls.getQqCodeDeleteUser, {
+    data: params,
+  });
 };
 

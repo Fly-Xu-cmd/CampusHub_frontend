@@ -82,6 +82,12 @@
       }
     },
     {
+      "path": "pages/forgot-password/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/profile/verify",
       "style": { "navigationStyle": "custom" }
     },

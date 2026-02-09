@@ -25,6 +25,7 @@
               v-for="tag in tagsList"
               :key="tag.id"
               class="tag-item"
+              :style="{ borderColor: tag.tagColor || '#e2e8f0' }"
               :class="{ 'is-selected': selectedIds.includes(tag.id) }"
               @click="toggleTag(tag)"
             >
@@ -43,7 +44,9 @@
                 mode="aspectFit"
               />
 
-              <text class="tag-text">{{ tag.tagName }}</text>
+              <text class="tag-text" :style="{ color: tag.tagColor }">{{
+                tag.tagName
+              }}</text>
             </view>
           </view>
 
@@ -80,11 +83,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useSystemStore } from "@/store/system";
+import { useUserStore } from "@/store/user";
 import { getTags } from "@/api/tags/router";
 import { updateInterests } from "@/api/profile/router";
 import type { InterestTag } from "@/types/modules/profile";
 
 const systemStore = useSystemStore();
+const userStore = useUserStore();
 
 // --- 状态管理 ---
 const selectedIds = ref<number[]>([]);
@@ -122,8 +127,8 @@ const fetchTags = async () => {
   try {
     const res = await getTags();
     // 适配 API 返回结构 { list: InterestTag[] }
-    if (res.data && Array.isArray(res.data.list)) {
-      tagsList.value = res.data.list;
+    if (res.data && Array.isArray(res.data.interestTags)) {
+      tagsList.value = res.data.interestTags;
     } else if (Array.isArray(res.data)) {
       // 兼容直接返回数组的情况
       tagsList.value = res.data as any;
@@ -140,20 +145,30 @@ const fetchTags = async () => {
 };
 
 const handleSubmit = async () => {
-  if (selectedIds.value.length === 0) return;
+  if (selectedIds.value.length === 0) {
+    uni.showToast({ title: "请至少选择1个标签", icon: "none" });
+    return;
+  }
 
   uni.showLoading({ title: "提交中..." });
   try {
-    await updateInterests({
+    const response = await updateInterests({
       interestTagIds: selectedIds.value,
     });
+
+    // 更新 store 中的用户标签
+    if (response.data?.interestTags) {
+      userStore.updateUserInfo({
+        interestTags: response.data.interestTags,
+      });
+    }
 
     uni.hideLoading();
     uni.showToast({ title: "设置成功", icon: "success" });
 
     setTimeout(() => {
       // 跳转到首页
-      uni.reLaunch({ url: "/pages/index/index" });
+      uni.reLaunch({ url: "/pages/home/index" });
     }, 1500);
   } catch (error) {
     uni.hideLoading();

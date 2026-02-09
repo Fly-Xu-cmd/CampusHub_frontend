@@ -17,11 +17,16 @@ export interface InterestTag {
   tagDesc: string;
   tagIcon: string;
   tagName: string;
+  tagColor?: string;
   [property: string]: any;
 }
 // 更新用户详情请求数据
 export interface PostUserDetailsRequest {
   age: number;
+  /**
+   * 要上传的头像图片
+   */
+  avatar_image: string;
   gender: string;
   introduction: string;
   nickname: string;
@@ -30,7 +35,6 @@ export interface PostUserDetailsRequest {
 // 更新用户兴趣标签请求数据
 export interface PostUserInterestsData {
   interestTags: InterestTag[];
-  userId: number;
   [property: string]: any;
 }
 
@@ -41,8 +45,8 @@ export interface PostUserInterestsRequest {
 
 // 修改用户密码请求数据
 export interface PostUserPasswordRequest {
-  newPassword: string;
   originPassword: string;
+  newPassword: string;
   [property: string]: any;
 }
 
@@ -150,12 +154,33 @@ export interface VerifyData {
 }
 
 export interface PostStudentAuthRequest {
+  /**
+   * 入学年份
+   */
   admission_year: string;
-  back_image_url: string;
+  /**
+   * 学生证详情面照片（jpg/jpeg/png，最大5MB）
+   */
+  back_image: string;
+  /**
+   * 院系
+   */
   department: string;
-  front_image_url: string;
+  /**
+   * 学生证正面照片（jpg/jpeg/png，最大5MB）
+   */
+  front_image: string;
+  /**
+   * 姓名
+   */
   real_name: string;
+  /**
+   * 学校名称
+   */
   school_name: string;
+  /**
+   * 学号
+   */
   student_id: string;
   [property: string]: any;
 }

@@ -1,24 +1,140 @@
 <template>
-  <CommonLayout headerType="standard" title="历史记录" showBack bgWhite>
-    <view class="list-container">
-      <view class="activity-card ended" v-for="i in 3" :key="i">
-        <image src="https://picsum.photos/200?random=5" class="cover-img" mode="aspectFill" />
+  <CommonLayout headerType="standard" title="已参加活动" showBack bgWhite>
+    <!-- 加载中 -->
+    <view v-if="loading" class="loading-container">
+      <AsyncLoading text="加载中..." />
+    </view>
+
+    <!-- 空状态 -->
+    <view v-else-if="activities.length === 0" class="empty-container">
+      <wd-icon name="time" size="64px" color="#cbd5e1"></wd-icon>
+      <text class="empty-text">暂无已参加活动</text>
+    </view>
+
+    <!-- 活动列表 -->
+    <view v-else class="list-container">
+      <view
+        class="activity-card ended"
+        v-for="activity in activities"
+        :key="activity.id"
+        @click="handleToDetail(activity.id)"
+      >
+        <image
+          :src="activity.imageUrl || defaultImage"
+          class="cover-img"
+          mode="aspectFill"
+        />
         <view class="info-col">
-          <text class="title">读书分享会</text>
+          <text class="title">{{ activity.name }}</text>
           <view class="meta-row">
-            <wd-icon name="time" size="12px" color="#94a3b8" custom-style="margin-right:8rpx"></wd-icon>
-            <text class="time">10.10</text>
+            <wd-icon
+              name="time"
+              size="12px"
+              color="#94a3b8"
+              custom-style="margin-right:8rpx"
+            ></wd-icon>
+            <text class="time">{{ formatTime(activity.time) }}</text>
           </view>
-          <text class="status-tip">已结束</text>
+          <text class="status-tip">{{ activity.status }}</text>
         </view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view
+        v-if="hasMore"
+        class="load-more"
+        @click="loadMore"
+        hover-class="btn-hover"
+      >
+        <text v-if="loadingMore">加载中...</text>
+        <text v-else>加载更多</text>
       </view>
     </view>
   </CommonLayout>
 </template>
 
+<script setup lang="ts">
+import { ref, computed, onMounted } from "vue";
+import { getActivityList } from "@/api/activity/router";
+import type { ActivityListItem } from "@/types/modules/activity";
+
+const defaultImage = "https://picsum.photos/200?random=5";
+const loading = ref(true);
+const loadingMore = ref(false);
+const activities = ref<ActivityListItem[]>([]);
+const currentPage = ref(1);
+const total = ref(0);
+const pageSize = 12;
+
+const hasMore = computed(() => activities.value.length < total.value);
+
+// 格式化时间显示
+const formatTime = (timeStr: string) => {
+  try {
+    const date = new Date(timeStr);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${month}.${day}`;
+  } catch {
+    return timeStr;
+  }
+};
+
+// 获取活动列表
+const fetchActivities = async (page: number) => {
+  try {
+    const response = await getActivityList("已参加", page, pageSize);
+    if (response.data) {
+      if (page === 1) {
+        activities.value = response.data.items || [];
+      } else {
+        activities.value.push(...(response.data.items || []));
+      }
+      total.value = response.data.total || 0;
+      currentPage.value = page;
+    }
+  } catch (error) {
+    console.error("获取已参加活动失败:", error);
+  } finally {
+    loading.value = false;
+    loadingMore.value = false;
+  }
+};
+
+// 加载更多
+const loadMore = () => {
+  if (loadingMore.value || !hasMore.value) return;
+  loadingMore.value = true;
+  fetchActivities(currentPage.value + 1);
+};
+
+// 跳转到活动详情
+const handleToDetail = (id: number) => {
+  uni.navigateTo({
+    url: `/pages/activity/detail?id=${id}`,
+  });
+};
+
+onMounted(() => {
+  fetchActivities(1);
+});
+</script>
+
 <style lang="scss" scoped>
 @use "@/styles/variables.scss" as *;
 @use "@/styles/mixins.scss" as *;
+
+.loading-container,
+.empty-container {
+  height: 60vh;
+  @include flex(column, center, center);
+  gap: $spacing-md;
+
+  .empty-text {
+    font-size: $font-size-sm;
+    color: $text-tertiary;
+  }
+}
 
 .list-container {
   padding: $spacing-md;
@@ -34,9 +150,9 @@
 
   // --- 历史记录特有样式 ---
   &.ended {
-    opacity: 0.6; // 整体半透明
+    opacity: 0.6;
     .cover-img {
-      filter: grayscale(100%); // 图片黑白
+      filter: grayscale(100%);
     }
   }
 
@@ -44,6 +160,8 @@
     width: 160rpx;
     height: 160rpx;
     border-radius: $border-radius-md;
+    background-color: $background-color;
+    flex-shrink: 0;
   }
 
   .info-col {
@@ -56,18 +174,37 @@
       font-size: $font-size-base;
       font-weight: $font-weight-bold;
       color: $text-primary;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
     }
 
     .meta-row {
       @include flex(row, flex-start, center);
-      .time { font-size: $font-size-sm; color: $text-secondary; }
+      .time {
+        font-size: $font-size-sm;
+        color: $text-secondary;
+      }
     }
 
     .status-tip {
       font-size: $font-size-sm;
-      color: $text-tertiary; // 灰色
+      color: $text-tertiary;
       font-weight: $font-weight-bold;
     }
+  }
+}
+
+.load-more {
+  text-align: center;
+  padding: $spacing-lg;
+  font-size: $font-size-sm;
+  color: $text-secondary;
+
+  &.btn-hover {
+    opacity: 0.7;
   }
 }
 </style>

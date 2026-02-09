@@ -1,28 +1,16 @@
 <template>
   <CommonLayout headerType="transparent" contentBg="#fff">
     <view
-      class="register-container"
+      class="forgot-container"
       :style="{ paddingTop: `${2 * (systemStore.statusBarHeight + 30)}rpx` }"
     >
       <view class="content-body">
         <view class="header-text">
-          <view class="title">注册账号</view>
-          <view class="subtitle">填写信息，开启你的旅程</view>
+          <view class="title">忘记密码</view>
+          <view class="subtitle">通过QQ邮箱重置您的密码</view>
         </view>
 
         <view class="form-section">
-          <view class="input-wrapper">
-            <view class="icon-wrapper">
-              <wd-icon name="user" class="icon" size="44rpx" />
-            </view>
-            <input
-              class="custom-input"
-              placeholder="昵称"
-              placeholder-class="placeholder-style"
-              v-model="formData.nickname"
-            />
-          </view>
-
           <view class="input-wrapper">
             <view class="icon-wrapper">
               <wd-icon name="mail" size="44rpx"></wd-icon>
@@ -42,17 +30,34 @@
             </view>
             <input
               class="custom-input"
-              placeholder="设置密码"
+              placeholder="新密码"
               placeholder-class="placeholder-style"
-              v-model="formData.password"
+              v-model="formData.newPassword"
               :password="!showPassword"
             />
-            <view class="input-icon" @click="toggleShowPassword">
+            <view class="icon-wrapper" @click="toggleShowPassword">
               <wd-icon
                 :name="showPassword ? 'browse-off' : 'browse'"
-                size="40rpx"
-                color="#94a3b8"
-                custom-class="input-icon"
+                size="44rpx"
+              ></wd-icon>
+            </view>
+          </view>
+
+          <view class="input-wrapper">
+            <view class="icon-wrapper">
+              <wd-icon name="lock-on" class="icon" size="44rpx" />
+            </view>
+            <input
+              class="custom-input"
+              placeholder="确认新密码"
+              placeholder-class="placeholder-style"
+              v-model="confirmPassword"
+              :password="!showConfirmPassword"
+            />
+            <view class="icon-wrapper" @click="toggleShowConfirmPassword">
+              <wd-icon
+                :name="showConfirmPassword ? 'browse-off' : 'browse'"
+                size="44rpx"
               ></wd-icon>
             </view>
           </view>
@@ -97,12 +102,16 @@
 
         <view class="footer-btn">
           <button
-            class="register-btn"
+            class="reset-btn"
             hover-class="btn-hover"
-            @click="handleRegister"
+            @click="handleResetPassword"
           >
-            完成注册
+            重置密码
           </button>
+        </view>
+
+        <view class="back-login" @click="goToLogin">
+          <text class="text-gray">返回登录</text>
         </view>
       </view>
     </view>
@@ -113,29 +122,27 @@
 import { reactive, ref, onMounted } from "vue";
 import { useSystemStore } from "@/store/system";
 import { authApi } from "@/api/register/router";
-import { useUserStore } from "@/store/user";
 import { loadGeetestScript } from "@/utils/geetest";
-
-const userStore = useUserStore();
 
 const systemStore = useSystemStore();
 
 const formData = reactive({
-  nickname: "",
   qqEmail: "",
   qqCode: "",
-  password: "",
+  newPassword: "",
   captchaOutput: "",
   genTime: "",
   lotNumber: "",
   passToken: "",
 });
 
+const confirmPassword = ref("");
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
 const timer = ref(0);
 const captchaObj = ref<any>(null);
-const captchaBox = ref<any>(null); // 极验验证码容器
-const captchaError = ref(false); // 验证码初始化失败状态
-const showPassword = ref(false); // 是否显示密码
+const captchaBox = ref<any>(null);
+const captchaError = ref(false);
 
 // 初始化极验
 const initCaptcha = async () => {
@@ -180,10 +187,8 @@ const initCaptcha = async () => {
 
 const retryCaptcha = () => {
   captchaError.value = false;
-  // 清空容器内容（如果之前有残留）
   if (captchaBox.value) {
     // #ifdef H5
-    // 尝试清空 DOM 内容，虽然 v-show 隐藏了，但重置时最好清理
     const el = document.getElementById("captchaBox");
     if (el) el.innerHTML = "";
     // #endif
@@ -211,16 +216,9 @@ const getVerifyCode = async () => {
     return;
   }
 
-  // #ifdef H5
-  if (!formData.passToken) {
-    uni.showToast({ title: "请先完成人机验证", icon: "none" });
-    return;
-  }
-  // #endif
-
   uni.showLoading({ title: "发送中..." });
   try {
-    await authApi.getQQCodeRegister({
+    await authApi.getQQCodeForgotPassword({
       qq_email: formData.qqEmail,
       captchaOutput: formData.captchaOutput,
       genTime: formData.genTime,
@@ -237,7 +235,6 @@ const getVerifyCode = async () => {
     }, 1000);
   } catch (error) {
     uni.hideLoading();
-    // 错误处理已在拦截器中统一处理，此处仅需重置状态
     console.error("获取验证码失败:", error);
     // 重置验证码
     if (captchaObj.value) {
@@ -250,68 +247,78 @@ const getVerifyCode = async () => {
   }
 };
 
-const handleRegister = async () => {
-  if (
-    !formData.qqEmail ||
-    !formData.password ||
-    !formData.nickname ||
-    !formData.qqCode
-  ) {
-    uni.showToast({ title: "请填写完整信息", icon: "none" });
+const handleResetPassword = async () => {
+  if (!formData.qqEmail) {
+    uni.showToast({ title: "请输入QQ邮箱", icon: "none" });
     return;
   }
 
-  uni.showLoading({ title: "注册中..." });
+  if (
+    !formData.qqEmail ||
+    !/^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$/.test(formData.qqEmail)
+  ) {
+    uni.showToast({ title: "请输入正确的QQ邮箱", icon: "none" });
+    return;
+  }
+
+  if (!formData.qqCode) {
+    uni.showToast({ title: "请输入验证码", icon: "none" });
+    return;
+  }
+
+  if (!formData.newPassword) {
+    uni.showToast({ title: "请输入新密码", icon: "none" });
+    return;
+  }
+
+  if (formData.newPassword.length < 6) {
+    uni.showToast({ title: "密码长度不能少于6位", icon: "none" });
+    return;
+  }
+
+  if (formData.newPassword !== confirmPassword.value) {
+    uni.showToast({ title: "两次输入的密码不一致", icon: "none" });
+    return;
+  }
+
+  uni.showLoading({ title: "重置中..." });
   try {
-    const response = await authApi.register({
-      nickname: formData.nickname,
-      qqEmail: formData.qqEmail,
-      password: formData.password,
-      qqCode: formData.qqCode,
+    await authApi.forgotPassword({
+      qq_code: formData.qqCode,
+      new_password: formData.newPassword,
     });
     uni.hideLoading();
-    uni.showToast({ title: "注册成功", icon: "success" });
-    userStore.login(
-      response.data.userInfo,
-      response.data.accessToken,
-      response.data.refreshToken,
-    );
-    // 注册成功，跳转到选择标签页
+    uni.showToast({ title: "密码重置成功", icon: "success" });
+
+    // 延迟跳转到登录页
     setTimeout(() => {
-      uni.navigateTo({ url: "/pages/selectTags/index" });
-    }, 1000);
+      uni.navigateTo({ url: "/pages/login/index" });
+    }, 1500);
   } catch (error) {
-    // HTTP 层已自动显示业务错误 toast
     uni.hideLoading();
-    console.error("注册失败:", error);
-    // 不需要手动显示错误，HTTP 拦截器已处理
+    console.error("重置密码失败:", error);
   }
+};
+
+const goToLogin = () => {
+  uni.navigateBack();
 };
 
 const toggleShowPassword = () => {
   showPassword.value = !showPassword.value;
+};
+
+const toggleShowConfirmPassword = () => {
+  showConfirmPassword.value = !showConfirmPassword.value;
 };
 </script>
 
 <style lang="scss" scoped>
 @use "@/styles/variables.scss" as *;
 
-.register-container {
+.forgot-container {
   display: flex;
   flex-direction: column;
-}
-
-.nav-header {
-  padding: 20rpx 40rpx;
-  .back-btn {
-    width: 80rpx;
-    height: 80rpx;
-    background-color: #f9fafb; // 浅灰背景
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
 }
 
 .content-body {
@@ -339,7 +346,7 @@ const toggleShowPassword = () => {
   display: flex;
   flex-direction: column;
   gap: 40rpx;
-  margin-bottom: 80rpx;
+  margin-bottom: 60rpx;
 
   .input-wrapper {
     background-color: #f9fafb;
@@ -347,6 +354,7 @@ const toggleShowPassword = () => {
     padding: 30rpx 32rpx;
     display: flex;
     align-items: center;
+
     .icon-wrapper {
       color: $text-tertiary;
       display: flex;
@@ -354,6 +362,7 @@ const toggleShowPassword = () => {
       justify-content: center;
       margin-right: 20rpx;
     }
+
     .custom-input {
       flex: 1;
       font-size: 30rpx;
@@ -368,12 +377,11 @@ const toggleShowPassword = () => {
     }
   }
 
-  // 验证码行的特殊样式
   .verify-wrapper {
-    padding-right: 10rpx; // 右边距减小，给按钮腾位置
+    padding-right: 10rpx;
 
     .verify-btn {
-      background-color: $text-primary; // 黑色按钮
+      background-color: $text-primary;
       color: #fff;
       font-size: 24rpx;
       font-weight: 700;
@@ -411,9 +419,9 @@ const toggleShowPassword = () => {
 }
 
 .footer-btn {
-  .register-btn {
+  .reset-btn {
     padding: $spacing-sm;
-    background-color: $primary-color; // 橙色
+    background-color: $primary-color;
     color: #fff;
     font-size: 32rpx;
     font-weight: 700;
@@ -427,6 +435,16 @@ const toggleShowPassword = () => {
     &.btn-hover {
       opacity: 0.9;
     }
+  }
+}
+
+.back-login {
+  margin-top: 40rpx;
+  text-align: center;
+  font-size: 28rpx;
+
+  .text-gray {
+    color: $text-tertiary;
   }
 }
 </style>

@@ -2,15 +2,15 @@ import { get } from "@/utils/http";
 import type { InterestTag } from "@/types/modules/profile";
 
 const apiUrls = {
-  tags: "/api/v1/activity/tags",
+  tags: "/api/v1/interests/tags",
 };
 
 export interface TagsResponse {
-  list: InterestTag[];
+  interestTags: InterestTag[];
 }
 
 /**
- * 获取活动标签列表
+ * 获取兴趣标签列表
  */
 export const getTags = () => {
   return get<Response<TagsResponse>>(apiUrls.tags);

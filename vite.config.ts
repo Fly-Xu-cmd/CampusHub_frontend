@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    // 确保静态资源被正确处理
+    assetsInclude: ["**/*.png", "**/*.jpg", "**/*.jpeg", "**/*.gif", "**/*.svg", "**/*.ico"],
     css: {
       preprocessorOptions: {
         scss: {
