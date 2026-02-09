@@ -17,6 +17,8 @@ export const useUserStore = defineStore("user", {
     token: "",
     refreshToken: "",
     accessToken: "",
+    credit: 0,
+    isStudentVerified: false,
   }),
 
   getters: {
@@ -33,6 +35,8 @@ export const useUserStore = defineStore("user", {
         nickname: this.nickname,
         qqEmail: this.qqEmail,
         interestTags: this.interestTags,
+        credit: this.credit,
+        isStudentVerified: this.isStudentVerified,
       };
     },
 
@@ -87,8 +91,10 @@ export const useUserStore = defineStore("user", {
       this.latitudeLongitude = "";
       this.nickname = "";
       this.qqEmail = "";
-      this.accessToken = "";
+      this.credit = 0;
+      this.isStudentVerified = false;
       this.refreshToken = "";
+      this.accessToken = "";
 
       // 清除本地存储
       uni.removeStorageSync("accessToken");
@@ -113,6 +119,9 @@ export const useUserStore = defineStore("user", {
       this.nickname = userData.nickname || this.nickname;
       this.qqEmail = userData.qqEmail || this.qqEmail;
       this.interestTags = userData.interestTags || this.interestTags;
+      this.credit = userData.credit || this.credit;
+      this.isStudentVerified =
+        userData.isStudentVerified || this.isStudentVerified;
 
       // 更新本地存储
       uni.setStorageSync("userInfo", JSON.stringify(this.userInfo));
@@ -139,6 +148,8 @@ export const useUserStore = defineStore("user", {
           this.latitudeLongitude = userInfo.latitudeLongitude || "";
           this.nickname = userInfo.nickname || "";
           this.qqEmail = userInfo.qqEmail || "";
+          this.credit = userInfo.credit || 0;
+          this.isStudentVerified = userInfo.isStudentVerified || false;
           this.accessToken = accessToken;
           this.refreshToken = refreshToken;
         } catch (error) {
@@ -162,6 +173,8 @@ export const useUserStore = defineStore("user", {
       this.latitudeLongitude = "";
       this.nickname = "";
       this.qqEmail = "";
+      this.credit = 0;
+      this.isStudentVerified = false;
       this.accessToken = "";
       this.refreshToken = "";
 

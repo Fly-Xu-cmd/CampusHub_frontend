@@ -55,7 +55,7 @@
           />
           <view class="input-icon" @click="toggleShowPassword">
             <wd-icon
-              :name="showPassword ? 'browse' : 'browse-off'"
+              :name="showPassword ? 'browse-off' : 'browse'"
               size="40rpx"
               color="#94a3b8"
               custom-class="input-icon"
@@ -166,7 +166,7 @@ const initCaptcha = async () => {
           captcha.onError((err) => {
             console.error("验证码错误:", err);
           });
-        }
+        },
       );
     }
   } catch (error) {
@@ -228,12 +228,13 @@ const handleLogin = async () => {
 
     uni.hideLoading();
     uni.showToast({ title: "登录成功", icon: "success" });
-
+    response.data.userInfo.qqEmail =
+      response.data.userInfo.qqEmail || formData.qqEmail;
     // 登录成功，存储用户信息
     userStore.login(
       response.data.userInfo,
       response.data.accessToken,
-      response.data.refreshToken
+      response.data.refreshToken,
     );
 
     // 跳转页面
@@ -253,11 +254,8 @@ const handleLogin = async () => {
     formData.genTime = "";
     formData.lotNumber = "";
     formData.passToken = "";
-
-    // 错误提示已在 http 拦截器中处理，但针对特定业务逻辑可补充
-    if (error.code === 401 || error.statusCode === 401) {
-      uni.showToast({ title: "账号或密码错误", icon: "none" });
-    }
+    // HTTP 层已自动显示业务错误 toast（包括账号密码错误、验证码错误等）
+    // 不需要手动显示错误提示
   }
 };
 
@@ -266,7 +264,7 @@ const goToRegister = () => {
 };
 
 const handleForgot = () => {
-  uni.showToast({ title: "功能开发中", icon: "none" });
+  uni.navigateTo({ url: "/pages/forgot-password/index" });
 };
 
 const toggleShowPassword = () => {
@@ -335,7 +333,7 @@ const toggleShowPassword = () => {
     }
 
     .input-icon {
-      margin-right: 24rpx;
+      margin-right: $spacing-xs;
     }
 
     .send-code-btn {
