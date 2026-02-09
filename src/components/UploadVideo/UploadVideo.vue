@@ -1,6 +1,6 @@
 <template>
 	<view class="upload-section">
-		<wd-upload :file-list="fileList" multiple action="" @change="handleChange" >
+		<wd-upload :file-list="localFileList" multiple action="" :auto-upload="false" @after-read="handleAfterRead" @remove="handleRemove" >
 			<view class="upload-placeholder custom-upload" :class="{ 'upload-hover': isUploadHover }"
 				@touchstart="isUploadHover = true" @touchend="isUploadHover = false" @touchcancel="isUploadHover = false"
 				@mouseenter="isUploadHover = true" @mouseleave="isUploadHover = false"
@@ -13,18 +13,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 // 定义组件的props
 const props = defineProps({
 	fileList: {
-	
-type: Array,
+		type: Array,
 		default: () => []
 	},
 	uploadText: {
-	
-type: String,
+		type: String,
 		default: '上传活动封面/视频'
 	}
 })
@@ -37,13 +35,30 @@ const emit = defineEmits([
 
 // 本地状态，用于处理组件内部的状态变化
 const isUploadHover = ref<boolean>(false)
+const localFileList = ref<any[]>([...props.fileList])
 
-// 处理文件上传
-const handleChange = (files: any[]): void => {
+// 监听外部fileList变化
+watch(() => props.fileList, (newValue) => {
+	localFileList.value = [...newValue]
+}, { deep: true })
+
+// 处理文件选择
+const handleAfterRead = (file: any): void => {
+	// 只允许选择一个文件
+	localFileList.value = [file]
 	// 触发update:fileList事件，更新父组件的fileList
-	emit('update:fileList', files)
+	emit('update:fileList', localFileList.value)
 	// 触发change事件，提供与原组件相同的回调
-	emit('change', files)
+	emit('change', localFileList.value)
+}
+
+// 处理文件移除
+const handleRemove = (file: any, index: number): void => {
+	localFileList.value.splice(index, 1)
+	// 触发update:fileList事件，更新父组件的fileList
+	emit('update:fileList', localFileList.value)
+	// 触发change事件，提供与原组件相同的回调
+	emit('change', localFileList.value)
 }
 </script>
 
