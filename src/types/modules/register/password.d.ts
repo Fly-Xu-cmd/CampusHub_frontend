@@ -1,5 +1,4 @@
 export interface ForgotPasswordRequest {
-  qqEmail: string;
-  qqCode: string;
-  password: string;
+  qq_code: string;
+  new_password: string;
 }

@@ -14,6 +14,7 @@ const whiteList = [
   // "/pages/register/index",
   // "/pages/selectTags/index", // 注册后的标签选择
   "/pages/profile/index", // 用户个人中心
+  "/pages/forgot-password/index", // 忘记密码
   // "/pages/ticket/index", // 票券
   // "/pages/profile/pending", // 待审核
   // "/pages/profile/history", // 活动历史
