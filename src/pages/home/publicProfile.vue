@@ -1,21 +1,21 @@
 <template>
-  <CommonLayout headerType="standard" title="用户详情">
-    <view class="profile-container">
+  <CommonLayout headerType="standard" title="用户详情" padding="0 8rpx">
+    <view class="profile-container">  
       <!-- 用户信息部分 -->
       <view class="user-info-section">
         <view class="avatar-wrapper">
-          <image :src="userInfo.avatar" class="avatar" mode="aspectFill" />
+          <image :src="userInfo?.avatarUrl" class="avatar" mode="aspectFill" />
         </view>
-        <text class="username">{{ userInfo.username }}</text>
-        <text class="bio">{{ userInfo.bio }}</text>
+        <text class="username">{{ userInfo?.nickname }}</text>
+        <text class="bio">{{ userInfo?.introduction }}</text>
         <view class="tags-row">
           <view 
-            v-for="(tag, index) in userInfo.tags" 
-            :key="index" 
+            v-for="tag in userInfo?.interestTags" 
+            :key="tag.id" 
             class="tag-item"
-            :class="tag.type"
+            :class="tag.tagColor"
           >
-            <text>{{ tag.name }}</text>
+            <text>{{ tag.tagName }}</text>
           </view>
         </view>
       </view>
@@ -27,14 +27,14 @@
         </view>
         <view class="activity-list">
           <view 
-            v-for="(activity, index) in publishedActivities" 
-            :key="index" 
+            v-for="activity in publishedActivities" 
+            :key="activity.id" 
             class="activity-item"
           >
-            <image :src="activity.image" class="activity-image" mode="aspectFill" />
+            <image :src="activity.coverUrl" class="activity-image" mode="aspectFill" />
             <view class="activity-info">
               <text class="activity-title">{{ activity.title }}</text>
-              <text class="activity-time">{{ activity.time }}</text>
+              <text class="activity-time">{{ activity.activityStartTime }}</text>
             </view>
           </view>
           <view v-if="publishedActivities.length === 0" class="empty-state">
@@ -50,13 +50,16 @@
         </view>
         <view class="activity-list">
           <view 
-            v-for="(activity, index) in joinedActivities" 
-            :key="index" 
+            v-for="activity in joinedActivities" 
+            :key="activity.id" 
             class="activity-item"
           >
-            <image :src="activity.image" class="activity-image" mode="aspectFill" />
+            <image :src="activity.imageUrl" class="activity-image" mode="aspectFill" />
             <view class="activity-info">
-              <text class="activity-title">{{ activity.title }}{{ activity.status ? ' (' + activity.status + ')' : '' }}</text>
+              <text class="activity-title">
+                {{ activity.name }}
+                {{ '(' + activity.status + ')' }}
+              </text>
               <text class="activity-time">{{ activity.time }}</text>
             </view>
           </view>
@@ -70,39 +73,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router'
+const route = useRoute()
+const userId = route.query.id
 
-// 模拟用户数据
+onMounted(() => {
+});
+// 用户数据
 const userInfo = ref({
-  avatar: 'https://picsum.photos/200/200?random=1',
-  username: '极客跑团',
-  bio: '热爱运动，专注组织线下夜跑活动。',
-  tags: [
-    { name: '运动达人', type: 'orange' },
-    { name: '组织者', type: 'blue' }
-  ]
+  avatarUrl: '',
+  nickname: '',
+  introduction: '',
+  interestTags: [
+    {
+      id: 1,
+      tagName: '运动',
+      tagColor: 'orange',
+    },
+  ],
 });
 
-// 模拟发布的活动
-const publishedActivities = ref([
-  {
-    id: 1,
-    title: '奥森夜跑',
-    time: '10.24 19:00',
-    image: 'https://picsum.photos/400/300?random=2'
-  }
-]);
+// 我发布的活动
+const publishedActivities = ref();
 
-// 模拟参加的活动
-const joinedActivities = ref([
-  {
-    id: 2,
-    title: '读书会',
-    time: '10.10',
-    status: '已结束',
-    image: 'https://picsum.photos/400/300?random=3'
-  }
-]);
+// 已参加的活动
+const joinedActivities = ref();
 
 </script>
 

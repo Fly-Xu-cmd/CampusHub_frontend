@@ -6,7 +6,9 @@
         <wd-icon name="arrow-left1" size="48rpx" color="#1e293b"></wd-icon>
       </view>
       <view class="header-center">
-        <view class="group-name">周五羽毛球核心群(14)</view>
+        <view class="group-name">
+          {{ groupTitle.name }}({{ groupTitle.member_count }})
+        </view>
       </view>
       <view class="header-right" @click="viewChatDetail">
         <view class="more-icon">⋯</view>
@@ -54,7 +56,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { getTitle } from '@/api/message/router';
+import { useRoute } from 'vue-router';
+const route = useRoute();
+const group_id = route.query.group_id as string;
+
+onMounted(() => {
+  // 获取群聊名称
+  getTitle(group_id).then(res => {
+    if (res.code === 200) {
+      groupTitle.value = res.data;
+    }
+  });
+});
+
+const groupTitle = ref();
 
 // 模拟消息数据
 const messages = ref([
@@ -77,7 +94,7 @@ const messages = ref([
 // 查看群聊详情
 const viewChatDetail = () => {
   uni.navigateTo({
-    url: '/pages/message/ChatDetail'
+    url: `/pages/message/ChatDetail?group_id=${group_id}&name=${groupTitle.value.name}&member_count=${groupTitle.value.member_count}`
   });
 };
 
