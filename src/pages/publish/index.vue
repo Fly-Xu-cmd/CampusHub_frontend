@@ -17,7 +17,8 @@
 		<view class="publish-container">
 			<!-- 上传组件 -->
 		<UploadVideo 
-			v-model:fileList="fileList"
+			:fileList="fileList"
+			@update:fileList="handleFileListUpdate"
 			upload-text="上传活动封面/视频"
 		/>
 			<!-- 上传组件 -->
@@ -201,6 +202,11 @@ const toggleTagPicker = async (): Promise<void> => {
 	isShowTagPicker.value = !isShowTagPicker.value
 }
 
+// 处理文件列表更新
+const handleFileListUpdate = (val: any[]): void => {
+	fileList.value = val
+}
+
 // 组件初始化时获取标签数据
 onMounted(async () => {
 	await fetchTags()
@@ -210,14 +216,12 @@ onMounted(async () => {
 const fetchTags = async (): Promise<void> => {
 	try {
 		const response: any = await getTags()
-		console.log('标签数据:', response)
 		if (response && response.code === 0 && response.data && response.data.list) {
 			tags.value = response.data.list
 		} else {
 			tags.value = []
 		}
 	} catch (error) {
-		console.error('获取标签失败:', error)
 		toast.error('获取标签失败，请稍后重试')
 		tags.value = []
 	}
@@ -243,6 +247,43 @@ watch(endValue, (newValue) => {
 // 提交表单
 const submitForm = async () => {
 	try {
+		// 表单验证
+		if (!activityTitle.value) {
+			toast.error('请输入活动标题')
+			return
+		}
+		
+		if (!contactPhone.value) {
+			toast.error('请输入联系电话')
+			return
+		}
+		
+		if (!locationName.value || locationName.value === '选择线下地点') {
+			toast.error('请选择活动地点')
+			return
+		}
+		
+		if (!peopleLimit.value || peopleLimit.value < 1) {
+			toast.error('请设置有效的人数限制')
+			return
+		}
+		
+		if (selectedTags.value.length === 0) {
+			toast.error('请至少选择一个活动标签')
+			return
+		}
+		
+		// 添加封面上传验证
+		if (fileList.value.length === 0) {
+			toast.error('请上传活动封面')
+			return
+		} else {
+			if (!fileList.value[0].url) {
+				toast.error('请等待文件上传完成')
+				return
+			}
+		}
+		
 		// 时间验证
 		const registerStartTime = Math.floor(signupStartValue.value / 1000)
 		const registerEndTime = Math.floor(signupEndValue.value / 1000)
@@ -265,40 +306,32 @@ const submitForm = async () => {
 			return
 		}
 		
-		// 准备数据 - 使用用户选择的数据
+		// 准备数据 - 完全使用用户选择的数据
 		const formData = {
-			title: activityTitle.value || "周五夜跑活动",
-			coverUrl: fileList.value.length > 0 ? fileList.value[0].url : "https://cdn.example.com/cover.jpg",
-			coverType: fileList.value.length > 0 ? (fileList.value[0].type === 'video' ? 2 : 1) : 1,
-			content: activityDetail.value || "<p>一起来奥森公园跑步吧！</p>",
-			categoryId: selectedTags.value.length > 0 ? selectedTags.value[0] : 1,
-			contactPhone: contactPhone.value || "13800138000",
+			title: activityTitle.value,
+			coverUrl: fileList.value[0].url,
+			coverType: fileList.value[0].type === 'video' ? 2 : 1,
+			content: activityDetail.value || "",
+			categoryId: selectedTags.value[0],
+			contactPhone: contactPhone.value,
 			registerStartTime: registerStartTime,
 			registerEndTime: registerEndTime,
 			activityStartTime: activityStartTime,
 			activityEndTime: activityEndTime,
-			location: locationName.value || "奥林匹克森林公园",
-			addressDetail: locationAddress.value || "南门集合",
-			longitude: locationLongitude.value || 116.407526,
-			latitude: locationLatitude.value || 39.90403,
-			maxParticipants: peopleLimit.value || 50,
+			location: locationName.value,
+			addressDetail: locationAddress.value || "",
+			longitude: locationLongitude.value,
+			latitude: locationLatitude.value,
+			maxParticipants: peopleLimit.value,
 			requireApproval: false,
 			requireStudentVerify: true,
 			minCreditScore: 60,
-			tagIds: selectedTags.value.length > 0 ? selectedTags.value : [1, 2, 3],
+			tagIds: selectedTags.value,
 			isDraft: false
 		} as any
 		
-		// 打印提交的数据
-		console.log('准备提交的数据:', formData)
-		// 显示提交的数据（可选，用于更明显的提示）
-		toast.info('正在提交数据，请查看控制台')
-		console.log('提交的数据详情:', JSON.stringify(formData, null, 2))
-		
 		// 提交数据
 		const response = await postPublish(formData)
-		
-		console.log('发布响应:', response)
 		
 		if (response.code === 200) {
 			toast.success('发布成功')
@@ -312,6 +345,7 @@ const submitForm = async () => {
 			locationLatitude.value = 0
 			locationLongitude.value = 0
 			contactPhone.value = ''
+			selectedTags.value = [1, 2, 3] // 重置为默认标签
 			// 跳转到票卷列表页面
 			uni.redirectTo({
 				url: '/pages/ticket/index'
@@ -320,7 +354,6 @@ const submitForm = async () => {
 			toast.error(response.message || '发布失败')
 		}
 	} catch (error) {
-		console.error('发布失败:', error)
 		toast.error('发布失败，请稍后重试')
 	}
 }
