@@ -683,7 +683,12 @@ export const upload = <T>(
     const otherFields: Record<string, any> = {};
     for (const [key, value] of Object.entries(formData)) {
       if (!fileFields.includes(key) && value !== undefined && value !== null) {
-        otherFields[key] = String(value);
+        // 数组类型需要序列化为 JSON 字符串
+        if (Array.isArray(value)) {
+          otherFields[key] = JSON.stringify(value);
+        } else {
+          otherFields[key] = String(value);
+        }
       }
     }
 

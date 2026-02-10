@@ -1,5 +1,8 @@
 import { get } from "@/utils/http";
-import type { ActivityListResponse } from "@/types/modules/activity";
+import type {
+  ActivityListResponse,
+  MyCreatedActivity,
+} from "@/types/modules/activity";
 
 const apiUrls = {
   getActivityList: "/api/v1/activity/list",
@@ -15,7 +18,7 @@ const apiUrls = {
 export const getActivityList = (
   type: "待参加" | "已参加",
   page = 1,
-  pageSize = 12
+  pageSize = 12,
 ) => {
   return get<Response<ActivityListResponse>>(apiUrls.getActivityList, {
     data: { type, page, pageSize },
@@ -28,7 +31,7 @@ export const getActivityList = (
  * @param pageSize 每页数量，默认12
  */
 export const getMyCreated = (page = 1, pageSize = 12) => {
-  return get<Response<ActivityListResponse>>(apiUrls.getMyCreated, {
+  return get<Response<MyCreatedActivity>>(apiUrls.getMyCreated, {
     data: { page, pageSize },
   });
 };

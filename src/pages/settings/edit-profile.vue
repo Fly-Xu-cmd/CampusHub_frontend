@@ -111,6 +111,66 @@
               >{{ formData.introduction.length }}/100</text
             >
           </view>
+
+          <!-- 兴趣标签 -->
+          <view class="form-item tags-item">
+            <text class="label"
+              >兴趣标签
+              <text class="tag-count"
+                >({{ formData.interestTagIds.length }}/{{
+                  tagsList.length
+                }})</text
+              ></text
+            >
+            <view class="tags-wrapper" v-if="tagsList.length > 0">
+              <view
+                v-for="tag in tagsList"
+                :key="tag.id"
+                class="tag-item"
+                :class="{ 'is-selected': isTagSelected(tag.id) }"
+                :style="{
+                  borderColor: isTagSelected(tag.id)
+                    ? tag.tagColor || '#f97316'
+                    : '#e2e8f0',
+                  backgroundColor: isTagSelected(tag.id)
+                    ? `${tag.tagColor || '#f97316'}15`
+                    : '#fff',
+                }"
+                @click="toggleTag(tag.id)"
+              >
+                <wd-icon
+                  v-if="!isImageUrl(tag.tagIcon)"
+                  :name="tag.tagIcon || 'star-on'"
+                  size="14px"
+                  class="tag-icon"
+                  :color="
+                    isTagSelected(tag.id)
+                      ? tag.tagColor || '#f97316'
+                      : '#94a3b8'
+                  "
+                  custom-style="margin-right: 6px;"
+                />
+
+                <image
+                  v-else
+                  :src="tag.tagIcon"
+                  class="tag-img-icon"
+                  mode="aspectFit"
+                />
+
+                <text
+                  class="tag-text"
+                  :style="{
+                    color: isTagSelected(tag.id)
+                      ? tag.tagColor || '#f97316'
+                      : '#64748b',
+                  }"
+                  >{{ tag.tagName }}</text
+                >
+              </view>
+            </view>
+            <text class="empty-tags-tip" v-else>暂无可选标签</text>
+          </view>
         </view>
       </template>
     </view>
@@ -121,8 +181,10 @@
 import { ref, computed, nextTick } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useUserStore } from "@/store/user";
-import { updateProfile, updateProfileWithAvatar } from "@/api/profile/router";
+import { updateProfileWithAvatar } from "@/api/profile/router";
+import { getTags } from "@/api/tags/router";
 import type { PostUserDetailsRequest } from "@/types/modules/profile";
+import type { InterestTag } from "@/types/modules/profile";
 
 const userStore = useUserStore();
 const loading = ref(false);
@@ -133,12 +195,17 @@ const isDataReady = ref(false); // 数据是否已准备好
 // 年龄范围：10-80岁
 const ageRange = Array.from({ length: 71 }, (_, i) => i + 10);
 
+// 标签相关
+const tagsList = ref<InterestTag[]>([]);
+const isLoadingTags = ref(false);
+
 // 表单数据
 const formData = ref({
   nickname: "",
   gender: "",
   age: 0,
   introduction: "",
+  interestTagIds: [] as number[],
 });
 
 // 头像URL（优先显示新选择的上传头像）
@@ -148,6 +215,52 @@ const avatarUrl = computed(() => {
   }
   return userStore.userInfo.avatarUrl || "/static/default_avatar.png";
 });
+
+// 获取标签列表
+const fetchTags = async () => {
+  isLoadingTags.value = true;
+  try {
+    const res = await getTags();
+    if (res.data && Array.isArray(res.data.interestTags)) {
+      tagsList.value = res.data.interestTags;
+    } else if (Array.isArray(res.data)) {
+      tagsList.value = res.data as any;
+    } else {
+      tagsList.value = [];
+    }
+  } catch (error) {
+    console.error("获取标签失败:", error);
+    tagsList.value = [];
+  } finally {
+    isLoadingTags.value = false;
+  }
+};
+
+// 切换标签选择
+const toggleTag = (tagId: number) => {
+  const index = formData.value.interestTagIds.indexOf(tagId);
+  if (index > -1) {
+    formData.value.interestTagIds.splice(index, 1);
+  } else {
+    // 最多选择10个标签
+    if (formData.value.interestTagIds.length >= 10) {
+      uni.showToast({ title: "最多选择10个标签", icon: "none" });
+      return;
+    }
+    formData.value.interestTagIds.push(tagId);
+  }
+};
+
+// 判断标签是否被选中
+const isTagSelected = (tagId: number) => {
+  return formData.value.interestTagIds.includes(tagId);
+};
+
+// 判断是否为图片URL
+const isImageUrl = (str: string) => {
+  if (!str) return false;
+  return str.startsWith("http") || str.startsWith("/static");
+};
 
 onLoad(() => {
   // 使用 nextTick 确保 DOM 渲染完成后再更新数据
@@ -160,9 +273,12 @@ onLoad(() => {
       gender: userInfo.gender || "",
       age: userInfo.age ? Number(userInfo.age) : 0,
       introduction: userInfo.introduction || "",
+      interestTagIds: userInfo.interestTags?.map((tag) => tag.id) || [],
     };
     isDataReady.value = true;
   });
+  // 获取标签列表
+  fetchTags();
 });
 
 // 年龄选择器变化
@@ -218,6 +334,7 @@ const handleSave = async () => {
       age: formData.value.age,
       introduction: formData.value.introduction.trim(),
       avatar_image: hasNewAvatar.value ? newAvatarPath.value : "",
+      interestTagIds: formData.value.interestTagIds,
     };
 
     // 使用支持头像上传的接口
@@ -235,6 +352,10 @@ const handleSave = async () => {
       introduction: formData.value.introduction,
       // 如果上传了新头像，从响应中获取新头像URL
       ...(response.data?.avatarUrl && { avatarUrl: response.data.avatarUrl }),
+      // 更新兴趣标签
+      ...(response.data?.interestTags && {
+        interestTags: response.data.interestTags,
+      }),
     });
 
     // 清除临时头像状态
@@ -414,6 +535,57 @@ const toBack = () => {
       content: "请选择年龄";
       color: $text-tertiary;
     }
+  }
+}
+
+/* --- 兴趣标签选择器 --- */
+.tags-item {
+  .tag-count {
+    font-size: $font-size-sm;
+    color: $text-tertiary;
+    font-weight: normal;
+  }
+
+  .tags-wrapper {
+    @include flex(row, flex-start, center);
+    flex-wrap: wrap;
+    gap: 16rpx;
+
+    .tag-item {
+      @include flex(row, center, center);
+      padding: 12rpx 20rpx;
+      background-color: #fff;
+      border: 2rpx solid #e2e8f0;
+      border-radius: 999px;
+      transition: all 0.2s ease;
+
+      .tag-icon,
+      .tag-img-icon {
+        margin-right: 6rpx;
+      }
+
+      .tag-img-icon {
+        width: 28rpx;
+        height: 28rpx;
+        opacity: 0.5;
+      }
+
+      &.is-selected .tag-img-icon {
+        opacity: 1;
+      }
+
+      .tag-text {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-bold;
+        color: #64748b;
+      }
+    }
+  }
+
+  .empty-tags-tip {
+    font-size: $font-size-sm;
+    color: $text-tertiary;
+    padding: $spacing-md 0;
   }
 }
 </style>

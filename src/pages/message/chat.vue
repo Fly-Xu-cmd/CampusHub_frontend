@@ -16,35 +16,79 @@
     </view>
 
     <!-- 聊天消息区域 -->
-    <scroll-view class="chat-content" scroll-y>
-      <!-- 消息时间 -->
-      <view class="message-time">
-        <view class="time-text">14:20</view>
+    <scroll-view
+      class="chat-content"
+      scroll-y
+      :scroll-into-view="scrollIntoView"
+      :scroll-with-animation="true"
+    >
+      <!-- 加载更多提示 -->
+      <view
+        class="load-more"
+        v-if="hasMore && !loadingHistory"
+        @click="loadHistoryMessages()"
+      >
+        <text>加载更多消息</text>
+      </view>
+      <view class="load-more loading" v-if="loadingHistory">
+        <text>加载中...</text>
       </view>
 
-      <!-- 他人消息 -->
-      <view class="message-item others">
-        <view class="message-avatar">
-          <image src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
-        </view>
-        <view class="message-info">
-          <view class="message-sender">
-            {{ "默认名" }}
-          </view>
-        
-          <view class="message-bubble">
-            <view class="message-text">大家到了吗？</view>
-          </view>
-        </view>
-      </view>
+      <!-- 消息列表 -->
+      <view class="message-list">
+        <!-- 消息项 -->
+        <view
+          class="message-item"
+          :class="msg.sender_id === currentUserId ? 'mine' : 'others'"
+          v-for="msg in messages"
+          :key="msg.message_id"
+          :id="'msg-' + msg.message_id"
+        >
+          <!-- 他人消息 -->
+          <template v-if="msg.sender_id !== currentUserId">
+            <view class="message-avatar">
+              <image :src="defaultAvatar" mode="aspectFill"></image>
+            </view>
+            <view class="message-info">
+              <view class="message-sender">{{ msg.sender_name }}</view>
+              <view class="message-bubble">
+                <!-- 文字消息 -->
+                <text class="message-text" v-if="msg.msg_type === 1">{{
+                  msg.content
+                }}</text>
+                <!-- 图片消息 -->
+                <image
+                  class="message-image"
+                  v-else-if="msg.msg_type === 2"
+                  :src="msg.image_url"
+                  mode="widthFix"
+                ></image>
+              </view>
+            </view>
+          </template>
 
-      <!-- 自己消息 -->
-      <view class="message-item mine">
-        <view class="message-avatar">
-          <image src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
-        </view>
-        <view class="message-bubble">
-          <view class="message-text">马上到！</view>
+          <!-- 自己消息 -->
+          <template v-else>
+            <view class="message-bubble">
+              <!-- 文字消息 -->
+              <text class="message-text" v-if="msg.msg_type === 1">{{
+                msg.content
+              }}</text>
+              <!-- 图片消息 -->
+              <image
+                class="message-image"
+                v-else-if="msg.msg_type === 2"
+                :src="msg.image_url"
+                mode="widthFix"
+              ></image>
+            </view>
+            <view class="message-avatar">
+              <image
+                :src="userStore.userInfo.avatarUrl || defaultAvatar"
+                mode="aspectFill"
+              ></image>
+            </view>
+          </template>
         </view>
       </view>
     </scroll-view>
@@ -52,7 +96,12 @@
     <!-- 底部输入区域 -->
     <view class="chat-input">
       <view class="input-container">
-        <input type="text" placeholder="发送消息..." class="message-input" />
+        <input
+          type="text"
+          placeholder="发送消息..."
+          v-model="inputText"
+          class="message-input"
+        />
       </view>
       <view class="send-button" @click="sendMessage">
         <view class="send-text">发送</view>
@@ -62,55 +111,176 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { getTitle } from '@/api/message/router';
-import { useRoute } from 'vue-router';
-const route = useRoute();
-const group_id = route.query.group_id as string;
+import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import { getGroupInfo, getGroupHistory } from "@/api/message/router";
+import { getWebSocket, initWebSocket } from "@/utils/websocket";
+import type { ChatMessage } from "@/types/modules/chat";
+import { useUserStore } from "@/store/user";
 
-onMounted(() => {
-  // 获取群聊名称
-  getTitle(group_id).then(res => {
-    groupTitle.value = res.data;
+const userStore = useUserStore();
+const defaultAvatar = "https://picsum.photos/200?random=avatar";
+
+// URL 参数
+let groupId = "";
+
+// 数据状态
+const groupTitle = ref<any>({});
+const messages = ref<ChatMessage[]>([]);
+const inputText = ref("");
+const scrollIntoView = ref("");
+const hasMore = ref(true);
+const loadingHistory = ref(false);
+const currentUserId = computed(() => userStore.userId);
+
+// 初始化 WebSocket
+const initWS = () => {
+  const token = uni.getStorageSync("accessToken");
+  if (!token) {
+    uni.showToast({ title: "未登录", icon: "none" });
+    return;
+  }
+
+  const wsUrl = import.meta.env.VITE_WS_URL || "ws://192.168.10.9/ws";
+  const ws = initWebSocket({
+    url: wsUrl,
+    token: token,
   });
+
+  // 监听认证成功
+  ws.on("authenticated", () => {
+    console.log("WebSocket 认证成功");
+    ws.joinGroup(groupId);
+    loadHistoryMessages();
+  });
+
+  // 监听新消息
+  ws.on("newMessage", (data: any) => {
+    console.log("收到新消息:", data);
+    if (data.group_id === groupId) {
+      messages.value.push({
+        message_id: data.message_id,
+        group_id: data.group_id,
+        sender_id: data.sender_id,
+        sender_name: data.sender_name,
+        msg_type: data.msg_type,
+        content: data.content,
+        image_url: data.image_url,
+        created_at: new Date(data.created_at * 1000).toISOString(),
+      });
+      scrollToBottom();
+    }
+  });
+
+  // 监听错误
+  ws.on("error", (data: any) => {
+    console.error("WebSocket 错误:", data);
+    uni.showToast({
+      title: data.message || "连接错误",
+      icon: "none",
+    });
+  });
+};
+
+// 获取群聊信息
+const fetchGroupInfo = async () => {
+  try {
+    const res = await getGroupInfo(groupId);
+    if (res.data) {
+      groupTitle.value = res.data;
+    }
+  } catch (error) {
+    console.error("获取群聊信息失败:", error);
+  }
+};
+
+// 获取历史消息
+const loadHistoryMessages = async (beforeId?: string) => {
+  if (loadingHistory.value) return;
+  loadingHistory.value = true;
+
+  try {
+    const res = await getGroupHistory(groupId, beforeId);
+    if (res.data?.messages) {
+      const newMessages = res.data.messages.reverse();
+      if (beforeId) {
+        messages.value = [...newMessages, ...messages.value];
+      } else {
+        messages.value = newMessages;
+      }
+      hasMore.value = res.data.has_more;
+
+      // 首次加载滚动到底部
+      if (!beforeId) {
+        nextTick(() => {
+          scrollToBottom();
+        });
+      }
+    }
+  } catch (error) {
+    console.error("获取历史消息失败:", error);
+  } finally {
+    loadingHistory.value = false;
+  }
+};
+
+// 暴露给模板
+defineExpose({
+  loadHistoryMessages,
 });
 
-const groupTitle = ref();
-// 模拟消息数据
-const messages = ref([
-  {
-    id: 1,
-    sender: 'other',
-    content: '大家到了吗？',
-    time: '14:20',
-    avatar: 'https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=100&h=100&fit=crop&crop=face'
-  },
-  {
-    id: 2,
-    sender: 'me',
-    content: '马上到！',
-    time: '14:20',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face'
+// 滚动到底部
+const scrollToBottom = () => {
+  if (messages.value.length > 0) {
+    const lastMsg = messages.value[messages.value.length - 1];
+    scrollIntoView.value = "msg-" + lastMsg.message_id;
   }
-]);
-
-// 查看群聊详情
-const viewChatDetail = () => {
-  uni.navigateTo({
-    url: `/pages/message/ChatDetail?group_id=${group_id}&name=${groupTitle.value.name}&member_count=${groupTitle.value.member_count}`
-  });
 };
 
 // 发送消息
 const sendMessage = () => {
-  // 后续实现WebSocket发送逻辑
-  console.log('发送消息');
+  const text = inputText.value.trim();
+
+  if (!text) return;
+
+  const ws = getWebSocket();
+  if (!ws || !ws.isAuth()) {
+    uni.showToast({ title: "未连接", icon: "none" });
+    return;
+  }
+
+  ws.sendTextMessage(groupId, text);
+  inputText.value = "";
+};
+
+// 查看群聊详情
+const viewChatDetail = () => {
+  uni.navigateTo({
+    url: `/pages/message/ChatDetail?group_id=${groupId}&name=${groupTitle.value.name}&member_count=${groupTitle.value.member_count}`,
+  });
 };
 
 // 返回上一页
 const goBack = () => {
   uni.navigateBack();
 };
+
+// 页面加载
+onLoad((options: any) => {
+  groupId = options.group_id;
+  if (groupId) {
+    fetchGroupInfo();
+    initWS();
+  }
+});
+
+// 页面卸载
+onUnmounted(() => {
+  const ws = getWebSocket();
+  if (ws) {
+    ws.leaveGroup(groupId);
+  }
+});
 </script>
 
 <style scoped lang="scss">
@@ -162,6 +332,17 @@ const goBack = () => {
   background-color: $background-color;
   min-height: calc(100vh - 120rpx - 240rpx);
 
+  .load-more {
+    @include flex(row, center, center);
+    padding: $spacing-sm;
+    font-size: $font-size-xs;
+    color: $text-tertiary;
+
+    &.loading {
+      color: $primary-color;
+    }
+  }
+
   /* 消息时间 */
   .message-time {
     @include flex(row, center, flex-start);
@@ -208,11 +389,17 @@ const goBack = () => {
           padding: $spacing-sm;
           box-shadow: $shadow-sm;
           max-width: 70%;
-                
+
           .message-text {
             font-size: $font-size-sm;
             color: $text-primary;
             line-height: 1.4;
+            word-break: break-all;
+          }
+
+          .message-image {
+            max-width: 400rpx;
+            border-radius: $border-radius-md;
           }
         }
       }
@@ -244,6 +431,12 @@ const goBack = () => {
           font-size: $font-size-sm;
           color: $text-light;
           line-height: 1.4;
+          word-break: break-all;
+        }
+
+        .message-image {
+          max-width: 400rpx;
+          border-radius: $border-radius-md;
         }
       }
     }
