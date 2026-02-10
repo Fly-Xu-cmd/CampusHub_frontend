@@ -137,9 +137,7 @@
 
 <script setup lang="ts">
 import '@/styles/iconfont.css'
-import {
-	useToast,
-} from 'wot-design-uni'
+
 import {
 	ref,
 	computed,
@@ -159,7 +157,6 @@ interface Tag {
 	color: string
 }
 
-	const toast = useToast()
 	const publishStore = usePublishStore()
 	const activityTitle = ref<string>('')
 const activityDetail = ref<string>('')
@@ -222,7 +219,7 @@ const fetchTags = async (): Promise<void> => {
 			tags.value = []
 		}
 	} catch (error) {
-		toast.error('获取标签失败，请稍后重试')
+		uni.showToast({ title: '获取标签失败，请稍后重试', icon: 'error' })
 		tags.value = []
 	}
 }
@@ -249,37 +246,37 @@ const submitForm = async () => {
 	try {
 		// 表单验证
 		if (!activityTitle.value) {
-			toast.error('请输入活动标题')
+			uni.showToast({ title: '请输入活动标题', icon: 'none' })
 			return
 		}
 		
 		if (!contactPhone.value) {
-			toast.error('请输入联系电话')
+			uni.showToast({ title: '请输入联系电话', icon: 'none' })
 			return
 		}
 		
 		if (!locationName.value || locationName.value === '选择线下地点') {
-			toast.error('请选择活动地点')
+			uni.showToast({ title: '请选择活动地点', icon: 'none' })
 			return
 		}
 		
 		if (!peopleLimit.value || peopleLimit.value < 1) {
-			toast.error('请设置有效的人数限制')
+			uni.showToast({ title: '请设置有效的人数限制', icon: 'none' })
 			return
 		}
 		
 		if (selectedTags.value.length === 0) {
-			toast.error('请至少选择一个活动标签')
+			uni.showToast({ title: '请至少选择一个活动标签', icon: 'none' })
 			return
 		}
 		
 		// 添加封面上传验证
 		if (fileList.value.length === 0) {
-			toast.error('请上传活动封面')
+			uni.showToast({ title: '请上传活动封面', icon: 'none' })
 			return
 		} else {
 			if (!fileList.value[0].url) {
-				toast.error('请等待文件上传完成')
+				uni.showToast({ title: '请等待文件上传完成', icon: 'none' })
 				return
 			}
 		}
@@ -292,17 +289,17 @@ const submitForm = async () => {
 		
 		// 检查时间顺序
 		if (registerEndTime <= registerStartTime) {
-			toast.error('报名截止时间必须在报名开始时间之后')
+			uni.showToast({ title: '报名截止时间必须在报名开始时间之后', icon: 'error' })
 			return
 		}
 		
 		if (activityStartTime <= registerEndTime) {
-			toast.error('活动开始时间必须在报名截止时间之后')
+			uni.showToast({ title: '活动开始时间必须在报名截止时间之后', icon: 'error' })
 			return
 		}
 		
 		if (activityEndTime <= activityStartTime) {
-			toast.error('活动结束时间必须在活动开始时间之后')
+			uni.showToast({ title: '活动结束时间必须在活动开始时间之后', icon: 'error' })
 			return
 		}
 		
@@ -334,7 +331,7 @@ const submitForm = async () => {
 		const response = await postPublish(formData)
 		
 		if (response.code === 200) {
-			toast.success('发布成功')
+			uni.showToast({ title: '发布成功', icon: 'success' })
 			// 重置表单
 			activityTitle.value = ''
 			activityDetail.value = ''
@@ -351,10 +348,10 @@ const submitForm = async () => {
 				url: '/pages/ticket/index'
 			})
 		} else {
-			toast.error(response.message || '发布失败')
+			uni.showToast({ title: response.message || '发布失败', icon: 'error' })
 		}
 	} catch (error) {
-		toast.error('发布失败，请稍后重试')
+		uni.showToast({ title: '发布失败，请稍后重试', icon: 'error' })
 	}
 }
 
