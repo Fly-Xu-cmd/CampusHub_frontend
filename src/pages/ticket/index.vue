@@ -30,8 +30,7 @@
 										{{ formatEventTime(ticket.eventTime) }}
 									</text>
 								</view>
-								<view :class="['event-status', ticket.status === 'used' ? 'status-used' : 'status-pending']"
-									@click="toggleStatus(ticket)">
+								<view :class="['event-status', ticket.status === 'used' ? 'status-used' : 'status-pending']">
 									{{ ticket.status === 'used' ? '已使用' : '待使用' }}
 								</view>
 							</view>
@@ -170,20 +169,19 @@ const fetchTicketDetails = async () => {
 		}
 		
 		// 直接使用后端返回的数据，进行必要的类型转换
-		const fetchedTickets = result.data.items.map((item: any) => {
-			return {
-				id: item.ticketId?.toString() || '',
-				eventId: item.activityId?.toString() || '',
-				eventName: item.activityName || '',
-				eventTime: item.activityTime || '',
-				eventLocation: '', // 默认空值
-				ticketNumber: item.ticketCode || '',
-				status: item.status === 1 ? 'used' : 'pending', // 将数字状态转换为字符串
-				qrCodeUrl: '', // 默认空值
-				createdAt: new Date().toISOString() // 当前时间
-			}
-		})
-		
+			const fetchedTickets = result.data.items.map((item: any) => {
+				return {
+					id: item.ticketId?.toString() || '',
+					eventId: item.activityId?.toString() || '',
+					eventName: item.activityName || '',
+					eventTime: item.activityTime || '',
+					eventLocation: '', // 默认空值
+					ticketNumber: item.ticketCode || '',
+					status: item.status === 1 ? 'used' : 'pending', // 将数字状态转换为字符串
+					qrCodeUrl: '', // 默认空值
+					createdAt: new Date().toISOString() // 当前时间
+				}
+			})
 		// 过滤掉无效票券
 		const validTickets = fetchedTickets.filter((ticket: any) => ticket && ticket.id) as Ticket[]
 		tickets.value = validTickets
@@ -200,13 +198,12 @@ const fetchTicketDetails = async () => {
 	}
 }
 
-// 切换票券状态
-const toggleStatus = (ticket: Ticket) => {
-	const index = tickets.value.findIndex(t => t.id === ticket.id)
-	if (index !== -1) {
-		tickets.value[index].status = tickets.value[index].status === 'pending' ? 'used' : 'pending'
-		// 这里可以添加API调用，将状态更新到服务器
-	}
+
+
+// 从 qrCodeUrl 中提取 TOTP 码
+const extractTotpFromQrCode = (qrCodeUrl: string): string => {
+	const match = qrCodeUrl.match(/totp=([0-9]+)/)
+	return match ? match[1] : ''
 }
 
 // 显示二维码
@@ -229,17 +226,20 @@ const showQRCode = async (ticket: Ticket) => {
 			}
 			// 更新二维码值
 			qrCodeValue.value = detailResult.data.qrCodeUrl || `https://ticket.campus-hub.com/event/${ticket.id}`
+			// 从 qrCodeUrl 中提取 TOTP 码
+			totpCode.value = extractTotpFromQrCode(detailResult.data.qrCodeUrl || '')
 		} else {
 			// 如果获取详情失败，使用列表中的数据
 			selectedTicket.value = ticket
 			qrCodeValue.value = `https://ticket.campus-hub.com/event/${ticket.id}`
+			totpCode.value = ''
 		}
 		showQR.value = true
 	} catch (error) {
-		console.error('获取票券详情失败:', error)
 		// 如果获取详情失败，使用列表中的数据
 		selectedTicket.value = ticket
 		qrCodeValue.value = `https://ticket.campus-hub.com/event/${ticket.id}`
+		totpCode.value = ''
 		showQR.value = true
 	}
 }
@@ -270,27 +270,46 @@ const verifyTicket = async () => {
 		return
 	}
 
+	// 验证必要字段
+	const activityId = Number(selectedTicket.value.eventId)
+	const ticketCode = selectedTicket.value.ticketNumber
+	const eventTime = selectedTicket.value.eventTime
+	
+	if (isNaN(activityId)) {
+		verifyResult.value = '活动ID无效'
+		verifySuccess.value = false
+		return
+	}
+
+	if (!ticketCode) {
+		verifyResult.value = '票券码无效'
+		verifySuccess.value = false
+		return
+	}
+
+	// 验证时间限制：活动开始前1小时内到活动开始后0.5小时内才能核销
+	if (eventTime) {
+		const now = new Date()
+		const activityStart = new Date(eventTime)
+		const oneHourBefore = new Date(activityStart.getTime() - 60 * 60 * 1000) // 1小时前
+		const halfHourAfter = new Date(activityStart.getTime() + 30 * 60 * 1000) // 0.5小时后
+		
+		if (now < oneHourBefore || now > halfHourAfter) {
+			verifyResult.value = '不在核销时间范围内（活动开始前1小时内到活动开始后0.5小时内）'
+			verifySuccess.value = false
+			return
+		}
+	}
+
 	verifyLoading.value = true
 	verifyResult.value = null
 
 	try {
-		// 特殊处理：当TOTP验证码为123456时，直接显示核销成功
-		if (totpCode.value === '123456') {
-			verifyResult.value = '核销成功'
-			verifySuccess.value = true
-			// 更新票券状态为已使用
-			const index = tickets.value.findIndex(t => t.id === selectedTicket.value?.id)
-			if (index !== -1) {
-				tickets.value[index].status = 'used'
-			}
-			verifyLoading.value = false
-			return
-		}
-
 		// 调用postVerifyTicket API方法实现核销功能
 		const result = await postVerifyTicket({
-			ticket_code: selectedTicket.value.ticketNumber,
-			totp_code: totpCode.value
+			activityId: activityId,
+			ticketCode: ticketCode,
+			totpCode: totpCode.value
 		})
 
 		if (result && result.code === 0) {
@@ -304,6 +323,10 @@ const verifyTicket = async () => {
 			if (index !== -1) {
 				tickets.value[index].status = 'used'
 			}
+			// 延迟关闭票券详情页面，让用户看到成功信息
+			setTimeout(() => {
+				hideQRCode()
+			}, 1500)
 		} else {
 			// 核销失败
 			const errorText = result?.message || '核销失败'

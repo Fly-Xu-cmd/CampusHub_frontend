@@ -15,12 +15,16 @@ export interface Data {
 
 export interface Request {
     /**
+     * 活动id
+     */
+    activityId: number;
+    /**
      * 票券码
      */
-    ticket_code: string;
+    ticketCode: string;
     /**
      * totp验证码
      */
-    totp_code: string;
+    totpCode: string;
     [property: string]: any;
 }

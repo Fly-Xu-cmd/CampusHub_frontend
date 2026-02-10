@@ -13,7 +13,7 @@ const apiUrls = {
 
 // 获取票券详情
 export const getTicketDetail = (ticketId: string) => {
-    return get<TicketDetailResponse>(`${apiUrls.getTicketDetail}?ticket_id=${ticketId}`);
+    return get<TicketDetailResponse>(`${apiUrls.getTicketDetail}?ticketId=${ticketId}`);
 };
 
 // 获取票券列表
