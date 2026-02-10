@@ -34,7 +34,7 @@
               <image :src="member.avatar" mode="aspectFill"></image>
             </view>
             <view class="member-info">
-              <view class="member-name">{{ member.username }}</view>
+              <view class="member-name">{{ member.username || "默认名"}}</view>
               <view v-if="member.role === 'owner'" class="member-role">群主</view>
             </view>
             <view class="member-more">⋯</view>
