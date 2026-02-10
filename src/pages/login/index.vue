@@ -98,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from "vue";
+import { reactive, ref, onMounted, onUnmounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useSystemStore } from "@/store/system";
 import { useUserStore } from "@/store/user";
@@ -192,6 +192,19 @@ onMounted(() => {
   // 仅在 H5 环境下初始化极验，其他环境需适配
   // #ifdef H5
   initCaptcha();
+  // #endif
+});
+
+// 页面卸载时销毁极验实例
+onUnmounted(() => {
+  // #ifdef H5
+  if (captchaObj.value) {
+    captchaObj.value.destroy();
+    captchaObj.value = null;
+  }
+  // 清空容器
+  const el = document.getElementById("captchaBox");
+  if (el) el.innerHTML = "";
   // #endif
 });
 
