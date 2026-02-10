@@ -47,9 +47,16 @@
           <view class="top-bar">
             <view class="avatar-wrapper">
               <image :src="avatarUrl" class="avatar-img" mode="aspectFill" />
-              <view class="avatar-badges">
-                <view class="badge-item orange">跑步</view>
-                <view class="badge-item green">徒步</view>
+              <!-- 头像徽章：显示前2个兴趣标签 -->
+              <view v-if="displayInterestTags.length > 0" class="avatar-badges">
+                <view
+                  v-for="(tag, index) in displayInterestTags.slice(0, 2)"
+                  :key="tag.id"
+                  class="badge-item"
+                  :class="getTagColorClass(index)"
+                >
+                  {{ tag.tagName }}
+                </view>
               </view>
             </view>
 
@@ -63,33 +70,39 @@
             <text class="bio">{{ userInfoRef.introduction || "" }}</text>
           </view>
 
+          <!-- 兴趣标签行 -->
           <view class="tags-row">
-            <view class="tag-item orange">
+            <!-- 有兴趣标签时显示 -->
+            <template v-if="displayInterestTags.length > 0">
+              <view
+                v-for="(tag, index) in displayInterestTags"
+                :key="tag.id"
+                class="tag-item"
+                :class="getTagColorClass(index)"
+              >
+                <wd-icon
+                  v-if="tag.tagIcon"
+                  class-prefix="iconfont"
+                  :name="tag.tagIcon"
+                  size="12px"
+                  custom-style="margin-right:4rpx"
+                ></wd-icon>
+                {{ tag.tagName }}
+              </view>
+            </template>
+            <!-- 无兴趣标签时显示兜底提示 -->
+            <view
+              v-else
+              class="tag-item placeholder"
+              @click="handleToAddInterests"
+            >
               <wd-icon
                 class-prefix="iconfont"
-                name="running"
+                name="add"
                 size="12px"
                 custom-style="margin-right:4rpx"
-              ></wd-icon
-              >跑步
-            </view>
-            <view class="tag-item green">
-              <wd-icon
-                class-prefix="iconfont"
-                name="mountain"
-                size="12px"
-                custom-style="margin-right:4rpx"
-              ></wd-icon
-              >徒步
-            </view>
-            <view class="tag-item purple">
-              <wd-icon
-                class-prefix="iconfont"
-                name="book"
-                size="12px"
-                custom-style="margin-right:4rpx"
-              ></wd-icon
-              >读书
+              ></wd-icon>
+              添加兴趣
             </view>
           </view>
 
@@ -223,6 +236,18 @@ const isAuthenticated = computed(() => userStore.isAuthenticated);
 const hasAvatar = computed(() => userStore.hasAvatar);
 const userInfoRef = computed(() => userStore.userInfo);
 
+// 兴趣标签显示
+const displayInterestTags = computed(() => {
+  const tags = userInfoRef.value.interestTags || [];
+  return tags;
+});
+
+// 获取标签颜色class（按索引循环）
+const getTagColorClass = (index: number): string => {
+  const colorClasses = ["orange", "green", "purple"];
+  return colorClasses[index % colorClasses.length];
+};
+
 // 处理头像URL，确保是绝对路径
 const avatarUrl = computed(() => {
   const url = userInfoRef.value.avatarUrl;
@@ -292,6 +317,7 @@ onShow(async () => {
 
       // 更新个人资料
       if (profileRes.status === "fulfilled" && profileRes.value.data) {
+        console.log("个人资料数据:", profileRes.value.data);
         userStore.updateUserInfo(profileRes.value.data);
       }
 
@@ -346,6 +372,11 @@ const handleToJoined = () => {
 
 const handleToVerify = () => {
   uni.navigateTo({ url: "/pages/profile/verify" });
+};
+
+const handleToAddInterests = () => {
+  // 跳转到兴趣标签选择页（如果有的话）或者设置页面
+  uni.navigateTo({ url: "/pages/selectTags/index" });
 };
 </script>
 
@@ -526,6 +557,7 @@ const handleToVerify = () => {
 
   .tags-row {
     @include flex(row, flex-start, center);
+    flex-wrap: wrap;
     padding: 0 $spacing-lg;
     gap: $spacing-sm;
     margin-bottom: 40rpx;
@@ -536,6 +568,7 @@ const handleToVerify = () => {
       padding: 8rpx 20rpx;
       border-radius: $border-radius-full;
       @include flex(row, center, center);
+      flex-wrap: nowrap;
 
       &.orange {
         background: #fff7ed;
@@ -548,6 +581,17 @@ const handleToVerify = () => {
       &.purple {
         background: #f5f3ff;
         color: #7c3aed;
+      }
+      // 兜底样式：添加兴趣按钮
+      &.placeholder {
+        background: #f1f5f9;
+        color: $text-tertiary;
+        border: 1rpx dashed $border-color;
+        cursor: pointer;
+
+        &:active {
+          opacity: 0.7;
+        }
       }
     }
   }

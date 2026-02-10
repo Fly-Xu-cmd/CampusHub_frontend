@@ -35,7 +35,9 @@
             ></wd-icon>
             <text class="time">{{ formatTime(activity.time) }}</text>
           </view>
-          <text class="status-tip">{{ activity.status }}</text>
+          <text class="status-tip" :class="getStatusClass(activity.time)">{{
+            getTimeStatusText(activity.time)
+          }}</text>
         </view>
       </view>
 
@@ -68,15 +70,46 @@ const pageSize = 12;
 
 const hasMore = computed(() => activities.value.length < total.value);
 
-// 格式化时间显示
-const formatTime = (timeStr: string) => {
+// 格式化时间显示 - 支持时间戳和字符串格式
+const formatTime = (time: string | number) => {
   try {
-    const date = new Date(timeStr);
+    const date = typeof time === "number" ? new Date(time) : new Date(time);
     const month = date.getMonth() + 1;
     const day = date.getDate();
-    return `${month}.${day}`;
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    return `${month}.${day} ${hours}:${minutes}`;
   } catch {
-    return timeStr;
+    return typeof time === "string" ? time : "";
+  }
+};
+
+// 获取时间状态文本 - 支持时间戳和字符串格式
+const getTimeStatusText = (time: string | number) => {
+  try {
+    const activityTime =
+      typeof time === "number" ? time : new Date(time).getTime();
+    const now = Date.now();
+    const diff = activityTime - now;
+
+    // 活动已结束
+    if (diff < 0) {
+      return "已结束";
+    }
+  } catch {
+    return "";
+  }
+};
+
+// 获取状态样式类
+const getStatusClass = (time: string | number) => {
+  try {
+    const activityTime =
+      typeof time === "number" ? time : new Date(time).getTime();
+    const now = Date.now();
+    return activityTime < now ? "ended" : "upcoming";
+  } catch {
+    return "";
   }
 };
 
@@ -191,8 +224,14 @@ onMounted(() => {
 
     .status-tip {
       font-size: $font-size-sm;
-      color: $text-tertiary;
       font-weight: $font-weight-bold;
+
+      &.ended {
+        color: $text-tertiary;
+      }
+      &.upcoming {
+        color: $primary-color;
+      }
     }
   }
 }

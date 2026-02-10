@@ -58,6 +58,7 @@ export const updateProfileWithAvatar = (data: PostUserDetailsRequest) => {
     age: data.age,
     gender: data.gender,
     avatar_image: data.avatar_image,
+    interestTagIds: data.interestTagIds,
   };
 
   return upload<Response<UserDetailsData>>(apiUrls.updateProfile, formData, [

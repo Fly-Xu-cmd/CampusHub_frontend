@@ -25,7 +25,7 @@
           mode="aspectFill"
         />
         <view class="info-col">
-          <text class="title">{{ activity.name }}</text>
+          <text class="title">{{ activity.categoryName }}</text>
           <view class="meta-row">
             <wd-icon
               name="time"
@@ -33,10 +33,23 @@
               color="#94a3b8"
               custom-style="margin-right:8rpx"
             ></wd-icon>
-            <text class="time">{{ formatTime(activity.time) }}</text>
+            <text class="time">{{
+              formatTime(activity.activityStartTime)
+            }}</text>
           </view>
-          <view class="status-tag" :class="getStatusClass(activity.status)">
-            {{ activity.status }}
+          <view class="status-row">
+            <view
+              class="status-tag"
+              :class="getStatusClass(activity.statusText)"
+            >
+              {{ activity.statusText }}
+            </view>
+            <text
+              class="countdown-text"
+              :class="getCountdownClass(activity.activityStartTime)"
+            >
+              {{ getCountdownText(activity.activityStartTime) }}
+            </text>
           </view>
         </view>
       </view>
@@ -58,29 +71,68 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { getMyCreated } from "@/api/activity/router";
-import type { ActivityListItem } from "@/types/modules/activity";
+import type { MyCreatedActivity } from "@/types/modules/activity";
 
 const defaultImage = "https://picsum.photos/200?random=1";
 const loading = ref(true);
 const loadingMore = ref(false);
-const activities = ref<ActivityListItem[]>([]);
+const activities = ref<MyCreatedActivity["list"]>([]);
 const currentPage = ref(1);
 const total = ref(0);
 const pageSize = 12;
 
 const hasMore = computed(() => activities.value.length < total.value);
 
-// 格式化时间显示
-const formatTime = (timeStr: string) => {
+// 格式化时间显示 - 支持时间戳和字符串格式
+const formatTime = (time: string | number) => {
   try {
-    const date = new Date(timeStr);
+    const date = typeof time === "number" ? new Date(time) : new Date(time);
     const month = date.getMonth() + 1;
     const day = date.getDate();
     const hour = date.getHours().toString().padStart(2, "0");
     const minute = date.getMinutes().toString().padStart(2, "0");
     return `${month}.${day} ${hour}:${minute}`;
   } catch {
-    return timeStr;
+    return typeof time === "string" ? time : "";
+  }
+};
+
+// 计算倒计时文本 - 支持时间戳和字符串格式
+const getCountdownText = (time: string | number) => {
+  try {
+    const activityTime =
+      typeof time === "number" ? time : new Date(time).getTime();
+    const now = Date.now();
+    const diff = activityTime - now;
+
+    if (diff <= 0) {
+      return "已结束";
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+    if (days > 0) {
+      return `${days}天后`;
+    } else if (hours > 0) {
+      return `${hours}小时后`;
+    } else {
+      return "即将开始";
+    }
+  } catch {
+    return "";
+  }
+};
+
+// 获取倒计时样式类
+const getCountdownClass = (time: string | number) => {
+  try {
+    const activityTime =
+      typeof time === "number" ? time : new Date(time).getTime();
+    const now = Date.now();
+    return activityTime < now ? "ended" : "upcoming";
+  } catch {
+    return "";
   }
 };
 
@@ -93,6 +145,7 @@ const getStatusClass = (status: string) => {
     草稿: "draft",
     已取消: "cancelled",
     已结束: "ended",
+    报名中: "success",
   };
   return statusMap[status] || "default";
 };
@@ -103,11 +156,11 @@ const fetchActivities = async (page: number) => {
     const response = await getMyCreated(page, pageSize);
     if (response.data) {
       if (page === 1) {
-        activities.value = response.data.items || [];
+        activities.value = response.data.list || [];
       } else {
-        activities.value.push(...(response.data.items || []));
+        activities.value.push(...(response.data.list || []));
       }
-      total.value = response.data.total || 0;
+      total.value = response.data.pagination.total || 0;
       currentPage.value = page;
     }
   } catch (error) {
@@ -190,7 +243,7 @@ onMounted(() => {
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+      line-clamp: 2;
       -webkit-box-orient: vertical;
     }
 
@@ -202,7 +255,16 @@ onMounted(() => {
       }
     }
 
+    .status-row {
+      @include flex(row, space-between, center);
+      gap: $spacing-xs;
+    }
+
     .status-tag {
+      font-size: $font-size-xs;
+      padding: 4rpx 12rpx;
+      border-radius: $border-radius-sm;
+      font-weight: $font-weight-bold;
       font-size: $font-size-xs;
       padding: 4rpx 12rpx;
       border-radius: $border-radius-sm;
@@ -241,6 +303,23 @@ onMounted(() => {
       &.default {
         background-color: #f3f4f6;
         color: #6b7280;
+      }
+
+      &.success {
+        background-color: $primary-color;
+        color: #fff;
+      }
+    }
+
+    .countdown-text {
+      font-size: $font-size-xs;
+      font-weight: $font-weight-bold;
+
+      &.upcoming {
+        color: $primary-color;
+      }
+      &.ended {
+        color: $text-tertiary;
       }
     }
   }
