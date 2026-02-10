@@ -1,5 +1,19 @@
 <template>
-	<CommonLayout headerType="none" title="发布新活动"  :showTabBar="true">
+	<CommonLayout headerType="none"  padding="0 0" :showTabBar="true">
+		<view class="header-container">
+			<view class="header-content">
+				<view class="header-left">
+					<view class="close-btn" @click="goBackHome">×</view>
+				</view>
+				<view class="header-title">
+					发布新活动
+				</view>
+				<view class="header-right">
+					<button class="submit-btn-header" @click="submitForm">提交</button>
+				</view>
+			</view>
+		</view>
+
 		<view class="publish-container">
 			<!-- 上传组件 -->
 		<UploadVideo 
@@ -9,9 +23,14 @@
 			<!-- 上传组件 -->
 
 			<!-- 活动标题 -->
-			<view class="form-item title-item">
-				<input type="text" v-model="activityTitle" placeholder="活动标题" class="title-input" placeholder-style="color: #999;">
-			</view>
+		<view class="form-item title-item">
+			<input type="text" v-model="activityTitle" placeholder="活动标题" class="title-input" placeholder-style="color: #999;">
+		</view>
+
+		<!-- 联系电话 -->
+		<view class="form-item title-item">
+			<input type="text" v-model="contactPhone" placeholder="联系电话" class="title-input" placeholder-style="color: #999;">
+		</view>
 
 			<!-- 活动信息容器（白色背景） -->
 			<view class="form-info-container">
@@ -68,9 +87,41 @@
 			<view class="tags-section">
 				<text class="section-title">活动标签</text>
 				<view class="tags-container">
-					<view class="tag-item active">运动</view>
-					<view class="tag-item">聚会</view>
-					<view class="tag-item add-tag">+ 添加</view>
+					<!-- 只渲染已选择的标签 -->
+					<template v-for="tag in tags" :key="tag.id">
+						<view 
+						     v-if="selectedTags.includes(tag.id)"
+						     class="tag-item" 
+						     :class="{ active: selectedTags.includes(tag.id) }"
+						     :style="{ backgroundColor: tag.color, color: '#fff' }"
+						     @click="selectTag(tag.id)">
+							{{ tag.name }}
+						</view>
+					</template>
+					<!-- 添加标签按钮 -->
+					<view class="tag-item add-tag" @click="toggleTagPicker">+ 添加</view>
+				</view>
+			</view>
+
+			<!-- 标签选择器 -->
+			<view v-if="isShowTagPicker" class="tag-picker-container">
+				<view class="tag-picker-content">
+					<view class="tag-picker-header">
+						<text class="tag-picker-title">选择标签</text>
+						<view class="tag-picker-close" @click="toggleTagPicker">×</view>
+					</view>
+					<view class="tag-picker-body">
+						<view v-for="tag in tags" :key="tag.id" 
+						     class="tag-picker-item" 
+						     :class="{ active: selectedTags.includes(tag.id) }"
+						     :style="selectedTags.includes(tag.id) ? { backgroundColor: tag.color, color: '#fff' } : {}"
+						     @click="selectTag(tag.id)">
+							{{ tag.name }}
+						</view>
+					</view>
+					<view class="tag-picker-footer">
+						<button class="tag-picker-confirm" @click="toggleTagPicker">确定</button>
+					</view>
 				</view>
 			</view>
 
@@ -92,11 +143,20 @@ import {
 	ref,
 	computed,
 	watch,
+	onMounted,
 } from 'vue'
 import { usePublishStore } from '@/store/publish'
 import TimeSelect from '@/components/TimeSelect/TimeSelect.vue'
 import LocationSelect from '@/components/LocationSelect/LocationSelect.vue'
 import UploadVideo from '@/components/UploadVideo/UploadVideo.vue'
+import { postPublish, getTags } from '@/api/publish/router'
+
+// 定义标签类型
+interface Tag {
+	id: number
+	name: string
+	color: string
+}
 
 	const toast = useToast()
 	const publishStore = usePublishStore()
@@ -108,6 +168,10 @@ const locationName = ref<string>('选择线下地点')
 const locationAddress = ref<string>('')
 const locationLatitude = ref<number>(0)
 const locationLongitude = ref<number>(0)
+const contactPhone = ref<string>('')
+const selectedTags = ref<number[]>([1, 2, 3]) // 默认标签ID，可根据实际选择修改
+const tags = ref<Tag[]>([]) // 存储从接口获取的标签数据
+const isShowTagPicker = ref<boolean>(false) // 控制标签选择器显示/隐藏
 // 日期选择相关的变量和逻辑已移至TimeSelect组件
 const startValue = ref<number>(Date.now())
 const endValue = ref<number>(Date.now())
@@ -128,17 +192,216 @@ const toggleSignupPicker = (): void => {
 	isShowSignupPicker.value = !isShowSignupPicker.value
 }
 
+// 切换标签选择器显示/隐藏
+const toggleTagPicker = async (): Promise<void> => {
+	if (!isShowTagPicker.value) {
+		// 当打开标签选择器时，获取标签数据
+		await fetchTags()
+	}
+	isShowTagPicker.value = !isShowTagPicker.value
+}
+
+// 组件初始化时获取标签数据
+onMounted(async () => {
+	await fetchTags()
+})
+
+// 获取标签数据
+const fetchTags = async (): Promise<void> => {
+	try {
+		const response: any = await getTags()
+		console.log('标签数据:', response)
+		if (response && response.code === 0 && response.data && response.data.list) {
+			tags.value = response.data.list
+		} else {
+			tags.value = []
+		}
+	} catch (error) {
+		console.error('获取标签失败:', error)
+		toast.error('获取标签失败，请稍后重试')
+		tags.value = []
+	}
+}
+
+// 选择标签
+const selectTag = (tagId: number): void => {
+	const index = selectedTags.value.indexOf(tagId)
+	if (index === -1) {
+		// 如果标签未选中，则添加到选中列表
+		selectedTags.value.push(tagId)
+	} else {
+		// 如果标签已选中，则从选中列表中移除
+		selectedTags.value.splice(index, 1)
+	}
+}
+
 // 监听结束时间变化，更新store
 watch(endValue, (newValue) => {
 	publishStore.setEndTime(newValue)
 })
 
+// 提交表单
+const submitForm = async () => {
+	try {
+		// 时间验证
+		const registerStartTime = Math.floor(signupStartValue.value / 1000)
+		const registerEndTime = Math.floor(signupEndValue.value / 1000)
+		const activityStartTime = Math.floor(startValue.value / 1000)
+		const activityEndTime = Math.floor(endValue.value / 1000)
+		
+		// 检查时间顺序
+		if (registerEndTime <= registerStartTime) {
+			toast.error('报名截止时间必须在报名开始时间之后')
+			return
+		}
+		
+		if (activityStartTime <= registerEndTime) {
+			toast.error('活动开始时间必须在报名截止时间之后')
+			return
+		}
+		
+		if (activityEndTime <= activityStartTime) {
+			toast.error('活动结束时间必须在活动开始时间之后')
+			return
+		}
+		
+		// 准备数据 - 使用用户选择的数据
+		const formData = {
+			title: activityTitle.value || "周五夜跑活动",
+			coverUrl: fileList.value.length > 0 ? fileList.value[0].url : "https://cdn.example.com/cover.jpg",
+			coverType: fileList.value.length > 0 ? (fileList.value[0].type === 'video' ? 2 : 1) : 1,
+			content: activityDetail.value || "<p>一起来奥森公园跑步吧！</p>",
+			categoryId: selectedTags.value.length > 0 ? selectedTags.value[0] : 1,
+			contactPhone: contactPhone.value || "13800138000",
+			registerStartTime: registerStartTime,
+			registerEndTime: registerEndTime,
+			activityStartTime: activityStartTime,
+			activityEndTime: activityEndTime,
+			location: locationName.value || "奥林匹克森林公园",
+			addressDetail: locationAddress.value || "南门集合",
+			longitude: locationLongitude.value || 116.407526,
+			latitude: locationLatitude.value || 39.90403,
+			maxParticipants: peopleLimit.value || 50,
+			requireApproval: false,
+			requireStudentVerify: true,
+			minCreditScore: 60,
+			tagIds: selectedTags.value.length > 0 ? selectedTags.value : [1, 2, 3],
+			isDraft: false
+		} as any
+		
+		// 打印提交的数据
+		console.log('准备提交的数据:', formData)
+		// 显示提交的数据（可选，用于更明显的提示）
+		toast.info('正在提交数据，请查看控制台')
+		console.log('提交的数据详情:', JSON.stringify(formData, null, 2))
+		
+		// 提交数据
+		const response = await postPublish(formData)
+		
+		console.log('发布响应:', response)
+		
+		if (response.code === 200) {
+			toast.success('发布成功')
+			// 重置表单
+			activityTitle.value = ''
+			activityDetail.value = ''
+			fileList.value = []
+			peopleLimit.value = 20
+			locationName.value = '选择线下地点'
+			locationAddress.value = ''
+			locationLatitude.value = 0
+			locationLongitude.value = 0
+			contactPhone.value = ''
+			// 跳转到票卷列表页面
+			uni.redirectTo({
+				url: '/pages/ticket/index'
+			})
+		} else {
+			toast.error(response.message || '发布失败')
+		}
+	} catch (error) {
+		console.error('发布失败:', error)
+		toast.error('发布失败，请稍后重试')
+	}
+}
+
 // 上传相关的变量和逻辑已移至UploadVideo组件
 
-	// 地点选择相关的变量和逻辑已移至LocationSelect组件
+// 地点选择相关的变量和逻辑已移至LocationSelect组件
+
+// 返回首页
+const goBackHome = () => {
+	uni.redirectTo({
+		url: '/pages/home/index'
+	})
+}
 </script>
 
 <style>
+	/* 头部容器 */
+	.header-container {
+		background-color: #fff;
+		padding: 20rpx 30rpx;
+		border-bottom: 1rpx solid #f0f0f0;
+		position: sticky;
+		top: 0;
+		z-index: 100;
+	}
+
+	/* 头部内容 */
+	.header-content {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		height: 80rpx;
+	}
+
+	/* 左侧关闭按钮 */
+	.header-left {
+		flex: 0 0 60rpx;
+		display: flex;
+		align-items: center;
+	}
+
+	/* 关闭按钮 */
+	.close-btn {
+		font-size: 40rpx;
+		color: #333;
+		font-weight: bold;
+	}
+
+	/* 中间标题 */
+	.header-title {
+		flex: 1;
+		text-align: center;
+		font-size: 32rpx;
+		font-weight: 600;
+		color: #333;
+	}
+
+	/* 右侧提交按钮 */
+	.header-right {
+		flex: 0 0 120rpx;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+	}
+
+	/* 头部提交按钮 */
+	.submit-btn-header {
+		padding: 12rpx 24rpx;
+		font-size: 26rpx;
+		font-weight: 500;
+		background-color: #fff7ed;
+		color: #f97316;
+		border-radius: 20rpx;
+		border: none;
+	}
+
+	.submit-btn-header::after {
+		border: none;
+	}
+
 	/* 发布页面容器 */
 	.publish-container {
 		width: 100%;
@@ -437,5 +700,94 @@ watch(endValue, (newValue) => {
 	/* 自定义提交按钮样式：右移20rpx */
 	:deep(.standard-header .nav-right) {
 		transform: translateX(35rpx);
+	}
+
+	/* 标签选择器样式 */
+	.tag-picker-container {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.5);
+		z-index: 1000;
+		display: flex;
+		align-items: flex-end;
+		justify-content: center;
+	}
+
+	.tag-picker-content {
+		width: 100%;
+		background-color: #fff;
+		border-radius: 20rpx 20rpx 0 0;
+		max-height: 70vh;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.tag-picker-header {
+		padding: 30rpx;
+		border-bottom: 1rpx solid #f0f0f0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.tag-picker-title {
+		font-size: 30rpx;
+		font-weight: 600;
+		color: #333;
+	}
+
+	.tag-picker-close {
+		font-size: 40rpx;
+		color: #999;
+		font-weight: bold;
+	}
+
+	.tag-picker-body {
+		padding: 30rpx;
+		flex: 1;
+		overflow-y: auto;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 20rpx;
+	}
+
+	.tag-picker-item {
+		padding: 16rpx 32rpx;
+		border-radius: 24rpx;
+		font-size: 26rpx;
+		background-color: #f5f5f5;
+		color: #666;
+		transition: all 0.3s ease;
+	}
+
+	.tag-picker-item.active {
+		background-color: #fff7ed;
+		color: #f97316;
+	}
+
+	.tag-picker-footer {
+		padding: 30rpx;
+		border-top: 1rpx solid #f0f0f0;
+		display: flex;
+		justify-content: center;
+	}
+
+	.tag-picker-confirm {
+		width: 100%;
+		padding: 20rpx;
+		background-color: #f97316;
+		color: #fff;
+		border-radius: 12rpx;
+		font-size: 28rpx;
+		font-weight: 500;
+		border: none;
+	}
+
+	.tag-picker-confirm::after {
+		border: none;
 	}
 </style>

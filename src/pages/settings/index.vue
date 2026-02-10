@@ -2,7 +2,10 @@
   <CommonLayout headerType="standard" title="设置" showBack>
     <view class="settings-list">
       <view class="menu-group">
-        <view class="menu-item border-b" @click="toPage('/pages/settings/edit-profile')">
+        <view
+          class="menu-item border-b"
+          @click="toPage('/pages/settings/edit-profile')"
+        >
           <text class="label">编辑资料</text>
           <wd-icon name="arrow-right" size="14px" color="#cbd5e1"></wd-icon>
         </view>
@@ -12,13 +15,33 @@
         </view>
       </view>
 
-      <button class="logout-btn" hover-class="btn-hover">退出登录</button>
+      <button class="logout-btn" hover-class="btn-hover" @click="handleLogout">
+        退出登录
+      </button>
     </view>
   </CommonLayout>
 </template>
 
 <script setup lang="ts">
+import { useUserStore } from "@/store/user";
+
 const toPage = (url: string) => uni.navigateTo({ url });
+const userStore = useUserStore();
+
+const handleLogout = () => {
+  uni.showModal({
+    title: "提示",
+    content: "确定要退出登录吗？",
+    success: (res) => {
+      if (res.confirm) {
+        userStore.logout();
+        uni.reLaunch({
+          url: "/pages/login/index",
+        });
+      }
+    },
+  });
+};
 </script>
 
 <style lang="scss" scoped>
@@ -47,7 +70,9 @@ const toPage = (url: string) => uni.navigateTo({ url });
       color: $text-primary;
     }
 
-    &.border-b { border-bottom: 1rpx solid $border-light; }
+    &.border-b {
+      border-bottom: 1rpx solid $border-light;
+    }
   }
 }
 
