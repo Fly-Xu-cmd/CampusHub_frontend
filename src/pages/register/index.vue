@@ -110,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from "vue";
+import { reactive, ref, onMounted, onUnmounted } from "vue";
 import { useSystemStore } from "@/store/system";
 import { authApi } from "@/api/register/router";
 import { useUserStore } from "@/store/user";
@@ -194,6 +194,19 @@ const retryCaptcha = () => {
 onMounted(() => {
   // #ifdef H5
   initCaptcha();
+  // #endif
+});
+
+// 页面卸载时销毁极验实例
+onUnmounted(() => {
+  // #ifdef H5
+  if (captchaObj.value) {
+    captchaObj.value.destroy();
+    captchaObj.value = null;
+  }
+  // 清空容器
+  const el = document.getElementById("captchaBox");
+  if (el) el.innerHTML = "";
   // #endif
 });
 

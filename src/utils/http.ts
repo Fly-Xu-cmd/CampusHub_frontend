@@ -29,6 +29,7 @@ import {
   shouldRedirectToLogin,
   isTokenError,
   isRetryableError,
+  isRefreshTokenError,
   CodeTokenInvalid,
   CodeTokenExpired,
 } from "./businessCodes";
@@ -84,8 +85,8 @@ const env = import.meta.env.MODE;
 // 根据环境设置 BASE_URL
 const BASE_URL =
   env === "production"
-    ? import.meta.env.VITE_PROD_BASE_URL || "https://api.yourdomain.com"
-    : import.meta.env.VITE_BASE_URL || "http://192.168.10.9:8888";
+    ? import.meta.env.VITE_PROD_BASE_URL || "https://192.168.10.9"
+    : import.meta.env.VITE_BASE_URL || "http://192.168.10.9";
 
 // 获取系统信息用于 User-Agent
 let systemInfo: UniApp.GetSystemInfoResult;
@@ -229,7 +230,7 @@ function handleTokenError() {
 function handleBusinessError(
   code: number,
   message: string,
-  config: RequestOptions
+  config: RequestOptions,
 ) {
   // 对于某些特定错误码，可以提供额外的处理逻辑
   switch (code) {
@@ -323,7 +324,7 @@ const attemptTokenRefresh = (): Promise<string> => {
 const applyRequestInterceptors = (config: RequestOptions): RequestOptions => {
   return requestInterceptors.reduce(
     (prev, interceptor) => interceptor(prev),
-    config
+    config,
   );
 };
 
@@ -331,7 +332,7 @@ const applyRequestInterceptors = (config: RequestOptions): RequestOptions => {
 const applyResponseInterceptors = (response: Response): Response => {
   return responseInterceptors.reduce(
     (prev, interceptor) => interceptor(prev),
-    response
+    response,
   );
 };
 
@@ -339,7 +340,7 @@ const applyResponseInterceptors = (response: Response): Response => {
 const applyErrorInterceptors = (error: any): any => {
   return errorInterceptors.reduce(
     (prev, interceptor) => interceptor(prev),
-    error
+    error,
   );
 };
 
@@ -378,7 +379,7 @@ const generateCacheKey = (options: RequestOptions): string => {
 
 export const http = <T>(
   options: RequestOptions,
-  retryCount = 0
+  retryCount = 0,
 ): Promise<T> => {
   // 应用请求拦截器
   const config = applyRequestInterceptors(options);
@@ -474,15 +475,33 @@ export const http = <T>(
         // 处理业务码错误
         if (res.data?.code !== 0) {
           const businessCode = res.data.code;
-          const businessMessage = res.data.message || getBusinessCodeMessage(businessCode);
+          const businessMessage =
+            res.data.message || getBusinessCodeMessage(businessCode);
           const errorMsg = `业务错误(${businessCode}): ${businessMessage}`;
 
           // Token 相关错误
           if (isTokenError(businessCode)) {
-            logger.info(`Token error detected: ${businessCode}, attempting refresh`);
+            // 如果是刷新 Token 无效错误（2055/2056），直接清除登录状态
+            if (isRefreshTokenError(businessCode)) {
+              logger.info(
+                `Refresh token error detected: ${businessCode}, clearing login state`,
+              );
+              handleTokenError();
+              handleBusinessError(businessCode, businessMessage, config);
+              reject(new Error(errorMsg));
+              return;
+            }
+
+            // 其他 Token 错误（2002/2003），尝试刷新
+            logger.info(
+              `Token error detected: ${businessCode}, attempting refresh`,
+            );
 
             // 如果是 Token 错误且允许自动刷新，尝试刷新
-            if ((config as any).autoRefresh !== false && !(config as any).__isRetryAfterRefresh) {
+            if (
+              (config as any).autoRefresh !== false &&
+              !(config as any).__isRetryAfterRefresh
+            ) {
               const refreshToken = uni.getStorageSync("refreshToken");
               if (refreshToken) {
                 attemptTokenRefresh()
@@ -498,7 +517,11 @@ export const http = <T>(
                     http<T>(retryConfig, retryCount)
                       .then(resolve)
                       .catch((err) => {
-                        handleBusinessError(businessCode, businessMessage, config);
+                        handleBusinessError(
+                          businessCode,
+                          businessMessage,
+                          config,
+                        );
                         reject(new Error(errorMsg));
                       });
                   })
@@ -545,7 +568,7 @@ export const http = <T>(
             logger.info(
               `Retry attempt ${
                 retryCount + 1
-              } for ${requestUrl} after ${delay}ms`
+              } for ${requestUrl} after ${delay}ms`,
             );
             setTimeout(() => {
               http<T>(config, retryCount + 1)
@@ -566,7 +589,7 @@ export const http = <T>(
         if (config.retry && retryCount < config.retry) {
           const delay = (config.retryDelay || 1000) * Math.pow(2, retryCount); // 指数退避
           logger.info(
-            `Retry attempt ${retryCount + 1} for ${requestUrl} after ${delay}ms`
+            `Retry attempt ${retryCount + 1} for ${requestUrl} after ${delay}ms`,
           );
           setTimeout(() => {
             http<T>(config, retryCount + 1)
@@ -603,7 +626,7 @@ export const getCacheSize = () => {
 // 快捷方法
 export const get = <T>(
   url: string,
-  options?: Omit<RequestOptions, "url" | "method">
+  options?: Omit<RequestOptions, "url" | "method">,
 ): Promise<T> => {
   return http<T>({ ...options, url, method: "GET" });
 };
@@ -611,7 +634,7 @@ export const get = <T>(
 export const post = <T>(
   url: string,
   data?: any,
-  options?: Omit<RequestOptions, "url" | "method" | "data">
+  options?: Omit<RequestOptions, "url" | "method" | "data">,
 ): Promise<T> => {
   return http<T>({ ...options, url, method: "POST", data });
 };
@@ -619,14 +642,14 @@ export const post = <T>(
 export const put = <T>(
   url: string,
   data?: any,
-  options?: Omit<RequestOptions, "url" | "method" | "data">
+  options?: Omit<RequestOptions, "url" | "method" | "data">,
 ): Promise<T> => {
   return http<T>({ ...options, url, method: "PUT", data });
 };
 
 export const del = <T>(
   url: string,
-  options?: Omit<RequestOptions, "url" | "method">
+  options?: Omit<RequestOptions, "url" | "method">,
 ): Promise<T> => {
   return http<T>({ ...options, url, method: "DELETE" });
 };
@@ -642,13 +665,13 @@ export const upload = <T>(
   url: string,
   formData: Record<string, any>,
   fileFields: string[],
-  options?: Omit<RequestOptions, "url" | "method" | "data">
+  options?: Omit<RequestOptions, "url" | "method" | "data">,
 ): Promise<T> => {
   return new Promise((resolve, reject) => {
     // 检查是否所有文件字段都有值
-    const hasAllFiles = fileFields.every(field => {
+    const hasAllFiles = fileFields.every((field) => {
       const value = formData[field];
-      return value && (typeof value === 'string' || value instanceof File);
+      return value && (typeof value === "string" || value instanceof File);
     });
 
     if (!hasAllFiles) {
@@ -665,7 +688,8 @@ export const upload = <T>(
     }
 
     // 获取 token
-    const token = uni.getStorageSync("token") || uni.getStorageSync("accessToken");
+    const token =
+      uni.getStorageSync("token") || uni.getStorageSync("accessToken");
 
     // #ifdef H5
     // H5 环境：使用 FormData + fetch
@@ -677,12 +701,17 @@ export const upload = <T>(
     });
 
     // 辅助函数：将文件路径转换为 File
-    const convertPathToFile = async (filePath: string, fieldName: string): Promise<void> => {
+    const convertPathToFile = async (
+      filePath: string,
+      fieldName: string,
+    ): Promise<void> => {
       try {
         const response = await fetch(filePath);
         const blob = await response.blob();
-        const fileName = filePath.split('/').pop() || `image_${Date.now()}.jpg`;
-        const file = new File([blob], fileName, { type: blob.type || 'image/jpeg' });
+        const fileName = filePath.split("/").pop() || `image_${Date.now()}.jpg`;
+        const file = new File([blob], fileName, {
+          type: blob.type || "image/jpeg",
+        });
         formDataObj.append(fieldName, file);
       } catch (e) {
         console.error(`转换文件失败: ${fieldName}`, e);
@@ -691,13 +720,13 @@ export const upload = <T>(
     };
 
     // 处理文件字段
-    const filePromises = fileFields.map(field => {
+    const filePromises = fileFields.map((field) => {
       const value = formData[field];
       if (value instanceof File) {
         // 直接是 File 对象
         formDataObj.append(field, value);
         return Promise.resolve();
-      } else if (typeof value === 'string') {
+      } else if (typeof value === "string") {
         // 是文件路径，需要转换
         return convertPathToFile(value, field);
       }
@@ -708,7 +737,7 @@ export const upload = <T>(
     Promise.all(filePromises)
       .then(() => {
         return fetch(BASE_URL + url, {
-          method: 'POST',
+          method: "POST",
           headers: {
             Authorization: token ? `Bearer ${token}` : "",
             // 不设置 Content-Type，让浏览器自动设置 multipart/form-data 边界
@@ -716,22 +745,26 @@ export const upload = <T>(
           body: formDataObj,
         });
       })
-      .then(response => response.json())
-      .then(result => {
+      .then((response) => response.json())
+      .then((result) => {
         if (result.code === 0) {
           resolve({ data: result } as T);
         } else {
-          const businessMessage = getBusinessCodeMessage(result.code)
-            || result.message
-            || "上传失败";
+          const businessMessage =
+            getBusinessCodeMessage(result.code) || result.message || "上传失败";
           if (options?.showErrorToast !== false) {
-            uni.showToast({ title: businessMessage, icon: "none", duration: 2000 });
+            uni.showToast({
+              title: businessMessage,
+              icon: "none",
+              duration: 2000,
+            });
           }
           reject(new Error(`业务错误(${result.code}): ${businessMessage}`));
         }
       })
-      .catch(err => {
-        const errorMessage = ErrorCodeMap[err.message] || err.message || "上传失败";
+      .catch((err) => {
+        const errorMessage =
+          ErrorCodeMap[err.message] || err.message || "上传失败";
         if (options?.showErrorToast !== false) {
           uni.showToast({ title: errorMessage, icon: "none", duration: 2000 });
         }
@@ -776,9 +809,8 @@ export const upload = <T>(
         // uni.uploadFile 的 res.data 是字符串类型，需要解析
         let responseData: any;
         try {
-          responseData = typeof res.data === "string"
-            ? JSON.parse(res.data)
-            : res.data;
+          responseData =
+            typeof res.data === "string" ? JSON.parse(res.data) : res.data;
         } catch (e) {
           responseData = res.data;
         }
@@ -798,40 +830,63 @@ export const upload = <T>(
             resolve(processedResponse as T);
           } else {
             // 业务错误
-            const businessMessage = getBusinessCodeMessage(responseData.code)
-              || responseData.message
-              || "请求失败";
+            const businessMessage =
+              getBusinessCodeMessage(responseData.code) ||
+              responseData.message ||
+              "请求失败";
 
             // 显示错误提示（除非禁用）
             if (options?.showErrorToast !== false) {
               uni.showToast({
                 title: businessMessage,
                 icon: "none",
-                duration: responseData.code === 2016 ||
-                         responseData.code === 2301 ||
-                         responseData.code === 2105
-                  ? 2500
-                  : 2000,
+                duration:
+                  responseData.code === 2016 ||
+                  responseData.code === 2301 ||
+                  responseData.code === 2105
+                    ? 2500
+                    : 2000,
               });
             }
 
             // Token 错误处理
             if (isTokenError(responseData.code)) {
+              // 如果是刷新 Token 无效错误（2055/2056），直接清除登录状态
+              if (isRefreshTokenError(responseData.code)) {
+                handleTokenError();
+                reject(
+                  new Error(
+                    `业务错误(${responseData.code}): ${businessMessage}`,
+                  ),
+                );
+                return;
+              }
+
+              // 其他 Token 错误，尝试刷新
               if (options?.autoRefresh !== false) {
                 attemptTokenRefresh()
                   .then(() => {
                     // Token 刷新成功，重新上传
-                    upload<T>(url, formData, fileFields, options).then(resolve).catch(reject);
+                    upload<T>(url, formData, fileFields, options)
+                      .then(resolve)
+                      .catch(reject);
                   })
                   .catch((error) => {
                     console.error("Token 刷新失败:", error);
-                    reject(new Error(`业务错误(${responseData.code}): ${businessMessage}`));
+                    handleTokenError();
+                    reject(
+                      new Error(
+                        `业务错误(${responseData.code}): ${businessMessage}`,
+                      ),
+                    );
                   });
                 return;
               }
             }
 
-            reject(new Error(`业务错误(${responseData.code}): ${businessMessage}`));
+            reject(
+              new Error(`业务错误(${responseData.code}): ${businessMessage}`),
+            );
           }
         } else {
           resolve(processedResponse as T);
@@ -839,7 +894,8 @@ export const upload = <T>(
       },
       fail: (err) => {
         // 网络错误处理
-        const errorMessage = ErrorCodeMap[err.errMsg] || err.errMsg || "网络请求失败";
+        const errorMessage =
+          ErrorCodeMap[err.errMsg] || err.errMsg || "网络请求失败";
 
         if (options?.showErrorToast !== false) {
           uni.showToast({

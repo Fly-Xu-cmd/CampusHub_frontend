@@ -308,6 +308,16 @@ export function isTokenError(code: number): boolean {
 }
 
 /**
+ * 判断是否为刷新 Token 无效错误（直接清除登录状态，不再尝试刷新）
+ */
+export function isRefreshTokenError(code: number): boolean {
+  return (
+    code === CodeRefreshTokenInvalid || // 2055: 无效的刷新令牌
+    code === CodeRefreshTokenExpired    // 2056: 刷新令牌已过期
+  );
+}
+
+/**
  * 判断是否为可重试的错误
  */
 export function isRetryableError(code: number): boolean {
