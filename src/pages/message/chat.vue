@@ -27,8 +27,14 @@
         <view class="message-avatar">
           <image src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
         </view>
-        <view class="message-bubble others">
-          <view class="message-text">大家到了吗？</view>
+        <view class="message-info">
+          <view class="message-sender">
+            {{ "默认名" }}
+          </view>
+        
+          <view class="message-bubble">
+            <view class="message-text">大家到了吗？</view>
+          </view>
         </view>
       </view>
 
@@ -37,7 +43,7 @@
         <view class="message-avatar">
           <image src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
         </view>
-        <view class="message-bubble mine">
+        <view class="message-bubble">
           <view class="message-text">马上到！</view>
         </view>
       </view>
@@ -65,14 +71,11 @@ const group_id = route.query.group_id as string;
 onMounted(() => {
   // 获取群聊名称
   getTitle(group_id).then(res => {
-    if (res.code === 200) {
-      groupTitle.value = res.data;
-    }
+    groupTitle.value = res.data;
   });
 });
 
 const groupTitle = ref();
-
 // 模拟消息数据
 const messages = ref([
   {
@@ -191,19 +194,26 @@ const goBack = () => {
           border-radius: $border-radius-full;
         }
       }
-
-      .message-bubble {
-        background-color: $surface-color;
-        border-radius: $border-radius-lg;
-        border-top-left-radius: 0;
-        padding: $spacing-sm;
-        box-shadow: $shadow-sm;
-        max-width: 70%;
-
-        .message-text {
-          font-size: $font-size-sm;
-          color: $text-primary;
-          line-height: 1.4;
+      .message-info {
+        flex: 1;
+        .message-sender {
+          font-size: $font-size-xs;
+          color: $text-tertiary;
+          margin-bottom: $spacing-xs;
+        }
+        .message-bubble {
+          background-color: $surface-color;
+          border-radius: $border-radius-lg;
+          border-top-left-radius: 0;
+          padding: $spacing-sm;
+          box-shadow: $shadow-sm;
+          max-width: 70%;
+                
+          .message-text {
+            font-size: $font-size-sm;
+            color: $text-primary;
+            line-height: 1.4;
+          }
         }
       }
     }
