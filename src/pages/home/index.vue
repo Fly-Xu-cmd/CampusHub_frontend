@@ -2,7 +2,7 @@
   <CommonLayout headerType="home" contentBg="$background-color" :showTabBar="true" padding="0 8rpx">
     <view class="content">
       <view class="search-section">
-        <view class="search-container">
+        <view class="search-container" >
           <wd-icon name="search" size="32rpx" color="#999999" class="search-icon" />
           <wd-search 
             v-model="searchQuery"
@@ -31,7 +31,7 @@
             :class="{ active: activeTag === 0 }"
             @click="selectTag(0)"
           >
-            <view class="iconfont" style="font-size: 30rpx;" />
+            <view class="iconfont iconfont-quanbu" style="font-size: 30rpx;" />
             <text>全部类型</text>
           </view>
           <view 
@@ -66,8 +66,18 @@
             <view class="card-image-container">
               <image :src="activity.coverUrl" class="card-image" mode="aspectFill" />
               <!-- 报名状态 -->
-              <view class="registration-status">
-                <view class="iconfont iconfont-remen" style="font-size: 25rpx;" />
+              <view class="registration-status"
+                :style="{
+                  color: activity.status === 2 ? '$primary-color' : 
+                         activity.status === 3 ? '#4ade80' : 
+                         activity.status === 4 ? '#666666' : 
+                         '#000000'
+                }"
+              >
+                <view class="iconfont" style="font-size: 25rpx;" 
+                :class="{'iconfont-remen': activity.status === 2, 'iconfont-people': activity.status === 3}"
+                v-if="!(activity.status === 4)"
+                />
                 <text>{{ activity.statusText }}</text>
               </view>
               <!-- 人数信息 -->
@@ -87,7 +97,9 @@
                 v-for="tag in activity.tags" 
                 :key="tag.id" 
                 class="activity-tag"
-                :class="tag.color"
+                :style="{
+                  color: tag.color  
+                }"
 
               >
                 <view class="iconfont" :class="tag.icon" style="font-size: 25rpx;" />
@@ -111,7 +123,7 @@
             <!-- 底部信息 -->
             <view class="card-footer">
               <view class="organizer">
-                <image :src="activity.organizerAvatar" class="organizer-avatar" />
+                <image :src="activity.organizerAvatar" class="organizer-avatar" mode="aspectFill" />
                 <text>{{ activity.organizerName }}</text>
               </view>
               <view class="action-button">
@@ -129,7 +141,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getActivityCategoryList, getActivityList, searchActivity } from '@/api/home/router';
-
 // 时间格式化函数：将10位时间戳转换为"周五 19:00"格式
 const formatTime = (timestamp: number) => {
   const date = new Date(timestamp * 1000); // 转换为毫秒
@@ -139,7 +150,6 @@ const formatTime = (timestamp: number) => {
   const minutes = date.getMinutes().toString().padStart(2, '0');
   return `${weekDay} ${hours}:${minutes}`;
 };
-
 
 
 onMounted(async () => {
@@ -170,7 +180,10 @@ const activities = ref(); // 活动列表
 const getActivities = async () => {
   loading.value = true;
   const { data: { list: Activities } } = await getActivityList({
+    page: 1,
+    pageSize: 10,
     categoryId: activeTag.value,
+    status: -1,
   });
   loading.value = false;
   activities.value = Activities;
@@ -191,6 +204,7 @@ const search = async () => {
   loading.value = false;
   activities.value = Activities;
 }
+
 
 const viewDetail = (activityId: number) => {
   uni.navigateTo({
@@ -439,9 +453,10 @@ $tag-inactive-color: #111;
 .activity-info {
   @include flex(row, flex-start, center);
   margin-left: 20rpx;
+  margin-right: 20rpx;
   margin-bottom: 20rpx;
-  padding: 20rpx 20rpx;
-  gap: $spacing-md;
+  padding: 10rpx 20rpx;
+  gap: $spacing-sm;
   background-color: #f8fafc; 
   border-radius: $border-radius-md;
 
@@ -452,6 +467,7 @@ $tag-inactive-color: #111;
   }
   .info-item {
     @include flex(row, center, center);
+    min-width: 30%;
     gap: 10rpx;
     font-size: 22rpx;
     color: $text-secondary;

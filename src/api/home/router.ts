@@ -6,6 +6,7 @@ import type { search, SearchRequest } from "@/types/modules/home/search";
 import type { detail } from "@/types/modules/home/detail";
 import type { sign } from "@/types/modules/home/sign";
 import type { wait, WaitRequest } from "@/types/modules/home/wait";
+import type { user } from "@/types/modules/home/user";
 
 const apiUrls = {
   getActivityCategoryList: "/api/v1/activity/categories",
@@ -16,7 +17,7 @@ const apiUrls = {
   signActivity: "/api/v1/activity/register",
   cancelSign: "/api/v1/activity/cancel",
   getWaitList: "/api/v1/activity/list",
-  createdActivities: "/api/v1/activity/my/created",
+  getUserHome: "/api/v1/users",
 };
 
 // 获取活动分类列表
@@ -27,7 +28,7 @@ export const getActivityCategoryList = () => {
 
 // 获取活动列表
 export const getActivityList = (params: ActivitiesRequest) => {
-  return get<activities>(`${apiUrls.getActivityList}?categoryId=${params.categoryId}`);
+  return get<activities>(`${apiUrls.getActivityList}?page=${params.page}&pageSize=${params.pageSize}&categoryId=${params.categoryId}&status=${params.status}`);
 };
 
 // 搜索活动
@@ -54,14 +55,15 @@ export const cancelSign = (id: number) => {
   });
 };
 
-// 获取待参加/已参加活动列表
+// 获取待参加活动列表
 export const getWaitList = (params: WaitRequest) => {
   return get<wait>(`${apiUrls.getWaitList}?type=${params.type}&page=1&pageSize=12`);
 };
 
-// 获取创建的活动列表
-export const createdActivities = () => {
-  return get<activities>(`${apiUrls.createdActivities}?page=1&pageSize=12`);
+// 获取用户首页信息
+export const getUserHome = (user_id: string) => {
+  return get<user>(`${apiUrls.getUserHome}/${user_id}/home`);
 };
+
 
 
