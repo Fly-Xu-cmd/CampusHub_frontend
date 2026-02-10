@@ -30,8 +30,7 @@
 										{{ formatEventTime(ticket.eventTime) }}
 									</text>
 								</view>
-								<view :class="['event-status', ticket.status === 'used' ? 'status-used' : 'status-pending']"
-									@click="toggleStatus(ticket)">
+								<view :class="['event-status', ticket.status === 'used' ? 'status-used' : 'status-pending']">
 									{{ ticket.status === 'used' ? '已使用' : '待使用' }}
 								</view>
 							</view>
@@ -200,13 +199,12 @@ const fetchTicketDetails = async () => {
 	}
 }
 
-// 切换票券状态
-const toggleStatus = (ticket: Ticket) => {
-	const index = tickets.value.findIndex(t => t.id === ticket.id)
-	if (index !== -1) {
-		tickets.value[index].status = tickets.value[index].status === 'pending' ? 'used' : 'pending'
-		// 这里可以添加API调用，将状态更新到服务器
-	}
+
+
+// 从 qrCodeUrl 中提取 TOTP 码
+const extractTotpFromQrCode = (qrCodeUrl: string): string => {
+	const match = qrCodeUrl.match(/totp=([0-9]+)/)
+	return match ? match[1] : ''
 }
 
 // 显示二维码
@@ -229,17 +227,20 @@ const showQRCode = async (ticket: Ticket) => {
 			}
 			// 更新二维码值
 			qrCodeValue.value = detailResult.data.qrCodeUrl || `https://ticket.campus-hub.com/event/${ticket.id}`
+			// 从 qrCodeUrl 中提取 TOTP 码
+			totpCode.value = extractTotpFromQrCode(detailResult.data.qrCodeUrl || '')
 		} else {
 			// 如果获取详情失败，使用列表中的数据
 			selectedTicket.value = ticket
 			qrCodeValue.value = `https://ticket.campus-hub.com/event/${ticket.id}`
+			totpCode.value = ''
 		}
 		showQR.value = true
 	} catch (error) {
-		console.error('获取票券详情失败:', error)
 		// 如果获取详情失败，使用列表中的数据
 		selectedTicket.value = ticket
 		qrCodeValue.value = `https://ticket.campus-hub.com/event/${ticket.id}`
+		totpCode.value = ''
 		showQR.value = true
 	}
 }
