@@ -1,8 +1,10 @@
 <template>
   <CommonLayout headerType="home" contentBg="$background-color" :showTabBar="true" padding="0 8rpx">
-    <view class="content">
+    <scroll-view class="content" 
+      @scrolltolower="handleScrollToLower"
+      scroll-y>
       <view class="search-section">
-        <view class="search-container">
+        <view class="search-container" >
           <wd-icon name="search" size="32rpx" color="#999999" class="search-icon" />
           <wd-search 
             v-model="searchQuery"
@@ -31,7 +33,7 @@
             :class="{ active: activeTag === 0 }"
             @click="selectTag(0)"
           >
-            <view class="iconfont" style="font-size: 30rpx;" />
+            <view class="iconfont iconfont-quanbu" style="font-size: 30rpx;" />
             <text>全部类型</text>
           </view>
           <view 
@@ -66,8 +68,18 @@
             <view class="card-image-container">
               <image :src="activity.coverUrl" class="card-image" mode="aspectFill" />
               <!-- 报名状态 -->
-              <view class="registration-status">
-                <view class="iconfont iconfont-remen" style="font-size: 25rpx;" />
+              <view class="registration-status"
+                :style="{
+                  color: activity.status === 2 ? '$primary-color' : 
+                         activity.status === 3 ? '#4ade80' : 
+                         activity.status === 4 ? '#666666' : 
+                         '#000000'
+                }"
+              >
+                <view class="iconfont" style="font-size: 25rpx;" 
+                :class="{'iconfont-remen': activity.status === 2, 'iconfont-people': activity.status === 3}"
+                v-if="!(activity.status === 4)"
+                />
                 <text>{{ activity.statusText }}</text>
               </view>
               <!-- 人数信息 -->
@@ -87,7 +99,9 @@
                 v-for="tag in activity.tags" 
                 :key="tag.id" 
                 class="activity-tag"
-                :class="tag.color"
+                :style="{
+                  color: tag.color  
+                }"
 
               >
                 <view class="iconfont" :class="tag.icon" style="font-size: 25rpx;" />
@@ -111,7 +125,7 @@
             <!-- 底部信息 -->
             <view class="card-footer">
               <view class="organizer">
-                <image :src="activity.organizerAvatar" class="organizer-avatar" />
+                <image :src="activity.organizerAvatar" class="organizer-avatar" mode="aspectFill" />
                 <text>{{ activity.organizerName }}</text>
               </view>
               <view class="action-button">
@@ -120,16 +134,19 @@
               </view>
             </view>
           </view>
+          <wd-loadmore
+            :state="state"
+            @reload="loadMore"
+          />
         </view>
       </view>
-    </view>
+    </scroll-view>
   </CommonLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getActivityCategoryList, getActivityList, searchActivity } from '@/api/home/router';
-
 // 时间格式化函数：将10位时间戳转换为"周五 19:00"格式
 const formatTime = (timestamp: number) => {
   const date = new Date(timestamp * 1000); // 转换为毫秒
@@ -140,14 +157,12 @@ const formatTime = (timestamp: number) => {
   return `${weekDay} ${hours}:${minutes}`;
 };
 
-
-
 onMounted(async () => {
   // 获取活动分类列表
-  getCategories();
+  await getCategories();
 
   // 获取活动列表
-  getActivities();
+  await getActivities();
 });
 
 const tags = ref(); // 活动分类列表
@@ -166,16 +181,23 @@ const selectTag = (tagId: number) => {
 
 const loading = ref<boolean>(false);
 const activities = ref(); // 活动列表
+const pagination = ref(); // 分页信息
+
 // 获取活动列表
 const getActivities = async () => {
   loading.value = true;
-  const { data: { list: Activities } } = await getActivityList({
+  const { data } = await getActivityList({
+    page: 1,
+    pageSize: 10,
     categoryId: activeTag.value,
+    status: -1,
   });
   loading.value = false;
-  activities.value = Activities;
+  activities.value = data.list;
+  pagination.value = data.pagination;
+  state.value = 'loading';
 }
-
+const isSearch = ref(false); // 是否搜索
 const searchQuery = ref(''); // 搜索框的值
 // 搜索活动
 const search = async () => {
@@ -185,12 +207,50 @@ const search = async () => {
     return
   }
   loading.value = true;
-  const { data: { list: Activities } } = await searchActivity({
+  const { data } = await searchActivity({
     keyword: keyword,
+    page: 1,
+    pageSize: 50,
   });
   loading.value = false;
-  activities.value = Activities;
+  activities.value = data.list;
+  isSearch.value = true;
 }
+
+const handleScrollToLower = () => {
+  if (isSearch.value){
+    state.value = 'finished';
+    return;
+  }
+  if (state.value === 'finished') {
+    return;
+  }
+  loadMore();
+}
+
+const state = ref('loading'); // 加载状态
+// 加载更多数据
+const loadMore = async () => {
+  try {
+    const { data } = await getActivityList({
+      page: pagination.value.page+1,
+      pageSize: 10,
+      categoryId: activeTag.value,
+      status: -1,
+    });
+    const list = data.list;
+    pagination.value = data.pagination;
+    const total = pagination.value.total
+    if (activities.value.length < total){
+      activities.value = [...activities.value, ...list];
+    }else{
+      state.value = 'finished';
+    }
+  } catch (error) {
+    state.value = 'error';
+  }
+}
+
 
 const viewDetail = (activityId: number) => {
   uni.navigateTo({
@@ -211,7 +271,8 @@ $tag-inactive-color: #111;
 .content {
   display: flex;
   flex-direction: column;
-  min-height: 80vh;
+  height: 80vh;
+  overflow-y: auto;
 }
 
 .search-section {
@@ -335,12 +396,10 @@ $tag-inactive-color: #111;
     margin-bottom: 0;
   }
 }
-
 /* 卡片图片容器 */
 .card-image-container {
-  position: relative;
-  height: 400rpx;
-  
+    position: relative;
+    height: 400rpx;
   .card-image {
     width: 100%;
     height: 100%;
@@ -439,9 +498,10 @@ $tag-inactive-color: #111;
 .activity-info {
   @include flex(row, flex-start, center);
   margin-left: 20rpx;
+  margin-right: 20rpx;
   margin-bottom: 20rpx;
-  padding: 20rpx 20rpx;
-  gap: $spacing-md;
+  padding: 10rpx 20rpx;
+  gap: $spacing-sm;
   background-color: #f8fafc; 
   border-radius: $border-radius-md;
 
@@ -452,6 +512,7 @@ $tag-inactive-color: #111;
   }
   .info-item {
     @include flex(row, center, center);
+    min-width: 30%;
     gap: 10rpx;
     font-size: 22rpx;
     color: $text-secondary;

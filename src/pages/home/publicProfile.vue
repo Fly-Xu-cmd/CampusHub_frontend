@@ -10,10 +10,10 @@
         <text class="bio">{{ userInfo?.introduction }}</text>
         <view class="tags-row">
           <view 
-            v-for="tag in userInfo?.interestTags" 
+            v-for="tag in tags" 
             :key="tag.id" 
             class="tag-item"
-            :class="tag.tagColor"
+            :style="{ backgroundColor: tag.tagColor }"
           >
             <text>{{ tag.tagName }}</text>
           </view>
@@ -31,10 +31,13 @@
             :key="activity.id" 
             class="activity-item"
           >
-            <image :src="activity.coverUrl" class="activity-image" mode="aspectFill" />
+            <image :src="activity.imageUrl" class="activity-image" mode="aspectFill" />
             <view class="activity-info">
-              <text class="activity-title">{{ activity.title }}</text>
-              <text class="activity-time">{{ activity.activityStartTime }}</text>
+             <text class="activity-title">
+                {{ activity.name }}
+                {{ '(' + activity.status + ')' }}
+              </text>
+              <text class="activity-time">{{ activity.time }}</text>
             </view>
           </view>
           <view v-if="publishedActivities.length === 0" class="empty-state">
@@ -73,26 +76,24 @@
 </template>
 
 <script setup lang="ts">
+import { getUserHome } from '@/api/home/router'
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router'
 const route = useRoute()
 const userId = route.query.id
 
 onMounted(() => {
+  getUserHome(userId as string).then((res) => {
+    userInfo.value = res.data.userInfo
+    tags.value = res.data.tags
+    publishedActivities.value = res.data.publishedActivities.list
+    joinedActivities.value = res.data.joinedActivities.list
+  })
 });
 // 用户数据
-const userInfo = ref({
-  avatarUrl: '',
-  nickname: '',
-  introduction: '',
-  interestTags: [
-    {
-      id: 1,
-      tagName: '运动',
-      tagColor: 'orange',
-    },
-  ],
-});
+const userInfo = ref();
+// 兴趣标签
+const tags = ref();
 
 // 我发布的活动
 const publishedActivities = ref();
@@ -159,16 +160,7 @@ const joinedActivities = ref();
       border-radius: $border-radius-full;
       font-size: $font-size-xs;
       font-weight: $font-weight-medium;
-
-      &.orange {
-        background-color: #fff7ed;
-        color: $primary-color;
-      }
-
-      &.blue {
-        background-color: #f0f9ff;
-        color: #0ea5e9;
-      }
+      color: $text-light;
     }
   }
 }
@@ -194,6 +186,7 @@ const joinedActivities = ref();
       @include flex(row, flex-start, center);
       gap: $spacing-md;
       padding: $spacing-md;
+      margin-bottom: $spacing-sm;
       background-color: $surface-color;
       border-radius: $border-radius-xl;
       box-shadow: $shadow-sm;
