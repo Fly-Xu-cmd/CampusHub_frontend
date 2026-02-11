@@ -319,7 +319,7 @@ const submitForm = async () => {
 			addressDetail: locationAddress.value || "",
 			longitude: locationLongitude.value,
 			latitude: locationLatitude.value,
-			maxParticipants: peopleLimit.value,
+			maxParticipants: Number(peopleLimit.value),
 			requireApproval: false,
 			requireStudentVerify: true,
 			minCreditScore: 60,
@@ -328,9 +328,8 @@ const submitForm = async () => {
 		} as any
 		
 		// 提交数据
-		const response = await postPublish(formData)
-		
-		if (response.code === 200) {
+			await postPublish(formData)
+			
 			uni.showToast({ title: '发布成功', icon: 'success' })
 			// 重置表单
 			activityTitle.value = ''
@@ -347,9 +346,6 @@ const submitForm = async () => {
 			uni.redirectTo({
 				url: '/pages/ticket/index'
 			})
-		} else {
-			uni.showToast({ title: response.message || '发布失败', icon: 'error' })
-		}
 	} catch (error) {
 		uni.showToast({ title: '发布失败，请稍后重试', icon: 'error' })
 	}

@@ -5,6 +5,7 @@ import type { Request, Response } from "@/types/modules/publish";
 const apiUrls = {
     postPublish: "/api/v1/activity/",
     getTags: "/api/v1/activity/tags",
+    postId: "/api/v1/images/upload",
 };
 
 // 发布活动
@@ -16,3 +17,10 @@ export const postPublish = (data: Request) => {
 export const getTags = () => {
     return get(apiUrls.getTags);
 };
+
+// 上传图片
+export const postId = (data: FormData) => {
+    return post<Response>(apiUrls.postId, data);
+};
+
+

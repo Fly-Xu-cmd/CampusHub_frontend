@@ -1,9 +1,19 @@
 <template>
 	<CommonLayout headerType="title" title="我的票券" :showTabBar="true">
 		<view class="content">
-			<view class="container" style="padding: 30rpx;">
+			<scroll-view 
+				class="container" 
+				style="padding: 30rpx; height: 100%;" 
+				@scrolltolower="loadMore"
+				@refresherpulling="onRefresh"
+				@refresherrefresh="handleRefresh"
+				:refresher-enabled="true"
+				:refresher-threshold="90"
+				:refresher-triggered="triggered"
+				refresher-background="#f5f5f5"
+			>
 				<!-- 加载状态 -->
-				<view v-if="loading" class="loading-container">
+				<view v-if="loading && tickets.length === 0" class="loading-container">
 					<wd-icon name="loading" size="48rpx" color="#f97316" />
 					<text class="loading-text">加载中...</text>
 				</view>
@@ -12,7 +22,7 @@
 				<view v-else-if="error" class="error-container">
 					<wd-icon name="error" size="48rpx" color="#ef4444" />
 					<text class="error-text">{{ error }}</text>
-					<view class="retry-btn" @click="fetchTicketDetails">重试</view>
+					<view class="retry-btn" @click="() => fetchTicketDetails()">重试</view>
 				</view>
 
 				<!-- 票券列表 -->
@@ -41,6 +51,17 @@
 							</view>
 						</view>
 					</view>
+					
+					<!-- 加载更多 -->
+					<view v-if="loading && tickets.length > 0" class="load-more-container">
+						<wd-icon name="loading" size="32rpx" color="#f97316" />
+						<text class="load-more-text">加载更多...</text>
+					</view>
+					
+					<!-- 没有更多数据 -->
+					<view v-if="!hasMore && tickets.length > 0" class="no-more-container">
+						<text class="no-more-text">没有更多票券了</text>
+					</view>
 				</view>
 
 				<!-- 空状态 -->
@@ -48,7 +69,7 @@
 					<wd-icon name="ticket" size="64rpx" color="#d1d5db" />
 					<text class="empty-text">暂无票券</text>
 				</view>
-			</view>
+			</scroll-view>
 
 			<!-- 二维码详情弹窗 -->
 			<view v-if="showQR && selectedTicket" class="qr-modal">
@@ -129,6 +150,13 @@ const tickets = ref<Ticket[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 
+// 分页相关状态
+const currentPage = ref(1)
+const pageSize = ref(6) // 初始每页显示6个票券
+const hasMore = ref(true) // 是否有更多数据
+const refreshing = ref(false) // 下拉刷新状态
+const triggered = ref(false) // 控制下拉刷新状态
+
 // 核销功能相关状态
 const totpCode = ref('')
 const verifyLoading = ref(false)
@@ -152,14 +180,24 @@ const formatEventTime = (eventTime: string) => {
 }
 
 // 从API获取票券列表
-const fetchTicketDetails = async () => {
-	loading.value = true
+const fetchTicketDetails = async (isRefresh: boolean = false) => {
+	if (isRefresh) {
+		currentPage.value = 1
+		tickets.value = []
+		hasMore.value = true
+	} else if (!isRefresh && !loading.value && !hasMore.value) {
+		// 没有更多数据，不再请求
+		return
+	}
+
+	if (!isRefresh) {
+		loading.value = true
+	}
 	error.value = null
-	tickets.value = []
 	
 	try {
 		// 尝试从API获取数据
-		const result = await getTicketList(1, 10)
+		const result = await getTicketList(currentPage.value, pageSize.value)
 		
 		// 检查result结构
 		if (!result || !result.data || !result.data.items) {
@@ -169,26 +207,41 @@ const fetchTicketDetails = async () => {
 		}
 		
 		// 直接使用后端返回的数据，进行必要的类型转换
-			const fetchedTickets = result.data.items.map((item: any) => {
-				return {
-					id: item.ticketId?.toString() || '',
-					eventId: item.activityId?.toString() || '',
-					eventName: item.activityName || '',
-					eventTime: item.activityTime || '',
-					eventLocation: '', // 默认空值
-					ticketNumber: item.ticketCode || '',
-					status: item.status === 1 ? 'used' : 'pending', // 将数字状态转换为字符串
-					qrCodeUrl: '', // 默认空值
-					createdAt: new Date().toISOString() // 当前时间
-				}
-			})
+		const fetchedTickets = result.data.items.map((item: any) => {
+			return {
+				id: item.ticketId?.toString() || '',
+				eventId: item.activityId?.toString() || '',
+				eventName: item.activityName || '',
+				eventTime: item.activityTime || '',
+				eventLocation: '', // 默认空值
+				ticketNumber: item.ticketCode || '',
+				status: item.status === 1 ? 'used' : 'pending', // 将数字状态转换为字符串
+				qrCodeUrl: '', // 默认空值
+				createdAt: new Date().toISOString() // 当前时间
+			}
+		})
 		// 过滤掉无效票券
 		const validTickets = fetchedTickets.filter((ticket: any) => ticket && ticket.id) as Ticket[]
-		tickets.value = validTickets
+
+		// 如果是刷新，替换数据；否则累加数据
+		if (isRefresh) {
+			tickets.value = validTickets
+		} else {
+			tickets.value = [...tickets.value, ...validTickets]
+		}
 		
-		if (validTickets.length === 0) {
-			// 无有效票券数据
+		// 检查是否有更多数据
+		// 当返回的数据量小于请求的pageSize时，说明没有更多数据了
+		hasMore.value = validTickets.length === pageSize.value
+
+		// 如果是刷新且无数据，设置error为null
+		if (isRefresh && validTickets.length === 0) {
 			error.value = null
+		}
+
+		// 增加页码
+		if (!isRefresh && hasMore.value) {
+			currentPage.value++
 		}
 	} catch (err) {
 		// API请求失败
@@ -339,6 +392,37 @@ const verifyTicket = async () => {
 		verifySuccess.value = false
 	} finally {
 		verifyLoading.value = false
+	}
+}
+
+// 加载更多数据
+const loadMore = () => {
+	if (!loading.value && hasMore.value) {
+		fetchTicketDetails()
+	}
+}
+
+// 下拉刷新开始
+const onRefresh = () => {
+	// 下拉刷新的视觉效果由框架处理
+}
+
+// 处理下拉刷新
+const handleRefresh = async () => {
+	// 开始刷新，显示刷新图标
+	triggered.value = true
+	
+	try {
+		// 每次刷新时，将 pageSize 增加 6
+		pageSize.value += 6
+		// 刷新时重新加载数据
+		await fetchTicketDetails(true)
+	} finally {
+		// 无论成功失败，都结束刷新状态
+		// 延迟一点时间，让用户看到刷新的视觉效果
+		setTimeout(() => {
+			triggered.value = false
+		}, 300)
 	}
 }
 
@@ -593,6 +677,30 @@ onMounted(() => {
 		color: #9ca3af;
 		font-weight: 500;
 	}
+}
+
+/* 加载更多样式 */
+.load-more-container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 30rpx 0;
+	color: #999;
+	font-size: 24rpx;
+}
+
+.load-more-text {
+	margin-left: 10rpx;
+}
+
+/* 没有更多数据样式 */
+.no-more-container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 30rpx 0;
+	color: #999;
+	font-size: 24rpx;
 }
 
 .status-pending {
