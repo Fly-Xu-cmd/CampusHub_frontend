@@ -1,16 +1,16 @@
 export interface Response {
-    code: number;
-    data: Data;
-    message: string;
-    [property: string]: any;
+  code: number;
+  data: Data;
+  message: string;
+  [property: string]: any;
 }
 
 export interface Data {
-    /**
-     * 核销结果
-     */
-    result: string;
-    [property: string]: any;
+  /**
+   * 核销结果
+   */
+  result: string;
+  [property: string]: any;
 }
 
 export interface Request {

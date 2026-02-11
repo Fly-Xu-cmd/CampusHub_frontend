@@ -7,6 +7,23 @@ import type {
 const apiUrls = {
   getActivityList: "/api/v1/activity/list",
   getMyCreated: "/api/v1/activity/my/created",
+  searchActivities: "/api/v1/activity/search",
+};
+
+/**
+ * 搜索活动（用于核销）
+ * @param keyword 搜索关键词
+ * @param page 页码，默认1
+ * @param pageSize 每页数量，默认10
+ */
+export const searchActivities = (
+  keyword: string,
+  page = 1,
+  pageSize = 10,
+) => {
+  return get<Response<MyCreatedActivity>>(apiUrls.searchActivities, {
+    data: { keyword, page, pageSize },
+  });
 };
 
 /**

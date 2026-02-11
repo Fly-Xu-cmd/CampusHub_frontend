@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import type { InterestTag, UserInfo } from "@/types/modules/user";
+import { initWebSocket, destroyWebSocket } from "@/utils/websocket";
 
 export const useUserStore = defineStore("user", {
   state: (): UserInfo => ({
@@ -74,12 +75,27 @@ export const useUserStore = defineStore("user", {
 
       // 存储用户信息到本地
       uni.setStorageSync("userInfo", JSON.stringify(this.userInfo));
+
+      // 登录成功后初始化 WebSocket 连接
+      const wsUrl = import.meta.env.VITE_WS_URL || "ws://192.168.10.9/ws";
+      initWebSocket({
+        url: wsUrl,
+        token: accessToken,
+      });
+      console.log("[UserStore] WebSocket 连接已初始化");
     },
 
     /**
      * 登出
      */
     logout() {
+      // 断开 WebSocket 连接
+      destroyWebSocket();
+      console.log("[UserStore] WebSocket 连接已断开");
+
+      // 清除未读消息本地存储
+      uni.removeStorageSync("group_unread_messages");
+
       // 重置状态
       this.userId = 0;
       this.activitiesNum = 0;
@@ -154,6 +170,14 @@ export const useUserStore = defineStore("user", {
           this.isStudentVerified = userInfo.isStudentVerified || false;
           this.accessToken = accessToken;
           this.refreshToken = refreshToken;
+
+          // 恢复登录状态后，初始化 WebSocket 连接
+          const wsUrl = import.meta.env.VITE_WS_URL || "ws://192.168.10.9/ws";
+          initWebSocket({
+            url: wsUrl,
+            token: accessToken,
+          });
+          console.log("[UserStore] 已从本地存储恢复，WebSocket 连接已初始化");
         } catch (error) {
           console.error("恢复用户状态失败:", error);
           this.logout();

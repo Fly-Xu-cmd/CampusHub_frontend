@@ -1,5 +1,11 @@
 <template>
-  <CommonLayout headerType="standard" title="学生认证" showBack bgWhite>
+  <CommonLayout
+    headerType="standard"
+    title="学生认证"
+    showBack
+    bgWhite
+    padding="0 0"
+  >
     <view class="verify-page">
       <!-- 加载中 -->
       <view v-if="loading" class="loading-container">
@@ -763,7 +769,7 @@ const handleBack = () => {
 @use "@/styles/mixins.scss" as *;
 
 .verify-page {
-  min-height: 100vh;
+  min-height: 100%;
   background: #f6faff;
 }
 

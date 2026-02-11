@@ -1,16 +1,24 @@
 <template>
-  <CommonLayout headerType="home" contentBg="$background-color" :showTabBar="true" padding="0 8rpx">
-    <scroll-view class="content" 
-      @scrolltolower="handleScrollToLower"
-      scroll-y>
+  <CommonLayout
+    headerType="home"
+    contentBg="$background-color"
+    :showTabBar="true"
+    padding="0 8rpx"
+  >
+    <scroll-view class="content" @scrolltolower="handleScrollToLower" scroll-y>
       <view class="search-section">
-        <view class="search-container" >
-          <wd-icon name="search" size="32rpx" color="#999999" class="search-icon" />
-          <wd-search 
+        <view class="search-container">
+          <wd-icon
+            name="search"
+            size="32rpx"
+            color="#999999"
+            class="search-icon"
+          />
+          <wd-search
             v-model="searchQuery"
-            hide-cancel 
-            placeholder="搜索活动..." 
-            placeholder-left 
+            hide-cancel
+            placeholder="搜索活动..."
+            placeholder-left
             custom-class="custom-search"
             @search="search"
           />
@@ -22,33 +30,37 @@
         <text class="recommend-title">推荐活动</text>
         <view class="recommend-line"></view>
       </view>
-      
-      
+
       <!-- 标签行 -->
       <view class="tag-row">
         <scroll-view scroll-x class="tag-scroll" show-scrollbar="false">
-          <view 
-            key="0" 
+          <view
+            key="0"
             class="tag-item"
             :class="{ active: activeTag === 0 }"
             @click="selectTag(0)"
           >
-            <view class="iconfont iconfont-quanbu" style="font-size: 30rpx;" />
+            <view class="iconfont" style="font-size: 30rpx" />
             <text>全部类型</text>
           </view>
-          <view 
-            v-for="tag in tags" 
-            :key="tag.id" 
+          <view
+            v-for="tag in tags"
+            :key="tag.id"
             class="tag-item"
             :class="{ active: activeTag === tag.id }"
             @click="selectTag(tag.id)"
           >
-            <view v-if="tag.icon" class="iconfont" :class="tag.icon" style="font-size: 30rpx;" />
+            <view
+              v-if="tag.icon"
+              class="iconfont"
+              :class="tag.icon"
+              style="font-size: 30rpx"
+            />
             <text>{{ tag.name }}</text>
           </view>
         </scroll-view>
       </view>
-      
+
       <!-- 活动列表 -->
       <view class="activity-list">
         <view v-if="loading" class="loading">
@@ -58,57 +70,57 @@
           <text>暂无活动</text>
         </view>
         <view v-else>
-          <view 
-            v-for="activity in activities" 
-            :key="activity.id" 
+          <view
+            v-for="activity in activities"
+            :key="activity.id"
             class="activity-card"
             @click="viewDetail(activity.id)"
           >
             <!-- 活动图片 -->
             <view class="card-image-container">
-              <image :src="activity.coverUrl" class="card-image" mode="aspectFill" />
+              <image
+                :src="activity.coverUrl"
+                class="card-image"
+                mode="aspectFill"
+              />
               <!-- 报名状态 -->
-              <view class="registration-status"
-                :style="{
-                  color: activity.status === 2 ? '$primary-color' : 
-                         activity.status === 3 ? '#4ade80' : 
-                         activity.status === 4 ? '#666666' : 
-                         '#000000'
-                }"
-              >
-                <view class="iconfont" style="font-size: 25rpx;" 
-                :class="{'iconfont-remen': activity.status === 2, 'iconfont-people': activity.status === 3}"
-                v-if="!(activity.status === 4)"
+              <view class="registration-status">
+                <view
+                  class="iconfont iconfont-remen"
+                  style="font-size: 25rpx"
                 />
                 <text>{{ activity.statusText }}</text>
               </view>
               <!-- 人数信息 -->
               <view class="participant-count">
                 <text>
-                  {{ activity.currentParticipants }}/{{ activity.maxParticipants }}人
+                  {{ activity.currentParticipants }}/{{
+                    activity.maxParticipants
+                  }}人
                 </text>
               </view>
             </view>
-            
+
             <!-- 活动标题 -->
             <text class="activity-title">{{ activity.title }}</text>
-            
+
             <!-- 活动标签 -->
             <view class="activity-tags">
-              <view 
-                v-for="tag in activity.tags" 
-                :key="tag.id" 
+              <view
+                v-for="tag in activity.tags"
+                :key="tag.id"
                 class="activity-tag"
-                :style="{
-                  color: tag.color  
-                }"
-
+                :class="tag.color"
               >
-                <view class="iconfont" :class="tag.icon" style="font-size: 25rpx;" />
+                <view
+                  class="iconfont"
+                  :class="tag.icon"
+                  style="font-size: 25rpx"
+                />
                 <text>{{ tag.name }}</text>
               </view>
             </view>
-            
+
             <!-- 活动信息 -->
             <view class="activity-info">
               <view class="info-item">
@@ -121,23 +133,27 @@
                 <text>{{ activity.location }}</text>
               </view>
             </view>
-            
+
             <!-- 底部信息 -->
             <view class="card-footer">
               <view class="organizer">
-                <image :src="activity.organizerAvatar" class="organizer-avatar" mode="aspectFill" />
+                <image
+                  :src="activity.organizerAvatar"
+                  class="organizer-avatar"
+                />
                 <text>{{ activity.organizerName }}</text>
               </view>
               <view class="action-button">
                 <text>查看详情</text>
-                <wd-icon name="arrow-right1" size="28rpx" style="font-weight: 600;"/>
+                <wd-icon
+                  name="arrow-right1"
+                  size="28rpx"
+                  style="font-weight: 600"
+                />
               </view>
             </view>
           </view>
-          <wd-loadmore
-            :state="state"
-            @reload="loadMore"
-          />
+          <wd-loadmore :state="state" @reload="loadMore" />
         </view>
       </view>
     </scroll-view>
@@ -145,15 +161,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { getActivityCategoryList, getActivityList, searchActivity } from '@/api/home/router';
+import { ref, onMounted } from "vue";
+import {
+  getActivityCategoryList,
+  getActivityList,
+  searchActivity,
+} from "@/api/home/router";
+
 // 时间格式化函数：将10位时间戳转换为"周五 19:00"格式
 const formatTime = (timestamp: number) => {
   const date = new Date(timestamp * 1000); // 转换为毫秒
-  const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const weekDays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
   const weekDay = weekDays[date.getDay()];
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
   return `${weekDay} ${hours}:${minutes}`;
 };
 
@@ -162,15 +183,17 @@ onMounted(async () => {
   await getCategories();
 
   // 获取活动列表
-  await getActivities();
+  getActivities();
 });
 
 const tags = ref(); // 活动分类列表
 // 获取活动分类列表
 const getCategories = async () => {
-  const { data: { list: Categories } } = await getActivityCategoryList();
+  const {
+    data: { list: Categories },
+  } = await getActivityCategoryList();
   tags.value = Categories;
-}
+};
 
 const activeTag = ref<number>(0); // 当前选中的标签
 // 选择标签
@@ -183,78 +206,57 @@ const loading = ref<boolean>(false);
 const activities = ref(); // 活动列表
 const pagination = ref(); // 分页信息
 
+// 加载更多状态
+const state = ref<"loading" | "finished" | "error">("finished");
+
+// 加载更多（暂未实现分页）
+const loadMore = () => {
+  // 当前版本不支持分页加载更多
+};
+
+// 滚动到底部触发
+const handleScrollToLower = () => {
+  loadMore();
+};
+
 // 获取活动列表
 const getActivities = async () => {
   loading.value = true;
-  const { data } = await getActivityList({
-    page: 1,
-    pageSize: 10,
+  const {
+    data: { list: Activities },
+  } = await getActivityList({
     categoryId: activeTag.value,
     status: -1,
+    page: 1,
+    pageSize: 10,
   });
   loading.value = false;
-  activities.value = data.list;
-  pagination.value = data.pagination;
-  state.value = 'loading';
-}
-const isSearch = ref(false); // 是否搜索
-const searchQuery = ref(''); // 搜索框的值
+  activities.value = Activities;
+};
+
+const searchQuery = ref(""); // 搜索框的值
 // 搜索活动
 const search = async () => {
-  const keyword = searchQuery.value.trim()
-  if (!keyword){
+  const keyword = searchQuery.value.trim();
+  if (!keyword) {
     // 非空判断
-    return
+    return;
   }
   loading.value = true;
-  const { data } = await searchActivity({
+  const {
+    data: { list: Activities },
+  } = await searchActivity({
     keyword: keyword,
     page: 1,
     pageSize: 50,
   });
   loading.value = false;
-  activities.value = data.list;
-  isSearch.value = true;
-}
-
-const handleScrollToLower = () => {
-  if (isSearch.value){
-    state.value = 'finished';
-    return;
-  }
-  if (state.value === 'finished') {
-    return;
-  }
-  loadMore();
-}
-
-const state = ref('loading'); // 加载状态
-// 加载更多数据
-const loadMore = async () => {
-  try {
-    const { data } = await getActivityList({
-      page: pagination.value.page+1,
-      pageSize: 10,
-      categoryId: activeTag.value,
-      status: -1,
-    });
-    const list = data.list;
-    pagination.value = data.pagination;
-    const total = pagination.value.total
-    if (activities.value.length < total){
-      activities.value = [...activities.value, ...list];
-    }else{
-      state.value = 'finished';
-    }
-  } catch (error) {
-    state.value = 'error';
-  }
-}
-
+  activities.value = Activities;
+};
 
 const viewDetail = (activityId: number) => {
   uni.navigateTo({
-    url: `/pages/home/detail?id=${activityId}`
+    url: `/pages/home/detail?id=${activityId}`,
   });
 };
 </script>
@@ -295,7 +297,7 @@ $tag-inactive-color: #111;
       .wd-search__input {
         background: #ffffff !important;
         border: 1rpx solid $border-color;
-        box-shadow: $shadow-sm; 
+        box-shadow: $shadow-sm;
         border-radius: 32rpx;
         height: 100rpx;
         padding-left: 80rpx !important;
@@ -347,11 +349,11 @@ $tag-inactive-color: #111;
   transition: all 0.3s ease;
   border: 1rpx solid transparent;
   box-shadow: $shadow-sm;
-  
+
   &:last-child {
     margin-right: 0;
   }
-  
+
   &.active {
     background-color: $tag-active-bg;
     color: $tag-active-color;
@@ -385,21 +387,24 @@ $tag-inactive-color: #111;
   overflow: hidden;
   box-shadow: 0 8rpx 10rpx 10rpx rgba(249, 115, 22, 0.05);
   background-color: $surface-color;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   padding: 25rpx;
   &:active {
     transform: translateY(2rpx);
     box-shadow: $shadow-sm;
   }
-  
+
   &:last-child {
     margin-bottom: 0;
   }
 }
 /* 卡片图片容器 */
 .card-image-container {
-    position: relative;
-    height: 400rpx;
+  position: relative;
+  height: 400rpx;
+
   .card-image {
     width: 100%;
     height: 100%;
@@ -407,7 +412,7 @@ $tag-inactive-color: #111;
     background-color: $background-color;
     border-radius: $border-radius-xl;
   }
-  
+
   /* 报名状态 */
   .registration-status {
     @include flex(row, center, center);
@@ -422,7 +427,7 @@ $tag-inactive-color: #111;
     color: $primary-color;
     font-weight: $font-weight-semibold;
   }
-  
+
   /* 人数信息 */
   .participant-count {
     position: absolute;
@@ -453,7 +458,7 @@ $tag-inactive-color: #111;
   @include flex(row, flex-start, center);
   gap: 12rpx;
   padding: 0 20rpx 20rpx;
-  
+
   .activity-tag {
     @include flex(row, center, center);
     gap: 6rpx;
@@ -461,32 +466,32 @@ $tag-inactive-color: #111;
     border-radius: $border-radius-full;
     font-size: 20rpx;
     font-weight: $font-weight-medium;
-    
+
     &.orange {
       background-color: #f8eaea;
       color: $accent-color;
     }
-    
+
     &.blue {
       background-color: #f0f9ff;
       color: #0ea5e9;
     }
-    
+
     &.green {
       background-color: #f0fdf4;
       color: #22c55e;
     }
-    
+
     &.yellow {
       background-color: #fefce8;
       color: #eab308;
     }
-    
+
     &.pink {
       background-color: #fdf2f8;
       color: #ec4899;
     }
-    
+
     &.black {
       background-color: #f8fafc;
       color: #64748b;
@@ -500,9 +505,9 @@ $tag-inactive-color: #111;
   margin-left: 20rpx;
   margin-right: 20rpx;
   margin-bottom: 20rpx;
-  padding: 10rpx 20rpx;
-  gap: $spacing-sm;
-  background-color: #f8fafc; 
+  padding: 20rpx 20rpx;
+  gap: $spacing-md;
+  background-color: #f8fafc;
   border-radius: $border-radius-md;
 
   .log {
@@ -516,34 +521,32 @@ $tag-inactive-color: #111;
     gap: 10rpx;
     font-size: 22rpx;
     color: $text-secondary;
-    
   }
-  
 }
 
 /* 底部信息 */
 .card-footer {
   @include flex(row, space-between, center);
   padding: 20rpx;
-  
+
   .organizer {
     @include flex(row, center, center);
     gap: 12rpx;
-    
+
     .organizer-avatar {
       width: 48rpx;
       height: 48rpx;
       border-radius: 50%;
       background-color: $background-color;
     }
-    
+
     text {
       font-size: 24rpx;
       color: $text-secondary;
       font-weight: $font-weight-medium;
     }
   }
-  
+
   .action-button {
     @include flex(row, center, center);
     gap: 12rpx;
@@ -554,7 +557,6 @@ $tag-inactive-color: #111;
     font-size: 24rpx;
     font-weight: $font-weight-bold;
     box-shadow: $shadow-md;
-    
   }
 }
 </style>

@@ -37,7 +37,11 @@
               :src="group.avatar || defaultAvatar"
               mode="aspectFill"
             ></image>
-            <view class="avatar-badge">{{ group.member_count }}</view>
+            <view
+              class="avatar-badge"
+              v-show="getGroupUnreadCount(group.group_id) > 0"
+              >{{ getGroupUnreadCount(group.group_id) }}</view
+            >
           </view>
           <view class="message-content">
             <view class="message-header">
@@ -73,8 +77,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
-import { getGroups, getNotificationsUnreadCount } from "@/api/message/router";
+import { onShow } from "@dcloudio/uni-app";
+import {
+  getGroups,
+  getNotificationsUnreadCount,
+  getOfflineMessages,
+} from "@/api/message/router";
 import { useUserStore } from "@/store/user";
+import { getWebSocket } from "@/utils/websocket";
 
 const userStore = useUserStore();
 const defaultAvatar = "https://picsum.photos/200?random=chat";
@@ -83,6 +93,74 @@ const defaultAvatar = "https://picsum.photos/200?random=chat";
 const groups = ref<any[]>([]);
 const unreadCount = ref(0);
 const loading = ref(true);
+
+// 群聊未读消息数量映射（group_id -> unread_count）
+const groupUnreadMap = ref<Map<string, number>>(new Map());
+
+// 本地存储 key
+const UNREAD_STORAGE_KEY = "group_unread_messages";
+
+// 从本地存储加载未读消息数量
+const loadUnreadFromStorage = () => {
+  try {
+    const data = uni.getStorageSync(UNREAD_STORAGE_KEY);
+    if (data) {
+      const unreadObj = JSON.parse(data);
+      groupUnreadMap.value = new Map(Object.entries(unreadObj));
+      console.log(
+        "[消息列表] 已从本地存储恢复未读消息数量:",
+        groupUnreadMap.value,
+      );
+    }
+  } catch (error) {
+    console.error("[消息列表] 加载未读消息数量失败:", error);
+  }
+};
+
+// 保存未读消息数量到本地存储
+const saveUnreadToStorage = () => {
+  try {
+    const unreadObj = Object.fromEntries(groupUnreadMap.value);
+    uni.setStorageSync(UNREAD_STORAGE_KEY, JSON.stringify(unreadObj));
+  } catch (error) {
+    console.error("[消息列表] 保存未读消息数量失败:", error);
+  }
+};
+
+// WebSocket 事件处理器
+const handleNewMessage = (data: any) => {
+  console.log("[消息列表] 收到新消息:", data);
+
+  // 查找对应的群聊
+  const groupIndex = groups.value.findIndex(
+    (g) => g.group_id === data.group_id,
+  );
+
+  if (groupIndex !== -1) {
+    // 群聊已存在，更新最后一条消息信息
+    const group = groups.value[groupIndex];
+    group.last_message = data.msg_type === 1 ? data.content : "[图片]";
+    group.last_message_at = data.created_at;
+
+    // 增加未读消息数量
+    const currentUnread = groupUnreadMap.value.get(data.group_id) || 0;
+    groupUnreadMap.value.set(data.group_id, currentUnread + 1);
+
+    // 保存到本地存储
+    saveUnreadToStorage();
+
+    // 按未读数量和最后消息时间重新排序
+    sortGroupsByUnread();
+  } else {
+    // 群聊不存在，刷新整个列表
+    fetchGroups();
+  }
+};
+
+// 获取群聊未读消息数量
+const getGroupUnreadCount = (groupId: string): number => {
+  return groupUnreadMap.value.get(groupId) || 0;
+};
 
 // 格式化时间
 const formatTime = (time: string | number) => {
@@ -151,8 +229,82 @@ const fetchUnreadCount = async () => {
   }
 };
 
+// 获取离线消息并更新未读数量
+const fetchOfflineMessages = async () => {
+  // 从本地存储获取上次离线时间
+  const lastOfflineTime = uni.getStorageSync("last_offline_time");
+  if (!lastOfflineTime) {
+    console.log("[消息列表] 无上次离线时间记录，跳过离线消息获取");
+    return;
+  }
+
+  try {
+    const res = await getOfflineMessages(userStore.userId, lastOfflineTime);
+    if (res.data?.messages && res.data.messages.length > 0) {
+      console.log(`[消息列表] 获取到 ${res.data.messages.length} 条离线消息`);
+
+      // 统计每个群组的离线消息数量
+      const offlineUnreadMap = new Map<string, number>();
+      res.data.messages.forEach((msg: any) => {
+        const count = offlineUnreadMap.get(msg.group_id) || 0;
+        offlineUnreadMap.set(msg.group_id, count + 1);
+      });
+
+      // 更新群组未读数量（累加到现有数量上）
+      offlineUnreadMap.forEach((count, groupId) => {
+        const currentUnread = groupUnreadMap.value.get(groupId) || 0;
+        groupUnreadMap.value.set(groupId, currentUnread + count);
+      });
+
+      // 保存到本地存储
+      saveUnreadToStorage();
+
+      // 按未读数量和最后消息时间重新排序群组
+      sortGroupsByUnread();
+
+      // 显示提示
+      const totalUnread = Array.from(offlineUnreadMap.values()).reduce(
+        (sum, count) => sum + count,
+        0,
+      );
+      if (totalUnread > 0) {
+        uni.showToast({
+          title: `收到 ${totalUnread} 条新消息`,
+          icon: "none",
+        });
+      }
+    }
+  } catch (error) {
+    console.error("[消息列表] 获取离线消息失败:", error);
+  }
+};
+
+// 按未读数量和最后消息时间排序群组
+const sortGroupsByUnread = () => {
+  groups.value.sort((a, b) => {
+    // 优先按未读数量排序（有未读的排前面）
+    const unreadA = groupUnreadMap.value.get(a.group_id) || 0;
+    const unreadB = groupUnreadMap.value.get(b.group_id) || 0;
+
+    if (unreadA > 0 && unreadB === 0) return -1;
+    if (unreadB > 0 && unreadA === 0) return 1;
+    if (unreadA !== unreadB) return unreadB - unreadA;
+
+    // 未读数量相同时，按最后消息时间排序
+    const timeA = new Date(a.last_message_at || 0).getTime();
+    const timeB = new Date(b.last_message_at || 0).getTime();
+    return timeB - timeA;
+  });
+};
+
 // 查看聊天
 const viewChat = (group_id: string) => {
+  // 清空该群聊的未读消息数量
+  groupUnreadMap.value.set(group_id, 0);
+
+  // 保存到本地存储
+  saveUnreadToStorage();
+
   uni.navigateTo({
     url: `/pages/message/chat?group_id=${group_id}`,
   });
@@ -165,9 +317,39 @@ const viewSystemMsg = () => {
   });
 };
 
-onMounted(() => {
-  fetchGroups();
+onShow(() => {
+  // 每次页面显示时刷新未读数量
   fetchUnreadCount();
+});
+
+onMounted(async () => {
+  // 从本地存储恢复未读消息数量
+  loadUnreadFromStorage();
+
+  // 获取群聊列表
+  await fetchGroups();
+
+  // 获取离线消息并更新未读数量
+  await fetchOfflineMessages();
+
+  // 获取系统通知未读数
+  fetchUnreadCount();
+
+  // 注册 WebSocket 新消息监听
+  const ws = getWebSocket();
+  if (ws) {
+    ws.on("newMessage", handleNewMessage);
+    console.log("[消息列表] 已注册 WebSocket 新消息监听");
+  }
+});
+
+onUnmounted(() => {
+  // 移除 WebSocket 新消息监听
+  const ws = getWebSocket();
+  if (ws) {
+    ws.off("newMessage", handleNewMessage);
+    console.log("[消息列表] 已移除 WebSocket 新消息监听");
+  }
 });
 </script>
 
@@ -320,6 +502,19 @@ onMounted(() => {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+          }
+
+          .unread-badge {
+            min-width: 36rpx;
+            height: 36rpx;
+            padding: 0 8rpx;
+            background-color: $accent-color;
+            color: $text-light;
+            font-size: $font-size-xs;
+            font-weight: $font-weight-semibold;
+            border-radius: 18rpx;
+            @include flex(row, center, center);
+            margin-left: $spacing-sm;
           }
         }
       }

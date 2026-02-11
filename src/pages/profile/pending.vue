@@ -85,7 +85,8 @@ const formatTime = (time: string | number) => {
 // 计算倒计时文本 - 支持时间戳和字符串格式
 const getCountdownText = (time: string | number) => {
   try {
-    const activityTime = typeof time === "number" ? time : new Date(time).getTime();
+    const activityTime =
+      typeof time === "number" ? time : new Date(time).getTime();
     const now = Date.now();
     const diff = activityTime - now;
 
@@ -139,7 +140,7 @@ const loadMore = () => {
 // 跳转到活动详情
 const handleToDetail = (id: number) => {
   uni.navigateTo({
-    url: `/pages/activity/detail?id=${id}`,
+    url: `/pages/home/detail?id=${id}`,
   });
 };
 

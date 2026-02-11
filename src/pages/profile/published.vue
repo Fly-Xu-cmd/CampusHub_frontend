@@ -25,7 +25,7 @@
           mode="aspectFill"
         />
         <view class="info-col">
-          <text class="title">{{ activity.categoryName }}</text>
+          <text class="title">{{ activity.title }}</text>
           <view class="meta-row">
             <wd-icon
               name="time"
@@ -181,7 +181,7 @@ const loadMore = () => {
 // 跳转到活动详情
 const handleToDetail = (id: number) => {
   uni.navigateTo({
-    url: `/pages/activity/detail?id=${id}`,
+    url: `/pages/home/detail?id=${id}`,
   });
 };
 

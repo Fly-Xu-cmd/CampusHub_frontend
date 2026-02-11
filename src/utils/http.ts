@@ -693,7 +693,7 @@ export const upload = <T>(
     }
 
     // 获取 token
-		const token = uni.getStorageSync("accessToken");
+    const token = uni.getStorageSync("accessToken");
 
     // #ifdef H5
     // H5 环境：使用 FormData + fetch
