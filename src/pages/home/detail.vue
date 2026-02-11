@@ -4,15 +4,22 @@
     <!-- 活动图片 -->
     <view class="activity-image-container">
       <image class="activity-image" 
-        :src="activityDetail.coverUrl" 
+        :src="activityDetail?.coverUrl" 
         mode="aspectFill" />
       <!-- 报名状态标签 -->
-      <view class="status-tag">
-        <text class="status-text">{{ activityDetail.statusText }}</text>
+      <view class="status-tag"
+        :style="{
+          backgroundColor: activityDetail.status === 2 ? '#f97316' :
+                           activityDetail.status === 3 ? '#4ade80' :
+                           activityDetail.status === 4 ? '#666666' :
+                            '#000000'
+        }"
+      >
+        <text class="status-text">{{ activityDetail?.statusText || '未知状态' }}</text>
       </view>
       <!-- 活动标题 -->
       <view class="activity-title">
-        <text>{{ activityDetail.title }}</text>
+        <text>{{ activityDetail?.title || '无标题' }}</text>
       </view>
     </view>
     
@@ -22,9 +29,9 @@
       <!-- 发起人信息 -->
       <view class="organizer-info" @click="viewPubilcProfil(activityDetail.organizerId)">
         <image class="organizer-avatar" 
-          :src="activityDetail.organizerAvatar" />
+          :src="activityDetail?.organizerAvatar" mode="aspectFill" />
         <view class="organizer-text">
-          <text class="organizer-name">{{ activityDetail.organizerName }}</text>
+          <text class="organizer-name">{{ activityDetail?.organizerName || '默认名' }}</text>
           <text class="organizer-detail">点击查看发起人详情</text>
         </view>
         <wd-icon name="arrow-right" size="35rpx" color="#999" />
@@ -34,11 +41,11 @@
       <view class="info-cards">
         <view class="info-card time-card">
           <text class="info-label">TIME</text>
-          <text class="info-value">{{ formatDate(activityDetail.activityStartTime) }}</text>
+          <text class="info-value">{{ formatDate(activityDetail?.activityStartTime) }}</text>
         </view>
         <view class="info-card location-card">
           <text class="info-label">LOCATION</text>
-          <text class="info-value">{{ activityDetail.addressDetail }}</text>
+          <text class="info-value">{{ activityDetail?.addressDetail }}</text>
         </view>
       </view>
       
@@ -48,7 +55,7 @@
           <text class="details-title">活动详情</text>
         </view>
         <view class="details-content">
-          <text class="details-text">{{ activityDetail.content }}</text>
+          <text class="details-text">{{ activityDetail?.content }}</text>
         </view>
       </view>
     </view>
@@ -81,6 +88,7 @@
         </button>
       </view>
     </view>
+
   </CommonLayout>
 </template>
 

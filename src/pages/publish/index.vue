@@ -17,7 +17,8 @@
 		<view class="publish-container">
 			<!-- 上传组件 -->
 		<UploadVideo 
-			v-model:fileList="fileList"
+			:fileList="fileList"
+			@update:fileList="handleFileListUpdate"
 			upload-text="上传活动封面/视频"
 		/>
 			<!-- 上传组件 -->
@@ -136,9 +137,7 @@
 
 <script setup lang="ts">
 import '@/styles/iconfont.css'
-import {
-	useToast,
-} from 'wot-design-uni'
+
 import {
 	ref,
 	computed,
@@ -149,7 +148,7 @@ import { usePublishStore } from '@/store/publish'
 import TimeSelect from '@/components/TimeSelect/TimeSelect.vue'
 import LocationSelect from '@/components/LocationSelect/LocationSelect.vue'
 import UploadVideo from '@/components/UploadVideo/UploadVideo.vue'
-import { postPublish, getTags } from '@/api/publish/router'
+import { postPublish, getTags, postId } from '@/api/publish/router'
 
 // 定义标签类型
 interface Tag {
@@ -158,7 +157,6 @@ interface Tag {
 	color: string
 }
 
-	const toast = useToast()
 	const publishStore = usePublishStore()
 	const activityTitle = ref<string>('')
 const activityDetail = ref<string>('')
@@ -201,6 +199,11 @@ const toggleTagPicker = async (): Promise<void> => {
 	isShowTagPicker.value = !isShowTagPicker.value
 }
 
+// 处理文件列表更新
+const handleFileListUpdate = (val: any[]): void => {
+	fileList.value = val
+}
+
 // 组件初始化时获取标签数据
 onMounted(async () => {
 	await fetchTags()
@@ -210,15 +213,13 @@ onMounted(async () => {
 const fetchTags = async (): Promise<void> => {
 	try {
 		const response: any = await getTags()
-		console.log('标签数据:', response)
 		if (response && response.code === 0 && response.data && response.data.list) {
 			tags.value = response.data.list
 		} else {
 			tags.value = []
 		}
 	} catch (error) {
-		console.error('获取标签失败:', error)
-		toast.error('获取标签失败，请稍后重试')
+		uni.showToast({ title: '获取标签失败，请稍后重试', icon: 'error' })
 		tags.value = []
 	}
 }
@@ -243,6 +244,43 @@ watch(endValue, (newValue) => {
 // 提交表单
 const submitForm = async () => {
 	try {
+		// 表单验证
+		if (!activityTitle.value) {
+			uni.showToast({ title: '请输入活动标题', icon: 'none' })
+			return
+		}
+		
+		if (!contactPhone.value) {
+			uni.showToast({ title: '请输入联系电话', icon: 'none' })
+			return
+		}
+		
+		if (!locationName.value || locationName.value === '选择线下地点') {
+			uni.showToast({ title: '请选择活动地点', icon: 'none' })
+			return
+		}
+		
+		if (!peopleLimit.value || peopleLimit.value < 1) {
+			uni.showToast({ title: '请设置有效的人数限制', icon: 'none' })
+			return
+		}
+		
+		if (selectedTags.value.length === 0) {
+			uni.showToast({ title: '请至少选择一个活动标签', icon: 'none' })
+			return
+		}
+		
+		// 添加封面上传验证
+		if (fileList.value.length === 0) {
+			uni.showToast({ title: '请上传活动封面', icon: 'none' })
+			return
+		} else {
+			if (!fileList.value[0].url) {
+				uni.showToast({ title: '请等待文件上传完成', icon: 'none' })
+				return
+			}
+		}
+		
 		// 时间验证
 		const registerStartTime = Math.floor(signupStartValue.value / 1000)
 		const registerEndTime = Math.floor(signupEndValue.value / 1000)
@@ -251,57 +289,62 @@ const submitForm = async () => {
 		
 		// 检查时间顺序
 		if (registerEndTime <= registerStartTime) {
-			toast.error('报名截止时间必须在报名开始时间之后')
+			uni.showToast({ title: '报名截止时间必须在报名开始时间之后', icon: 'error' })
 			return
 		}
 		
 		if (activityStartTime <= registerEndTime) {
-			toast.error('活动开始时间必须在报名截止时间之后')
+			uni.showToast({ title: '活动开始时间必须在报名截止时间之后', icon: 'error' })
 			return
 		}
 		
 		if (activityEndTime <= activityStartTime) {
-			toast.error('活动结束时间必须在活动开始时间之后')
+			uni.showToast({ title: '活动结束时间必须在活动开始时间之后', icon: 'error' })
 			return
 		}
 		
-		// 准备数据 - 使用用户选择的数据
-		const formData = {
-			title: activityTitle.value || "周五夜跑活动",
-			coverUrl: fileList.value.length > 0 ? fileList.value[0].url : "https://cdn.example.com/cover.jpg",
-			coverType: fileList.value.length > 0 ? (fileList.value[0].type === 'video' ? 2 : 1) : 1,
-			content: activityDetail.value || "<p>一起来奥森公园跑步吧！</p>",
-			categoryId: selectedTags.value.length > 0 ? selectedTags.value[0] : 1,
-			contactPhone: contactPhone.value || "13800138000",
+		// 上传图片获取ID
+		uni.showLoading({ title: '上传图片中...' })
+		const imageFile = fileList.value[0]
+		// 传递实际的File对象而不是本地URL
+		const uploadResponse = await postId(imageFile.file)
+		if (!uploadResponse || !uploadResponse.data || !uploadResponse.data.data || !uploadResponse.data.data.id) {
+			uni.hideLoading()
+			uni.showToast({ title: '图片上传失败', icon: 'error' })
+			return
+		}
+		
+		const coverImageId = uploadResponse.data.data.id
+		uni.hideLoading()
+		
+		// 准备数据 - 完全使用用户选择的数据
+		const activityData = {
+			title: activityTitle.value,
+			coverImageId: coverImageId,
+			coverType: imageFile.type === 'video' ? 2 : 1,
+			content: activityDetail.value || "",
+			categoryId: selectedTags.value[0],
+			contactPhone: contactPhone.value,
 			registerStartTime: registerStartTime,
 			registerEndTime: registerEndTime,
 			activityStartTime: activityStartTime,
 			activityEndTime: activityEndTime,
-			location: locationName.value || "奥林匹克森林公园",
-			addressDetail: locationAddress.value || "南门集合",
-			longitude: locationLongitude.value || 116.407526,
-			latitude: locationLatitude.value || 39.90403,
-			maxParticipants: peopleLimit.value || 50,
+			location: locationName.value,
+			addressDetail: locationAddress.value || "",
+			longitude: locationLongitude.value,
+			latitude: locationLatitude.value,
+			maxParticipants: Number(peopleLimit.value),
 			requireApproval: false,
 			requireStudentVerify: true,
 			minCreditScore: 60,
-			tagIds: selectedTags.value.length > 0 ? selectedTags.value : [1, 2, 3],
+			tagIds: selectedTags.value,
 			isDraft: false
 		} as any
 		
-		// 打印提交的数据
-		console.log('准备提交的数据:', formData)
-		// 显示提交的数据（可选，用于更明显的提示）
-		toast.info('正在提交数据，请查看控制台')
-		console.log('提交的数据详情:', JSON.stringify(formData, null, 2))
-		
 		// 提交数据
-		const response = await postPublish(formData)
-		
-		console.log('发布响应:', response)
-		
-		if (response.code === 200) {
-			toast.success('发布成功')
+			await postPublish(activityData)
+			
+			uni.showToast({ title: '发布成功', icon: 'success' })
 			// 重置表单
 			activityTitle.value = ''
 			activityDetail.value = ''
@@ -312,16 +355,14 @@ const submitForm = async () => {
 			locationLatitude.value = 0
 			locationLongitude.value = 0
 			contactPhone.value = ''
+			selectedTags.value = [1, 2, 3] // 重置为默认标签
 			// 跳转到票卷列表页面
 			uni.redirectTo({
 				url: '/pages/ticket/index'
 			})
-		} else {
-			toast.error(response.message || '发布失败')
-		}
 	} catch (error) {
-		console.error('发布失败:', error)
-		toast.error('发布失败，请稍后重试')
+		uni.hideLoading()
+		uni.showToast({ title: '发布失败，请稍后重试', icon: 'error' })
 	}
 }
 

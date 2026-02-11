@@ -1,21 +1,12 @@
 <template>
-  <CommonLayout
-    headerType="home"
-    contentBg="$background-color"
-    :showTabBar="true"
-    padding="0 8rpx"
-    :systemMessageCount="systemMessageCount"
-  >
-    <view class="content">
+  <CommonLayout headerType="home" contentBg="$background-color" :showTabBar="true" padding="0 8rpx">
+    <scroll-view class="content" 
+      @scrolltolower="handleScrollToLower"
+      scroll-y>
       <view class="search-section">
         <view class="search-container">
-          <wd-icon
-            name="search"
-            size="32rpx"
-            color="#999999"
-            class="search-icon"
-          />
-          <wd-search
+          <wd-icon name="search" size="32rpx" color="#999999" class="search-icon" />
+          <wd-search 
             v-model="searchQuery"
             hide-cancel
             placeholder="搜索活动..."
@@ -41,7 +32,7 @@
             :class="{ active: activeTag === 0 }"
             @click="selectTag(0)"
           >
-            <view class="iconfont" style="font-size: 30rpx" />
+            <view class="iconfont" style="font-size: 30rpx;" />
             <text>全部类型</text>
           </view>
           <view
@@ -86,10 +77,7 @@
               />
               <!-- 报名状态 -->
               <view class="registration-status">
-                <view
-                  class="iconfont iconfont-remen"
-                  style="font-size: 25rpx"
-                />
+                <view class="iconfont iconfont-remen" style="font-size: 25rpx;" />
                 <text>{{ activity.statusText }}</text>
               </view>
               <!-- 人数信息 -->
@@ -112,6 +100,7 @@
                 :key="tag.id"
                 class="activity-tag"
                 :class="tag.color"
+
               >
                 <view
                   class="iconfont"
@@ -138,10 +127,7 @@
             <!-- 底部信息 -->
             <view class="card-footer">
               <view class="organizer">
-                <image
-                  :src="activity.organizerAvatar"
-                  class="organizer-avatar"
-                />
+                <image :src="activity.organizerAvatar" class="organizer-avatar" />
                 <text>{{ activity.organizerName }}</text>
               </view>
               <view class="action-button">
@@ -154,24 +140,19 @@
               </view>
             </view>
           </view>
+          <wd-loadmore
+            :state="state"
+            @reload="loadMore"
+          />
         </view>
       </view>
-    </view>
+    </scroll-view>
   </CommonLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import {
-  getActivityCategoryList,
-  getActivityList,
-  getNotificationCount,
-  searchActivity,
-} from "@/api/home/router";
-import { useUserStore } from "@/store/user";
-
-const userStore = useUserStore();
-const systemMessageCount = ref(0); // 系统消息数量
+import { ref, onMounted } from 'vue';
+import { getActivityCategoryList, getActivityList, searchActivity } from '@/api/home/router';
 
 // 时间格式化函数：将10位时间戳转换为"周五 19:00"格式
 const formatTime = (timestamp: number) => {
@@ -185,23 +166,10 @@ const formatTime = (timestamp: number) => {
 
 onMounted(async () => {
   // 获取活动分类列表
-  getCategories();
+  await getCategories();
 
   // 获取活动列表
   getActivities();
-  if (userStore.userInfo.userId) {
-    // 获取系统消息
-    getNotificationCount(userStore.userInfo.userId).then((res) => {
-      // 假设返回的数据结构是 { count: number }
-      const count = res.data.count;
-      console.log("res", res);
-      systemMessageCount.value = count;
-      // 这里可以将 count 传递给 CommonLayout 组件，或者使用全局状态管理
-      // 例如：systemStore.setSystemMessageCount(count);
-    });
-  } else {
-    systemMessageCount.value = 0;
-  }
 });
 
 const tags = ref(); // 活动分类列表
@@ -222,19 +190,20 @@ const selectTag = (tagId: number) => {
 
 const loading = ref<boolean>(false);
 const activities = ref(); // 活动列表
+const pagination = ref(); // 分页信息
+
 // 获取活动列表
 const getActivities = async () => {
   loading.value = true;
-  const {
-    data: { list: Activities },
-  } = await getActivityList({
+  const { data: { list: Activities } } = await getActivityList({
     categoryId: activeTag.value,
+    status: -1,
   });
   loading.value = false;
   activities.value = Activities;
-};
+}
 
-const searchQuery = ref(""); // 搜索框的值
+const searchQuery = ref(''); // 搜索框的值
 // 搜索活动
 const search = async () => {
   const keyword = searchQuery.value.trim();
@@ -243,14 +212,14 @@ const search = async () => {
     return;
   }
   loading.value = true;
-  const {
-    data: { list: Activities },
-  } = await searchActivity({
+  const { data: { list: Activities } } = await searchActivity({
     keyword: keyword,
+    page: 1,
+    pageSize: 50,
   });
   loading.value = false;
   activities.value = Activities;
-};
+}
 
 const viewDetail = (activityId: number) => {
   uni.navigateTo({
@@ -271,7 +240,8 @@ $tag-inactive-color: #111;
 .content {
   display: flex;
   flex-direction: column;
-  min-height: 80vh;
+  height: 80vh;
+  overflow-y: auto;
 }
 
 .search-section {
@@ -397,12 +367,11 @@ $tag-inactive-color: #111;
     margin-bottom: 0;
   }
 }
-
 /* 卡片图片容器 */
 .card-image-container {
   position: relative;
   height: 400rpx;
-
+  
   .card-image {
     width: 100%;
     height: 100%;
@@ -501,10 +470,11 @@ $tag-inactive-color: #111;
 .activity-info {
   @include flex(row, flex-start, center);
   margin-left: 20rpx;
+  margin-right: 20rpx;
   margin-bottom: 20rpx;
   padding: 20rpx 20rpx;
   gap: $spacing-md;
-  background-color: #f8fafc;
+  background-color: #f8fafc; 
   border-radius: $border-radius-md;
 
   .log {
@@ -514,6 +484,7 @@ $tag-inactive-color: #111;
   }
   .info-item {
     @include flex(row, center, center);
+    min-width: 30%;
     gap: 10rpx;
     font-size: 22rpx;
     color: $text-secondary;
