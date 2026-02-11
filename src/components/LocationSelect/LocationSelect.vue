@@ -2,7 +2,7 @@
 	<view class="form-item location-item" @click="selectLocation">
 		<view class="form-item-left">
 			<view class="icon-container">
-				<view class="iconfont iconfont-location" style="font-size: 40rpx; color: #6b7280;"></view>
+				<view class="iconfont iconfont-location" style="font-size: 40rpx; color: #3b82f6;"></view>
 			</view>
 			<view class="text-content">
 				<text class="form-label">{{ label }}</text>
@@ -10,7 +10,7 @@
 			</view>
 		</view>
 		<view class="form-item-right">
-			<view class="wd-icon" style="font-size: 24rpx; color: #999;">
+			<view class="wd-icon" style="font-size: 24rpx; color: #3b82f6;">
 				<text style="font-size: 24rpx; transform: rotate(90deg); display: inline-block;">›</text>
 			</view>
 		</view>
@@ -534,7 +534,7 @@ onUnmounted(() => {
 /* 地点名称样式 */
 .location-total {
 	font-size: 26rpx;
-	color: #333;
+	color: #9c9ca6;
 	font-weight: 500;
 	margin-left: 70rpx;
 }

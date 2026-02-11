@@ -552,14 +552,16 @@ const goBackHome = () => {
 
 	/* 活动标题输入框 */
 	.title-input {
-		width: 100%;
+		width: 99.9%;
 		height: 100rpx;
-		padding: 0 30rpx;
+		padding: 5rpx 20rpx;
 		font-size: 28rpx;
 		color: #333;
 		background-color: #fff;
 		border-bottom: 1rpx solid #f0f0f0;
 		box-sizing: border-box;
+		border: 1rpx dashed #ffbb8a;
+		border-radius: 16rpx;
 	}
 
 	/* 人数限制 */

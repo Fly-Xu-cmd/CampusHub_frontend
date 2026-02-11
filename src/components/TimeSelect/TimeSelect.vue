@@ -4,15 +4,15 @@
 		<view class="form-item time-item" @click="toggle">
 			<view class="form-item-left">
 				<view class="icon-container">
-					<wd-icon name="clock" size="38rpx" color="#666" />
-				</view>
+				<wd-icon name="clock" size="38rpx" :color="'#f97316'" />
+			</view>
 				<view class="text-content">
 					<text class="form-label">{{ label }}</text>
-					<text class="form-value">设置开始 ~ 结束时间</text>
+					<text class="form-value">{{ formattedTimeRange }}</text>
 				</view>
 			</view>
 			<view class="form-item-right">
-				<wd-icon name="arrow-right" size="24rpx" color="#999" />
+				<wd-icon name="arrow-right" size="24rpx" :color="'#f97316'" />
 			</view>
 		</view>
 
@@ -28,13 +28,25 @@
 			<!-- 日期选择组件 -->
 			<view class="picker-section">
 				<text class="picker-section-label">开始时间</text>
+				<view class="picker-section-units-container">
+					<text class="picker-section-unit">月</text>
+					<text class="picker-section-unit-day">日</text>
+					<text class="picker-section-unit-hour">时</text>
+					<text class="picker-section-unit-m">分</text>
+				</view>
 				<wd-datetime-picker-view v-model="localStartValue" @change="onStartChange" font-size="26rpx"
-					label-width="0rpx" picker-height="40rpx" style="margin-bottom: 20rpx;" />
+					label-width="40rpx" picker-height="40rpx" style="margin-bottom: 20rpx;" type="datetime" :fields="['month', 'day', 'hour', 'minute']" />
 			</view>
 			<view class="picker-section">
 				<text class="picker-section-label">结束时间</text>
+				<view class="picker-section-units-container">
+					<text class="picker-section-unit">月</text>
+					<text class="picker-section-unit-day">日</text>
+					<text class="picker-section-unit-hour">时</text>
+					<text class="picker-section-unit-m">分</text>
+				</view>
 				<wd-datetime-picker-view v-model="localEndValue" @change="onEndChange" font-size="26rpx"
-					label-width="0rpx" picker-height="40rpx" />
+					label-width="40rpx" picker-height="40rpx" type="datetime" :fields="['month', 'day', 'hour', 'minute']" />
 			</view>
 			<!-- 错误信息显示 -->
 			<view v-if="errorMessage" class="time-error-message">
@@ -45,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 
 // 定义组件的props
 const props = defineProps({
@@ -103,6 +115,23 @@ watch(() => props.errorMessage, (newValue) => {
 	localErrorMessage.value = newValue
 })
 
+// 格式化时间函数
+const formatTime = (timestamp: number): string => {
+	const date = new Date(timestamp)
+	const month = String(date.getMonth() + 1).padStart(2, '0')
+	const day = String(date.getDate()).padStart(2, '0')
+	const hours = String(date.getHours()).padStart(2, '0')
+	const minutes = String(date.getMinutes()).padStart(2, '0')
+	return `${month}-${day} ${hours}:${minutes}`
+}
+
+// 计算属性：格式化后的时间范围
+const formattedTimeRange = computed(() => {
+	const start = formatTime(localStartValue.value)
+	const end = formatTime(localEndValue.value)
+	return `${start} ~ ${end}`
+})
+
 // 切换选择器显示/隐藏
 const toggle = (): void => {
 	emit('toggle')
@@ -140,7 +169,9 @@ const onEndChange = (event: any): void => {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '@/styles/variables.scss';
+
 /* 表单项目样式 */
 .form-item {
 	display: flex;
@@ -232,8 +263,12 @@ const onEndChange = (event: any): void => {
 	background-color: #fff;
 	border-radius: 16rpx;
 	padding: 20rpx;
-	width: 90%;
-	max-width: 500rpx;
+	width: 90vw;
+	max-width: none;
+	max-height: 70vh;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
 }
 
 /* 新增：顶部确定按钮容器 */
@@ -278,11 +313,112 @@ const onEndChange = (event: any): void => {
 
 /* 选择器部分标签样式 */
 .picker-section-label {
-	display: block;
+	display: inline-block;
 	font-size: 24rpx;
 	color: #333;
 	font-weight: 500;
 	margin-bottom: 15rpx;
 	padding-left: 10rpx;
+}
+
+/* 单位标签容器样式 */
+.picker-section-units-container {
+	display: flex;
+	position: relative;
+	margin-left: 140rpx;
+	margin-right: 40rpx;
+	width: calc(100% - 180rpx);
+	height: 30rpx;
+}
+
+/* 单个单位标签样式 */
+.picker-section-unit,
+.picker-section-unit-day,
+.picker-section-unit-hour,
+.picker-section-unit-m {
+	font-size: 22rpx;
+	color: #333333;
+	position: absolute;
+	top: 0;
+	transform: translateX(-50%);
+}
+
+/* 月标签位置 */
+.picker-section-unit {
+	left: 13%;
+}
+
+/* 日标签位置 */
+.picker-section-unit-day {
+	left: 40%;
+}
+
+/* 时标签位置 */
+.picker-section-unit-hour {
+	left: 68%;
+}
+
+/* 分标签位置 */
+.picker-section-unit-m {
+	left: 95%;
+}
+
+/* 响应式调整 - 移动设备 */
+@media screen and (max-width: 750rpx) {
+	.picker-section-units-container {
+		margin-left: 140rpx;
+		margin-right: 30rpx;
+		width: calc(100% - 150rpx);
+	}
+	
+	.picker-section-unit,
+	.picker-section-unit-day,
+	.picker-section-unit-hour,
+	.picker-section-unit-m {
+		font-size: 20rpx;
+	}
+	
+	/* 月标签位置 - 移动设备 */
+	.picker-section-unit {
+		left: 13%;
+	}
+	
+	/* 日标签位置 - 移动设备 */
+	.picker-section-unit-day {
+		left: 40%;
+	}
+	
+	/* 时标签位置 - 移动设备 */
+	.picker-section-unit-hour {
+		left: 68%;
+	}
+	
+	/* 分标签位置 - 移动设备 */
+	.picker-section-unit-m {
+		left: 95%;
+	}
+}
+
+/* 响应式调整 - H5设备 */
+@media screen and (min-width: 751rpx) {
+	/* 月标签位置 - H5设备 */
+	.picker-section-unit {
+		left: 13%;
+	}
+	
+	/* 日标签位置 - H5设备 */
+	.picker-section-unit-day {
+		left: 40%;
+	}
+	
+	/* 时标签位置 - H5设备 */
+	.picker-section-unit-hour {
+		left: 68%;
+	}
+	
+	/* 分标签位置 - H5设备 */
+	.picker-section-unit-m {
+		left: 95%;
+	}
 }
 </style>
