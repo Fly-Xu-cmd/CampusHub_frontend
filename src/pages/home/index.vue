@@ -196,6 +196,7 @@ const getActivities = async () => {
   activities.value = data.list;
   pagination.value = data.pagination;
   state.value = 'loading';
+  isSearch.value = false;
 }
 const isSearch = ref(false); // 是否搜索
 const searchQuery = ref(''); // 搜索框的值
