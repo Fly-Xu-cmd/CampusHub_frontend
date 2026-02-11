@@ -5,44 +5,45 @@
     padding="0 0"
     :showTabBar="true"
   >
-    <view class="profile-container">
-      <!-- 未登录状态占位符 -->
-      <view v-if="!isAuthenticated" class="guest-placeholder">
-        <view class="guest-content">
-          <!-- Logo图标 -->
-          <view class="guest-logo">
-            <wd-icon
-              class-prefix="iconfont"
-              name="a-shapequickpressedtrue"
-              size="120rpx"
-              color="#ffffff"
-            ></wd-icon>
-          </view>
+    <ClientOnly>
+      <view class="profile-container">
+        <!-- 未登录状态占位符 -->
+        <view v-if="!isAuthenticated" class="guest-placeholder">
+          <view class="guest-content">
+            <!-- Logo图标 -->
+            <view class="guest-logo">
+              <wd-icon
+                class-prefix="iconfont"
+                name="a-shapequickpressedtrue"
+                size="120rpx"
+                color="#ffffff"
+              ></wd-icon>
+            </view>
 
-          <!-- 欢迎文字 -->
-          <view class="guest-title">欢迎来到 CampusHub</view>
-          <view class="guest-subtitle">登录即可发现精彩校园活动</view>
+            <!-- 欢迎文字 -->
+            <view class="guest-title">欢迎来到 CampusHub</view>
+            <view class="guest-subtitle">登录即可发现精彩校园活动</view>
 
-          <!-- 登录按钮 -->
-          <button
-            class="guest-login-btn"
-            hover-class="btn-hover"
-            @click="handleToLogin"
-          >
-            立即登录
-          </button>
-
-          <!-- 注册提示 -->
-          <view class="guest-register-tip">
-            <text class="text-gray">还没有账号？</text>
-            <text class="text-primary font-bold" @click="handleToRegister"
-              >立即注册</text
+            <!-- 登录按钮 -->
+            <button
+              class="guest-login-btn"
+              hover-class="btn-hover"
+              @click="handleToLogin"
             >
+              立即登录
+            </button>
+
+            <!-- 注册提示 -->
+            <view class="guest-register-tip">
+              <text class="text-gray">还没有账号？</text>
+              <text class="text-primary font-bold" @click="handleToRegister"
+                >立即注册</text
+              >
+            </view>
           </view>
         </view>
-      </view>
-      <!-- 已登录状态 -->
-      <template v-else>
+        <!-- 已登录状态 -->
+        <template v-else>
         <view class="header-section">
           <view class="top-bar">
             <view class="avatar-wrapper">
@@ -148,6 +149,17 @@
               ></wd-icon>
               <text class="status-label">已参加</text>
             </view>
+            <view class="divider-v"></view>
+            <view class="status-item" @click="handleScanQRCode">
+              <wd-icon
+                class-prefix="iconfont"
+                name="scan"
+                size="60rpx"
+                color="#10b981"
+                custom-style="margin-bottom:8rpx"
+              ></wd-icon>
+              <text class="status-label">扫码核销</text>
+            </view>
           </view>
 
           <view class="menu-list">
@@ -212,7 +224,8 @@
           </view>
         </view>
       </template>
-    </view>
+      </view>
+    </ClientOnly>
   </CommonLayout>
 </template>
 
@@ -377,6 +390,35 @@ const handleToVerify = () => {
 const handleToAddInterests = () => {
   // 跳转到兴趣标签选择页（如果有的话）或者设置页面
   uni.navigateTo({ url: "/pages/selectTags/index" });
+};
+
+// 扫描核销码
+const handleScanQRCode = () => {
+  // #ifdef MP-WEIXIN
+  uni.scanCode({
+    success: (res: any) => {
+      console.log("扫码结果:", res);
+      // 跳转到核销页面，传递扫码结果
+      uni.navigateTo({
+        url: `/pages/activity/verify?code=${encodeURIComponent(res.result)}`,
+      });
+    },
+    fail: (err: any) => {
+      console.error("扫码失败:", err);
+      if (err.errMsg !== "scanCode:fail cancel") {
+        uni.showToast({
+          title: "扫码失败",
+          icon: "none",
+        });
+      }
+    },
+  });
+  // #endif
+
+  // #ifdef H5
+  // H5 环境下跳转到核销页面（搜索活动 -> 输入核销码）
+  uni.navigateTo({ url: "/pages/activity/verify" });
+  // #endif
 };
 </script>
 
@@ -645,7 +687,7 @@ const handleToAddInterests = () => {
       @include flex(column, center, center);
 
       .status-label {
-        font-size: $font-size-base;
+        font-size: $font-size-sm;
         font-weight: $font-weight-bold;
         color: $text-secondary;
       }

@@ -1,14 +1,14 @@
 <template>
   <view class="tab-bar-container">
     <view class="tab-bar-content safe-area-bottom">
-      <view class="nav-item " :class="{ active: currentPath === 'pages/home/index' }" @tap="switchTab('/pages/home/index')">
+      <view class="nav-item" :class="{ active: isActiveTab('pages/home/index') }" @tap="switchTab('/pages/home/index')">
         <view class="icon">
-          <wd-icon class-prefix="iconfont" name="faxian1"  size="40rpx" />
+          <wd-icon class-prefix="iconfont" name="faxian1" size="40rpx" />
         </view>
       </view>
-      <view class="nav-item" :class="{ active: currentPath === 'pages/message/index' }" @tap="switchTab('/pages/message/index')">
+      <view class="nav-item" :class="{ active: isActiveTab('pages/message/index') }" @tap="switchTab('/pages/message/index')">
         <view class="icon">
-          <wd-icon  class-prefix="iconfont" name="message" size="40rpx" />
+          <wd-icon class-prefix="iconfont" name="message" size="40rpx" />
         </view>
       </view>
 
@@ -18,15 +18,15 @@
         </view>
       </view>
 
-      <view class="nav-item" :class="{ active: currentPath === 'pages/ticket/index' }" @tap="switchTab('/pages/ticket/index')">
+      <view class="nav-item" :class="{ active: isActiveTab('pages/ticket/index') }" @tap="switchTab('/pages/ticket/index')">
         <view class="icon">
           <wd-icon class-prefix="iconfont" name="ticket" size="40rpx" />
         </view>
       </view>
 
-      <view class="nav-item" :class="{ active: currentPath === 'pages/profile/index' }" @tap="switchTab('/pages/profile/index')">
+      <view class="nav-item" :class="{ active: isActiveTab('pages/profile/index') }" @tap="switchTab('/pages/profile/index')">
         <view class="icon">
-          <wd-icon class-prefix="iconfont" name="geren" size="40rpx" /> 
+          <wd-icon class-prefix="iconfont" name="geren" size="40rpx" />
         </view>
       </view>
     </view>
@@ -34,19 +34,33 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, onMounted } from 'vue';
 
-// 获取当前页面路径，用于高亮状态
-const pages = getCurrentPages();
-const currentPath = computed(() => {
-  return pages[pages.length - 1]?.route || '';
+// 使用 ref 而不是 computed，避免 SSR 不匹配
+const currentPath = ref('');
+
+// 在客户端挂载后获取当前路径
+onMounted(() => {
+  const pages = getCurrentPages();
+  currentPath.value = pages[pages.length - 1]?.route || '';
 });
-console.log(currentPath.value);
+
+// 判断是否是激活的 tab
+const isActiveTab = (path: string): boolean => {
+  // 移除查询参数并比较
+  const basePath = (route: string) => {
+    const match = route.match(/^\/pages\/[^\/]+/);
+    return match ? match[0] : route;
+  };
+
+  return basePath(currentPath.value) === basePath(path);
+};
+
 const switchTab = (url: string) => {
-  uni.navigateTo({ 
+  uni.navigateTo({
     url,
     animationType: 'none',
-	  animationDuration: 200
+    animationDuration: 200
   });
 };
 
@@ -56,6 +70,8 @@ const handlePublish = () => {
 </script>
 
 <style lang="scss" scoped>
+@use "@/styles/variables.scss" as *;
+
 .tab-bar-container {
   position: fixed;
   bottom: 40rpx; /* 距离底部悬浮 */
@@ -85,13 +101,13 @@ const handlePublish = () => {
   justify-content: center;
   height: 100%;
   flex: 1;
-  
+
   .icon {
     font-size: 40rpx;
     color: #8ea6c4;
     transition: color 0.3s;
   }
-  
+
   &.active .icon {
     color: $accent-color; /* 橙色高亮 */
   }
@@ -100,7 +116,7 @@ const handlePublish = () => {
 /* 中间凸起按钮样式 */
 .center-item {
   margin-top: -60rpx; /* 向上凸起 */
-  
+
   .plus-btn {
     width: 96rpx;
     height: 96rpx;
@@ -112,7 +128,7 @@ const handlePublish = () => {
     justify-content: center;
     border: 8rpx solid #F8FAFC; /* 模拟外部遮罩 */
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    
+
     .plus-icon {
       font-size: 44rpx;
       color: white;

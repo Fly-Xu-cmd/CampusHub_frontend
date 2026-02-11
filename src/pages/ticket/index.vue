@@ -289,8 +289,9 @@ const verifyTicket = async () => {
 
 		// 调用postVerifyTicket API方法实现核销功能
 		const result = await postVerifyTicket({
-			ticket_code: selectedTicket.value.ticketNumber,
-			totp_code: totpCode.value
+			activityId: Number(selectedTicket.value.eventId),
+			ticketCode: selectedTicket.value.ticketNumber,
+			totpCode: totpCode.value
 		})
 
 		if (result && result.code === 0) {

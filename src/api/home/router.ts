@@ -1,11 +1,15 @@
 import { get, post } from "@/utils/http";
 
 import type { categories } from "@/types/modules/home/categories";
-import type { activities, ActivitiesRequest } from "@/types/modules/home/activities";
+import type {
+  activities,
+  ActivitiesRequest,
+} from "@/types/modules/home/activities";
 import type { search, SearchRequest } from "@/types/modules/home/search";
 import type { detail } from "@/types/modules/home/detail";
 import type { sign } from "@/types/modules/home/sign";
 import type { wait, WaitRequest } from "@/types/modules/home/wait";
+import type { systemMessage } from "@/types/modules/home/index";
 
 const apiUrls = {
   getActivityCategoryList: "/api/v1/activity/categories",
@@ -17,6 +21,7 @@ const apiUrls = {
   cancelSign: "/api/v1/activity/cancel",
   getWaitList: "/api/v1/activity/list",
   createdActivities: "/api/v1/activity/my/created",
+  getNotificationCount: "/api/notifications/unread-count",
 };
 
 // 获取活动分类列表
@@ -27,7 +32,9 @@ export const getActivityCategoryList = () => {
 
 // 获取活动列表
 export const getActivityList = (params: ActivitiesRequest) => {
-  return get<activities>(`${apiUrls.getActivityList}?categoryId=${params.categoryId}`);
+  return get<activities>(
+    `${apiUrls.getActivityList}?categoryId=${params.categoryId}`,
+  );
 };
 
 // 搜索活动
@@ -56,7 +63,9 @@ export const cancelSign = (id: number) => {
 
 // 获取待参加/已参加活动列表
 export const getWaitList = (params: WaitRequest) => {
-  return get<wait>(`${apiUrls.getWaitList}?type=${params.type}&page=1&pageSize=12`);
+  return get<wait>(
+    `${apiUrls.getWaitList}?type=${params.type}&page=1&pageSize=12`,
+  );
 };
 
 // 获取创建的活动列表
@@ -64,4 +73,9 @@ export const createdActivities = () => {
   return get<activities>(`${apiUrls.createdActivities}?page=1&pageSize=12`);
 };
 
-
+// 获取系统消息未读数量
+export const getNotificationCount = (user_id: number) => {
+  return get<Response<systemMessage>>(apiUrls.getNotificationCount, {
+    data: { user_id },
+  });
+};

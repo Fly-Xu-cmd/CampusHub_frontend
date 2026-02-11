@@ -17,8 +17,14 @@
             <text class="sub-text">Welcome Back</text>
             <view class="main-title">
               <text class="title-text">Activity Pro</text>
-              <view class="bell-btn">
-                <wd-badge is-dot top="4rpx" right="4rpx">
+              <view class="bell-btn" @click="goSystemMessage">
+                <wd-badge
+                  :is-dot="
+                    props.systemMessageCount && props.systemMessageCount > 0
+                  "
+                  top="4rpx"
+                  right="4rpx"
+                >
                   <wd-icon
                     name="notification"
                     size="40rpx"
@@ -116,6 +122,7 @@ interface Props {
   rightText?: string;
   contentBg?: string;
   padding?: string;
+  systemMessageCount?: number; // 新增系统消息数量
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -240,6 +247,12 @@ const handleBack = () => {
   } else {
     uni.reLaunch({ url: "/pages/home/index" });
   }
+};
+
+const goSystemMessage = () => {
+  uni.navigateTo({
+    url: "/pages/message/SystemMsg",
+  });
 };
 </script>
 
