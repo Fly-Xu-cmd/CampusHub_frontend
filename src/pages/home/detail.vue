@@ -9,7 +9,7 @@
       <!-- 报名状态标签 -->
       <view class="status-tag"
         :style="{
-          backgroundColor: activityDetail.status === 2 ? '$primary-color' :
+          backgroundColor: activityDetail.status === 2 ? '#f97316' :
                            activityDetail.status === 3 ? '#4ade80' :
                            activityDetail.status === 4 ? '#666666' :
                             '#000000'

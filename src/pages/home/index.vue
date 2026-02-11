@@ -1,6 +1,8 @@
 <template>
   <CommonLayout headerType="home" contentBg="$background-color" :showTabBar="true" padding="0 8rpx">
-    <view class="content">
+    <scroll-view class="content" 
+      @scrolltolower="handleScrollToLower"
+      scroll-y>
       <view class="search-section">
         <view class="search-container" >
           <wd-icon name="search" size="32rpx" color="#999999" class="search-icon" />
@@ -132,9 +134,13 @@
               </view>
             </view>
           </view>
+          <wd-loadmore
+            :state="state"
+            @reload="loadMore"
+          />
         </view>
       </view>
-    </view>
+    </scroll-view>
   </CommonLayout>
 </template>
 
@@ -151,13 +157,12 @@ const formatTime = (timestamp: number) => {
   return `${weekDay} ${hours}:${minutes}`;
 };
 
-
 onMounted(async () => {
   // 获取活动分类列表
-  getCategories();
+  await getCategories();
 
   // 获取活动列表
-  getActivities();
+  await getActivities();
 });
 
 const tags = ref(); // 活动分类列表
@@ -176,19 +181,23 @@ const selectTag = (tagId: number) => {
 
 const loading = ref<boolean>(false);
 const activities = ref(); // 活动列表
+const pagination = ref(); // 分页信息
+
 // 获取活动列表
 const getActivities = async () => {
   loading.value = true;
-  const { data: { list: Activities } } = await getActivityList({
+  const { data } = await getActivityList({
     page: 1,
     pageSize: 10,
     categoryId: activeTag.value,
     status: -1,
   });
   loading.value = false;
-  activities.value = Activities;
+  activities.value = data.list;
+  pagination.value = data.pagination;
+  state.value = 'loading';
 }
-
+const isSearch = ref(false); // 是否搜索
 const searchQuery = ref(''); // 搜索框的值
 // 搜索活动
 const search = async () => {
@@ -198,11 +207,48 @@ const search = async () => {
     return
   }
   loading.value = true;
-  const { data: { list: Activities } } = await searchActivity({
+  const { data } = await searchActivity({
     keyword: keyword,
+    page: 1,
+    pageSize: 50,
   });
   loading.value = false;
-  activities.value = Activities;
+  activities.value = data.list;
+  isSearch.value = true;
+}
+
+const handleScrollToLower = () => {
+  if (isSearch.value){
+    state.value = 'finished';
+    return;
+  }
+  if (state.value === 'finished') {
+    return;
+  }
+  loadMore();
+}
+
+const state = ref('loading'); // 加载状态
+// 加载更多数据
+const loadMore = async () => {
+  try {
+    const { data } = await getActivityList({
+      page: pagination.value.page+1,
+      pageSize: 10,
+      categoryId: activeTag.value,
+      status: -1,
+    });
+    const list = data.list;
+    pagination.value = data.pagination;
+    const total = pagination.value.total
+    if (activities.value.length < total){
+      activities.value = [...activities.value, ...list];
+    }else{
+      state.value = 'finished';
+    }
+  } catch (error) {
+    state.value = 'error';
+  }
 }
 
 
@@ -225,7 +271,8 @@ $tag-inactive-color: #111;
 .content {
   display: flex;
   flex-direction: column;
-  min-height: 80vh;
+  height: 80vh;
+  overflow-y: auto;
 }
 
 .search-section {
@@ -349,12 +396,10 @@ $tag-inactive-color: #111;
     margin-bottom: 0;
   }
 }
-
 /* 卡片图片容器 */
 .card-image-container {
-  position: relative;
-  height: 400rpx;
-  
+    position: relative;
+    height: 400rpx;
   .card-image {
     width: 100%;
     height: 100%;

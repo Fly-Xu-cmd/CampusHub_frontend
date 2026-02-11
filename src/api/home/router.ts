@@ -33,7 +33,7 @@ export const getActivityList = (params: ActivitiesRequest) => {
 
 // 搜索活动
 export const searchActivity = (params: SearchRequest) => {
-  return get<search>(`${apiUrls.searchActivity}?keyword=${params.keyword}`);
+  return get<search>(`${apiUrls.searchActivity}?keyword=${params.keyword}&page=${params.page}&pageSize=${params.pageSize}`);
 };
 
 // 获取活动详情
