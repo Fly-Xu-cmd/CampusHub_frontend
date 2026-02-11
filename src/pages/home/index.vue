@@ -1,12 +1,20 @@
 <template>
-  <CommonLayout headerType="home" contentBg="$background-color" :showTabBar="true" padding="0 8rpx">
-    <scroll-view class="content" 
-      @scrolltolower="handleScrollToLower"
-      scroll-y>
+  <CommonLayout
+    headerType="home"
+    contentBg="$background-color"
+    :showTabBar="true"
+    padding="0 8rpx"
+  >
+    <scroll-view class="content" @scrolltolower="handleScrollToLower" scroll-y>
       <view class="search-section">
         <view class="search-container">
-          <wd-icon name="search" size="32rpx" color="#999999" class="search-icon" />
-          <wd-search 
+          <wd-icon
+            name="search"
+            size="32rpx"
+            color="#999999"
+            class="search-icon"
+          />
+          <wd-search
             v-model="searchQuery"
             hide-cancel
             placeholder="搜索活动..."
@@ -32,7 +40,7 @@
             :class="{ active: activeTag === 0 }"
             @click="selectTag(0)"
           >
-            <view class="iconfont" style="font-size: 30rpx;" />
+            <view class="iconfont" style="font-size: 30rpx" />
             <text>全部类型</text>
           </view>
           <view
@@ -77,7 +85,10 @@
               />
               <!-- 报名状态 -->
               <view class="registration-status">
-                <view class="iconfont iconfont-remen" style="font-size: 25rpx;" />
+                <view
+                  class="iconfont iconfont-remen"
+                  style="font-size: 25rpx"
+                />
                 <text>{{ activity.statusText }}</text>
               </view>
               <!-- 人数信息 -->
@@ -100,7 +111,6 @@
                 :key="tag.id"
                 class="activity-tag"
                 :class="tag.color"
-
               >
                 <view
                   class="iconfont"
@@ -127,7 +137,10 @@
             <!-- 底部信息 -->
             <view class="card-footer">
               <view class="organizer">
-                <image :src="activity.organizerAvatar" class="organizer-avatar" />
+                <image
+                  :src="activity.organizerAvatar"
+                  class="organizer-avatar"
+                />
                 <text>{{ activity.organizerName }}</text>
               </view>
               <view class="action-button">
@@ -140,10 +153,7 @@
               </view>
             </view>
           </view>
-          <wd-loadmore
-            :state="state"
-            @reload="loadMore"
-          />
+          <wd-loadmore :state="state" @reload="loadMore" />
         </view>
       </view>
     </scroll-view>
@@ -151,8 +161,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { getActivityCategoryList, getActivityList, searchActivity } from '@/api/home/router';
+import { ref, onMounted } from "vue";
+import {
+  getActivityCategoryList,
+  getActivityList,
+  searchActivity,
+} from "@/api/home/router";
 
 // 时间格式化函数：将10位时间戳转换为"周五 19:00"格式
 const formatTime = (timestamp: number) => {
@@ -195,15 +209,19 @@ const pagination = ref(); // 分页信息
 // 获取活动列表
 const getActivities = async () => {
   loading.value = true;
-  const { data: { list: Activities } } = await getActivityList({
+  const {
+    data: { list: Activities },
+  } = await getActivityList({
     categoryId: activeTag.value,
     status: -1,
+    page: 1,
+    pageSize: 10,
   });
   loading.value = false;
   activities.value = Activities;
-}
+};
 
-const searchQuery = ref(''); // 搜索框的值
+const searchQuery = ref(""); // 搜索框的值
 // 搜索活动
 const search = async () => {
   const keyword = searchQuery.value.trim();
@@ -212,14 +230,16 @@ const search = async () => {
     return;
   }
   loading.value = true;
-  const { data: { list: Activities } } = await searchActivity({
+  const {
+    data: { list: Activities },
+  } = await searchActivity({
     keyword: keyword,
     page: 1,
     pageSize: 50,
   });
   loading.value = false;
   activities.value = Activities;
-}
+};
 
 const viewDetail = (activityId: number) => {
   uni.navigateTo({
@@ -371,7 +391,7 @@ $tag-inactive-color: #111;
 .card-image-container {
   position: relative;
   height: 400rpx;
-  
+
   .card-image {
     width: 100%;
     height: 100%;
@@ -474,7 +494,7 @@ $tag-inactive-color: #111;
   margin-bottom: 20rpx;
   padding: 20rpx 20rpx;
   gap: $spacing-md;
-  background-color: #f8fafc; 
+  background-color: #f8fafc;
   border-radius: $border-radius-md;
 
   .log {

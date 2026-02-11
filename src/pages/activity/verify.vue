@@ -98,7 +98,7 @@
             <input
               type="text"
               placeholder="请输入核销码"
-              v-model="verifyForm.ticket_code"
+              v-model="verifyForm.ticketCode"
               class="form-input"
             />
           </view>
@@ -108,7 +108,7 @@
             <input
               type="text"
               placeholder="请输入6位TOTP验证码"
-              v-model="verifyForm.totp_code"
+              v-model="verifyForm.totpCode"
               class="form-input"
               maxlength="6"
             />

@@ -25,7 +25,7 @@
           mode="aspectFill"
         />
         <view class="info-col">
-          <text class="title">{{ activity.categoryName }}</text>
+          <text class="title">{{ activity.title }}</text>
           <view class="meta-row">
             <wd-icon
               name="time"
