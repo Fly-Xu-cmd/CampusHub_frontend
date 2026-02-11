@@ -1,4 +1,4 @@
-import { post, get } from "@/utils/http";
+import { post, get, upload } from "@/utils/http";
 
 import type { Request, Response } from "@/types/modules/publish";
 
@@ -19,8 +19,8 @@ export const getTags = () => {
 };
 
 // 上传图片
-export const postId = (data: FormData) => {
-    return post<Response>(apiUrls.postId, data);
+export const postId = (file: string | File) => {
+    return upload<Response>(apiUrls.postId, { file: file, bizType: "avatar" }, ["file"]);
 };
 
 

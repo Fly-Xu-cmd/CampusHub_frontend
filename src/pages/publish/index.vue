@@ -148,7 +148,7 @@ import { usePublishStore } from '@/store/publish'
 import TimeSelect from '@/components/TimeSelect/TimeSelect.vue'
 import LocationSelect from '@/components/LocationSelect/LocationSelect.vue'
 import UploadVideo from '@/components/UploadVideo/UploadVideo.vue'
-import { postPublish, getTags } from '@/api/publish/router'
+import { postPublish, getTags, postId } from '@/api/publish/router'
 
 // 定义标签类型
 interface Tag {
@@ -303,11 +303,25 @@ const submitForm = async () => {
 			return
 		}
 		
+		// 上传图片获取ID
+		uni.showLoading({ title: '上传图片中...' })
+		const imageFile = fileList.value[0]
+		// 传递实际的File对象而不是本地URL
+		const uploadResponse = await postId(imageFile.file)
+		if (!uploadResponse || !uploadResponse.data || !uploadResponse.data.data || !uploadResponse.data.data.id) {
+			uni.hideLoading()
+			uni.showToast({ title: '图片上传失败', icon: 'error' })
+			return
+		}
+		
+		const coverImageId = uploadResponse.data.data.id
+		uni.hideLoading()
+		
 		// 准备数据 - 完全使用用户选择的数据
-		const formData = {
+		const activityData = {
 			title: activityTitle.value,
-			coverUrl: fileList.value[0].url,
-			coverType: fileList.value[0].type === 'video' ? 2 : 1,
+			coverImageId: coverImageId,
+			coverType: imageFile.type === 'video' ? 2 : 1,
 			content: activityDetail.value || "",
 			categoryId: selectedTags.value[0],
 			contactPhone: contactPhone.value,
@@ -328,7 +342,7 @@ const submitForm = async () => {
 		} as any
 		
 		// 提交数据
-			await postPublish(formData)
+			await postPublish(activityData)
 			
 			uni.showToast({ title: '发布成功', icon: 'success' })
 			// 重置表单
@@ -347,6 +361,7 @@ const submitForm = async () => {
 				url: '/pages/ticket/index'
 			})
 	} catch (error) {
+		uni.hideLoading()
 		uni.showToast({ title: '发布失败，请稍后重试', icon: 'error' })
 	}
 }

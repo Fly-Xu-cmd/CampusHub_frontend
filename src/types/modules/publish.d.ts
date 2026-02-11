@@ -1,6 +1,6 @@
 export interface Request {
     title: string;
-    coverUrl: string;
+    coverImageId: number;
     coverType: number;
     content: string;
     categoryId: number;
