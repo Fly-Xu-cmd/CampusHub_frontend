@@ -1,6 +1,6 @@
 <template>
-  <view class="tab-bar-container">
-    <view class="tab-bar-content safe-area-bottom">
+  <view class="tab-bar-container" :style="{ bottom: tabBarBottom }">
+    <view class="tab-bar-content">
       <view class="nav-item" :class="{ active: isActiveTab('pages/home/index') }" @tap="switchTab('/pages/home/index')">
         <view class="icon">
           <wd-icon class-prefix="iconfont" name="faxian1" size="40rpx" />
@@ -34,10 +34,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useSystemStore } from '@/store/system';
+
+const systemStore = useSystemStore();
 
 // 使用 ref 而不是 computed，避免 SSR 不匹配
 const currentPath = ref('');
+
+// 计算底部位置：基础距离 + 安全区域高度
+const tabBarBottom = computed(() => {
+  const baseBottom = 20; // 基础距离 rpx
+  const safeBottom = systemStore.safeAreaInsetsBottom; // px
+  // 转换 rpx 到 px（设计稿 750px 宽度）
+  const baseBottomPx = baseBottom * (systemStore.windowWidth / 750);
+  return `${baseBottomPx + safeBottom}px`;
+});
 
 // 在客户端挂载后获取当前路径
 onMounted(() => {
@@ -74,7 +86,6 @@ const handlePublish = () => {
 
 .tab-bar-container {
   position: fixed;
-  bottom: 40rpx; /* 距离底部悬浮 */
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 80rpx); /* 两侧留白 */

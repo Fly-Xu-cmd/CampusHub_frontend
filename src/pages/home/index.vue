@@ -206,6 +206,19 @@ const loading = ref<boolean>(false);
 const activities = ref(); // 活动列表
 const pagination = ref(); // 分页信息
 
+// 加载更多状态
+const state = ref<"loading" | "finished" | "error">("finished");
+
+// 加载更多（暂未实现分页）
+const loadMore = () => {
+  // 当前版本不支持分页加载更多
+};
+
+// 滚动到底部触发
+const handleScrollToLower = () => {
+  loadMore();
+};
+
 // 获取活动列表
 const getActivities = async () => {
   loading.value = true;

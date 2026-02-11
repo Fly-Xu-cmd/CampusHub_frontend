@@ -12,31 +12,54 @@
         <view class="header-title">系统消息</view>
       </view>
 
-      <view class="header-actions">
+      <view v-if="notifications.length > 0" class="header-actions">
         <view class="mark-all" @click="readAll"> 全部已读 </view>
       </view>
     </view>
+
     <!-- 系统通知列表 -->
-    <view class="message-list">
-      <view
-        class="message-item"
-        :key="notification.id"
-        v-for="notification in notifications"
-        @click="read([notification.notification_id])"
-      >
-        <view class="message-header">
-          <view class="message-title">{{ notification.title }}</view>
-          <view class="message-time">{{
-            formatTime(notification.created_at)
-          }}</view>
-          <!-- 小红点未读提示 -->
-          <view v-if="!notification.is_read" class="unread-dot"></view>
-        </view>
-        <view class="message-text">
-          {{ notification.content }}
-        </view>
+    <scroll-view
+      class="message-list"
+      scroll-y
+      @scrolltolower="loadMore"
+      refresher-enabled
+      :refresher-triggered="isRefreshing"
+      @refresherrefresh="onRefresh"
+    >
+      <!-- 加载状态 -->
+      <view v-if="loading && !notifications.length" class="loading-state">
+        <AsyncLoading text="加载中..." />
       </view>
-    </view>
+
+      <!-- 空状态 -->
+      <view v-else-if="!loading && !notifications.length" class="empty-state">
+        <wd-icon name="comment" size="120rpx" color="#ccc" />
+        <text class="empty-text">暂无系统消息</text>
+      </view>
+
+      <!-- 通知列表 -->
+      <view v-else>
+        <view
+          class="message-item"
+          :key="notification.notification_id"
+          v-for="notification in notifications"
+          @click="read([notification.notification_id])"
+        >
+          <view class="message-header">
+            <view class="message-title">{{ notification.title }}</view>
+            <view class="message-time">{{
+              formatTime(notification.created_at)
+            }}</view>
+            <!-- 小红点未读提示 -->
+            <view v-if="!notification.is_read" class="unread-dot"></view>
+          </view>
+          <view class="message-text">
+            {{ notification.content }}
+          </view>
+        </view>
+        <wd-loadmore :state="loadState" @reload="loadMore" />
+      </view>
+    </scroll-view>
   </CommonLayout>
 </template>
 
@@ -50,10 +73,16 @@ import { onMounted, ref } from "vue";
 import { useUserStore } from "@/store/user";
 const userStore = useUserStore(); // 个人信息
 
-console.log("用户ID:", userStore.userId);
-
 // 系统通知列表
-const notifications = ref();
+const notifications = ref<any[]>([]);
+
+// 分页状态
+const page = ref(1);
+const pageSize = 10;
+const hasMore = ref(true);
+const loading = ref(false);
+const isRefreshing = ref(false);
+const loadState = ref<"loading" | "finished" | "error">("loading");
 
 const formatTime = (time: string | number) => {
   try {
@@ -90,6 +119,55 @@ const formatTime = (time: string | number) => {
   }
 };
 
+// 加载通知列表
+const loadNotifications = async (isRefresh = false) => {
+  if (loading.value) return;
+
+  if (isRefresh) {
+    page.value = 1;
+    hasMore.value = true;
+  }
+
+  loading.value = true;
+  loadState.value = "loading";
+
+  try {
+    const res = await getNotifications(userStore.userId, page.value, pageSize);
+
+    if (isRefresh) {
+      notifications.value = res.data.notifications || [];
+    } else {
+      notifications.value = [
+        ...notifications.value,
+        ...(res.data.notifications || []),
+      ];
+    }
+
+    const newItems = res.data.notifications?.length || 0;
+    hasMore.value = newItems >= pageSize;
+    loadState.value = hasMore.value ? "loading" : "finished";
+  } catch (error) {
+    loadState.value = "error";
+    console.error("加载通知失败:", error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 下拉刷新
+const onRefresh = async () => {
+  isRefreshing.value = true;
+  await loadNotifications(true);
+  isRefreshing.value = false;
+};
+
+// 上拉加载更多
+const loadMore = async () => {
+  if (!hasMore.value || loading.value) return;
+  page.value++;
+  await loadNotifications(false);
+};
+
 const read = (ids: string[]) => {
   // 标记消息为已读的逻辑
   markNotificationsRead(userStore.userId, ids).then(() => {
@@ -98,9 +176,7 @@ const read = (ids: string[]) => {
       icon: "success",
     });
     // 刷新通知列表
-    getNotifications(userStore.userId).then((res) => {
-      notifications.value = res.data.notifications;
-    });
+    loadNotifications(true);
   });
 };
 
@@ -112,9 +188,7 @@ const readAll = () => {
       icon: "success",
     });
     // 刷新通知列表
-    getNotifications(userStore.userId).then((res) => {
-      notifications.value = res.data.notifications;
-    });
+    loadNotifications(true);
   });
 };
 
@@ -124,9 +198,7 @@ const goBack = () => {
 };
 
 onMounted(() => {
-  getNotifications(userStore.userId).then((res) => {
-    notifications.value = res.data.notifications;
-  });
+  loadNotifications(true);
 });
 </script>
 
@@ -163,6 +235,7 @@ onMounted(() => {
 
 // 消息列表
 .message-list {
+  height: calc(100vh - 200rpx);
   padding: $spacing-md;
 
   .message-item {
@@ -204,6 +277,29 @@ onMounted(() => {
       font-size: $font-size-xs;
       color: $text-secondary;
     }
+  }
+}
+
+// 加载状态
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 100rpx 0;
+}
+
+// 空状态
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 150rpx 0;
+
+  .empty-text {
+    margin-top: $spacing-md;
+    font-size: $font-size-sm;
+    color: $text-tertiary;
   }
 }
 </style>

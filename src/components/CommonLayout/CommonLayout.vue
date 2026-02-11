@@ -193,18 +193,14 @@ const contentStyle = computed(() => {
 
 // 4. 底部垫片高度
 const footerSpacerHeight = computed(() => {
-  // #ifdef H5
-  return "0px";
-  // #endif
-  // #ifdef APP-PLUS || APP-HARMONY || MP-WEIXIN
   const safeArea = systemStore.safeAreaInsetsBottom; // 单位 px
 
   if (props.showTabBar) {
+    // TabBar 高度约 120rpx + 基础间距 20rpx = 140rpx，再加上安全区域
     // 混合计算：rpx + px
     return `calc(180rpx + ${safeArea}px)`;
   }
   return `${safeArea}px`;
-  // #endif
 });
 
 // 5. none样式
