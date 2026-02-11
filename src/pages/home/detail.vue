@@ -62,12 +62,31 @@
     
     <!-- 底部报名按钮 -->
     <view class="bottom-button">
-      <button v-if="!isSigned" class="register-button" @click="sign">
-        <text class="register-text">立即报名</text>
-      </button>
-      <button v-else class="register-button cancel" @click="unSign">
-        <text class="register-text">取消报名</text>
-      </button>
+      <view class="button-row">
+        <button
+          v-if="!isSigned"
+          class="register-button primary"
+          @click="sign"
+        >
+          <text class="register-text">立即报名</text>
+        </button>
+        <button
+          v-else
+          class="register-button cancel"
+          @click="unSign"
+        >
+          <text class="register-text">取消报名</text>
+        </button>
+        <!-- 群聊按钮 -->
+        <button
+          v-if="isSigned && groupId"
+          class="chat-button"
+          @click="enterChat"
+        >
+          <wd-icon name="chat" size="40rpx" color="#fff"></wd-icon>
+          <text class="chat-text">群聊</text>
+        </button>
+      </view>
     </view>
 
   </CommonLayout>
@@ -75,85 +94,139 @@
 
 <script setup lang="ts">
 import { getActivityDetail, signActivity, cancelSign, getWaitList } from "@/api/home/router";
-import { onMounted, ref } from "vue";
-import { useRoute } from 'vue-router'
+import { ref } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
 
 // 时间格式化函数：将10位时间戳转换为"10.24 19:00"格式
 const formatDate = (timestamp: number) => {
   const date = new Date(timestamp * 1000); // 转换为毫秒
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
   return `${month}.${day} ${hours}:${minutes}`;
 };
 
 // 获取传入的活动ID参数
-const route = useRoute()
-const activityId = route.query.id
+let activityId = "";
+let groupId = ""; // 群聊ID
+
 // 活动详情数据
-const activityDetail = ref()
-
-onMounted(() => {
-
-  getActivityDetail(String(activityId)).then(res => {
-    activityDetail.value = res.data.activity
-  })
-
-  WaitList()
-})
+const activityDetail = ref<any>({});
 
 // 记录是否报名
-const isSigned = ref(false)
-const WaitList = async() => {
-  const { data: { items } } = await getWaitList({
+const isSigned = ref(false);
+
+onLoad((options: any) => {
+  activityId = options.id;
+  if (activityId) {
+    fetchActivityDetail();
+    checkSignStatus();
+  }
+});
+
+// 获取活动详情
+const fetchActivityDetail = () => {
+  getActivityDetail(String(activityId)).then((res) => {
+    activityDetail.value = res.data.activity;
+    // 假设活动详情中包含群组ID，或者通过活动ID获取
+    // groupId = res.data.group_id;
+  });
+};
+
+// 检查报名状态
+const checkSignStatus = async () => {
+  const {
+    data: { items },
+  } = await getWaitList({
     type: "待参加",
-  })
+  });
   // 检查是否报名
-  isSigned.value = items?.some(item => item.id == Number(activityId))
-}
+  isSigned.value = items?.some((item: any) => item.id == Number(activityId));
+};
 
 // 报名活动
 const sign = () => {
-  signActivity(Number(activityId)).then(res => {
+  signActivity(Number(activityId)).then((res) => {
     if (res.data.result == "success") {
       uni.showToast({
         title: "报名成功",
         icon: "success",
-      })
-      isSigned.value = true
-    }else {
+      });
+      isSigned.value = true;
+
+      // TODO: 报名成功后获取群组ID
+      // 如果后端在报名响应中返回了群组ID
+      // groupId = res.data.group_id;
+
+      // 延迟后提示进入群聊
+      setTimeout(() => {
+        if (groupId) {
+          enterChat();
+        } else {
+          uni.showModal({
+            title: "提示",
+            content: "是否进入活动群聊？",
+            success: (modalRes) => {
+              if (modalRes.confirm) {
+                // TODO: 通过活动ID获取群组ID
+                // getGroupByActivityId(activityId).then(res => {
+                //   groupId = res.data.group_id;
+                //   enterChat();
+                // });
+              }
+            },
+          });
+        }
+      }, 500);
+    } else {
       uni.showToast({
         title: res.data.reason,
         icon: "error",
-      })
+      });
     }
-  })
-}
+  });
+};
 
 // 取消报名
 const unSign = () => {
-  cancelSign(Number(activityId)).then(res => {
+  cancelSign(Number(activityId)).then((res) => {
     if (res.data.result == "success") {
       uni.showToast({
         title: "取消报名成功",
         icon: "success",
-      })
-      isSigned.value = false
-    }else {
+      });
+      isSigned.value = false;
+      groupId = ""; // 取消报名后清空群组ID
+    } else {
       uni.showToast({
         title: "取消报名失败",
         icon: "error",
-      })
+      });
     }
-  })
-}
+  });
+};
 
+// 进入群聊
+const enterChat = () => {
+  if (!groupId) {
+    uni.showToast({
+      title: "群聊尚未开通",
+      icon: "none",
+    });
+    return;
+  }
+  uni.navigateTo({
+    url: `/pages/message/chat?group_id=${groupId}`,
+  });
+};
+
+// 查看发起人详情
 const viewPubilcProfil = (id: number) => {
   uni.navigateTo({
-    url: `/pages/home/PublicProfile?id=${id}`
+    url: `/pages/home/PublicProfile?id=${id}`,
   });
-}
+};
 </script>
 
 <style lang="scss" scoped>
@@ -306,19 +379,44 @@ const viewPubilcProfil = (id: number) => {
   padding: 0 $spacing-md $spacing-xl;
   box-shadow: $shadow-md;
 
-  .register-button {
-    width: 100%;
-    height: 100rpx;
-    background-color: #111;
-    color: $text-light;
-    border-radius: 45rpx;
-    font-size: 28rpx;
-    font-weight: $font-weight-semibold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    &.cancel {
-      background-color: #e74c3c;
+  .button-row {
+    @include flex(row, flex-start, center);
+    gap: $spacing-md;
+
+    .register-button {
+      flex: 1;
+      height: 100rpx;
+      background-color: #111;
+      color: $text-light;
+      border-radius: 45rpx;
+      font-size: 28rpx;
+      font-weight: $font-weight-semibold;
+      @include flex(row, center, center);
+      justify-content: center;
+
+      &.cancel {
+        background-color: #e74c3c;
+      }
+
+      &.primary {
+        background-color: $primary-color;
+      }
+    }
+
+    .chat-button {
+      width: 200rpx;
+      height: 100rpx;
+      background-color: $primary-color;
+      color: $text-light;
+      border-radius: 45rpx;
+      font-size: 28rpx;
+      font-weight: $font-weight-semibold;
+      @include flex(row, center, center);
+      gap: $spacing-xs;
+
+      .chat-text {
+        font-size: 26rpx;
+      }
     }
   }
 }

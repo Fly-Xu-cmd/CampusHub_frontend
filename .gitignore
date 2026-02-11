@@ -44,7 +44,7 @@ unpackage/
 .windsurf/
 .vscode/
 .claude/
-
+CLAUDE.md
 # 后端
 *.openapi.json
 *.go

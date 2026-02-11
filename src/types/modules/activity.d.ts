@@ -43,3 +43,103 @@ export interface ActivityListResponse {
   pageSize: number;
   [property: string]: any;
 }
+
+// 我发布的活动
+
+export interface MyCreatedActivity {
+  list: List[];
+  pagination: Pagination;
+  [property: string]: any;
+}
+
+export interface List {
+  /**
+   * 活动开始时间
+   */
+  activityStartTime: number;
+  /**
+   * 活动雷暴
+   */
+  categoryName: string;
+  /**
+   * 封面类型
+   */
+  coverType: number;
+  /**
+   * 活动图片url
+   */
+  coverUrl: string;
+  /**
+   * 创建时间
+   */
+  createdAt: number;
+  /**
+   * 当前报名人数
+   */
+  currentParticipants: number;
+  /**
+   * 活动id
+   */
+  id: number;
+  /**
+   * 活动地点
+   */
+  location: string;
+  /**
+   * 最大人数
+   */
+  maxParticipants: number;
+  /**
+   * 组织者头像
+   */
+  organizerAvatar: string;
+  /**
+   * 组织者名称
+   */
+  organizerName: string;
+  /**
+   * 活动状态
+   */
+  status: number;
+  /**
+   * 状态文本
+   */
+  statusText: string;
+  /**
+   * 标签列表
+   */
+  tags: Tag[];
+  /**
+   * 活动标题
+   */
+  title: string;
+  viewCount: number;
+  [property: string]: any;
+}
+
+export interface Tag {
+  color: string;
+  id: number;
+  name: string;
+  [property: string]: any;
+}
+
+export interface Pagination {
+  /**
+   * 页数
+   */
+  page: number;
+  /**
+   * 一页多少个
+   */
+  pageSize: number;
+  /**
+   * 总共多少
+   */
+  total: number;
+  /**
+   * 总共多少页
+   */
+  totalPages: number;
+  [property: string]: any;
+}

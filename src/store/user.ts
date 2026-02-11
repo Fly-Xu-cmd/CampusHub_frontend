@@ -58,7 +58,7 @@ export const useUserStore = defineStore("user", {
     login(
       userData: Partial<UserInfo>,
       accessToken: string,
-      refreshToken: string
+      refreshToken: string,
     ) {
       console.log("login", userData, accessToken, refreshToken);
       this.updateUserInfo(userData);
@@ -122,6 +122,8 @@ export const useUserStore = defineStore("user", {
       this.credit = userData.credit || this.credit;
       this.isStudentVerified =
         userData.isStudentVerified || this.isStudentVerified;
+      //触发getter更新
+      this.userInfo;
 
       // 更新本地存储
       uni.setStorageSync("userInfo", JSON.stringify(this.userInfo));
