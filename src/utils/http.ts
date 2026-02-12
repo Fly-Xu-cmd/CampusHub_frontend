@@ -821,7 +821,7 @@ export const upload = <T>(
 
         // 构造标准响应格式
         const processedResponse: Response = {
-          statusCode: res.statusCode,
+          statusCode: res.statusCode, 
           data: responseData,
           header: (res as any).header || {},
           errMsg: res.errMsg,
