@@ -15,7 +15,7 @@
                             '#000000'
         }"
       >
-        <text class="status-text">{{ activityDetail?.statusText || '未知状态' }}</text>
+        <text class="status-text">{{ activityDetail?.statusText || '报名中' }}</text>
       </view>
       <!-- 活动标题 -->
       <view class="activity-title">
@@ -37,14 +37,20 @@
         <wd-icon name="arrow-right" size="35rpx" color="#999" />
       </view>
       
-      <!-- 时间和地点信息 -->
+      <!-- 报名和地点信息 -->
       <view class="info-cards">
         <view class="info-card time-card">
-          <text class="info-label">TIME</text>
-          <text class="info-value">{{ formatDate(activityDetail?.activityStartTime) }}</text>
+          <view class="info-label">
+            <wd-icon name="time" size="28rpx" color="#999" /> TIME
+          </view>
+          <text class="info-value">
+            {{ formatDate(activityDetail?.activityStartTime) }}
+          </text>
         </view>
         <view class="info-card location-card">
-          <text class="info-label">LOCATION</text>
+          <view class="info-label">
+            <wd-icon name="location" size="28rpx" color="#999" /> LOCATION
+          </view>
           <text class="info-value">{{ activityDetail?.addressDetail }}</text>
         </view>
       </view>
@@ -55,7 +61,9 @@
           <text class="details-title">活动详情</text>
         </view>
         <view class="details-content">
-          <text class="details-text">{{ activityDetail?.content }}</text>
+          <text class="details-text">
+            {{ activityDetail?.content || '欢迎来到CampusHub！' }}
+          </text>
         </view>
       </view>
     </view>
@@ -320,7 +328,10 @@ const viewPubilcProfil = (id: number) => {
 .info-cards {
   display: flex;
   gap: $spacing-sm;
-  margin-bottom: $spacing-xl;
+  margin-bottom: $spacing-sm;
+  &:last-child {
+    margin-bottom: $spacing-xl;
+  }
   .info-card {
     flex: 1;
     padding: $spacing-md;
@@ -361,6 +372,7 @@ const viewPubilcProfil = (id: number) => {
   }
   .details-content {
     margin-bottom: $spacing-sm;
+    padding: 0 $spacing-sm;
     .details-text {
       font-size: 25rpx;
       color: $text-secondary;
@@ -395,7 +407,7 @@ const viewPubilcProfil = (id: number) => {
       justify-content: center;
 
       &.cancel {
-        background-color: #e74c3c;
+        background-color: red;
       }
 
       &.primary {

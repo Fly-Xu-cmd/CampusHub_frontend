@@ -12,6 +12,9 @@
             placeholder="搜索活动..." 
             placeholder-left 
             custom-class="custom-search"
+            :class="{ 'search-focused': isSearchFocused }"
+            @focus="isSearchFocused = true"
+            @blur="isSearchFocused = false"
             @search="search"
           />
         </view>
@@ -33,7 +36,7 @@
             :class="{ active: activeTag === 0 }"
             @click="selectTag(0)"
           >
-            <view class="iconfont iconfont-quanbu" style="font-size: 30rpx;" />
+            <view class="iconfont" style="font-size: 30rpx;" />
             <text>全部类型</text>
           </view>
           <view 
@@ -48,7 +51,6 @@
           </view>
         </scroll-view>
       </view>
-      
       <!-- 活动列表 -->
       <view class="activity-list">
         <view v-if="loading" class="loading">
@@ -66,7 +68,18 @@
           >
             <!-- 活动图片 -->
             <view class="card-image-container">
-              <image :src="activity.coverUrl" class="card-image" mode="aspectFill" />
+              <wd-img 
+                :src="activity.coverUrl"
+                class="card-image" 
+                mode="aspectFill" 
+              >
+                <template #error>
+                  <wd-icon name=""></wd-icon>
+                </template>
+                <template #loading>
+                  <AsyncLoading text="加载中..." />
+                </template>
+              </wd-img>
               <!-- 报名状态 -->
               <view class="registration-status"
                 :style="{
@@ -100,7 +113,7 @@
                 :key="tag.id" 
                 class="activity-tag"
                 :style="{
-                  color: tag.color  
+                  backgroundColor: tag.color  
                 }"
 
               >
@@ -125,7 +138,12 @@
             <!-- 底部信息 -->
             <view class="card-footer">
               <view class="organizer">
-                <image :src="activity.organizerAvatar" class="organizer-avatar" mode="aspectFill" />
+                <image 
+                  :src="activity.organizerAvatar"
+                  @error="handleImageError($event, activity, 'organizerAvatar')"
+                  class="organizer-avatar" 
+                  mode="aspectFill" 
+                />
                 <text>{{ activity.organizerName }}</text>
               </view>
               <view class="action-button">
@@ -147,6 +165,18 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getActivityCategoryList, getActivityList, searchActivity } from '@/api/home/router';
+
+const defaultCoverImage = ref('/static/default_cover.png');
+const defaultAvatarImage = ref('/static/default_avatar.png');
+
+const handleImageError = (event: any, activity: any, field: string) => {
+  console.log(event)
+  if (field === 'coverUrl') {
+    activity.coverUrl = defaultCoverImage.value;
+  } else if (field === 'organizerAvatar') {
+    activity.organizerAvatar = defaultAvatarImage.value;
+  }
+};
 // 时间格式化函数：将10位时间戳转换为"周五 19:00"格式
 const formatTime = (timestamp: number) => {
   const date = new Date(timestamp * 1000); // 转换为毫秒
@@ -156,7 +186,6 @@ const formatTime = (timestamp: number) => {
   const minutes = date.getMinutes().toString().padStart(2, '0');
   return `${weekDay} ${hours}:${minutes}`;
 };
-
 onMounted(async () => {
   // 获取活动分类列表
   await getCategories();
@@ -200,6 +229,7 @@ const getActivities = async () => {
 }
 const isSearch = ref(false); // 是否搜索
 const searchQuery = ref(''); // 搜索框的值
+const isSearchFocused = ref(false); // 搜索框是否聚焦
 // 搜索活动
 const search = async () => {
   const keyword = searchQuery.value.trim()
@@ -295,11 +325,18 @@ $tag-inactive-color: #111;
       width: 100%;
       .wd-search__input {
         background: #ffffff !important;
-        border: 1rpx solid $border-color;
-        box-shadow: $shadow-sm; 
+        border: 2rpx solid $border-color;
         border-radius: 32rpx;
         height: 100rpx;
         padding-left: 80rpx !important;
+        transition: all 0.2s ease;
+        box-shadow: $shadow-sm;
+      }
+    }
+    .search-focused {
+      :deep(.wd-search__input) {
+        border-color: $primary-color !important;
+        box-shadow: 0 4rpx 16rpx rgba(249, 115, 22, 0.3) !important;
       }
     }
   }
@@ -462,36 +499,8 @@ $tag-inactive-color: #111;
     border-radius: $border-radius-full;
     font-size: 20rpx;
     font-weight: $font-weight-medium;
+    color: #fff;
     
-    &.orange {
-      background-color: #f8eaea;
-      color: $accent-color;
-    }
-    
-    &.blue {
-      background-color: #f0f9ff;
-      color: #0ea5e9;
-    }
-    
-    &.green {
-      background-color: #f0fdf4;
-      color: #22c55e;
-    }
-    
-    &.yellow {
-      background-color: #fefce8;
-      color: #eab308;
-    }
-    
-    &.pink {
-      background-color: #fdf2f8;
-      color: #ec4899;
-    }
-    
-    &.black {
-      background-color: #f8fafc;
-      color: #64748b;
-    }
   }
 }
 
