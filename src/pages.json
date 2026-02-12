@@ -13,7 +13,7 @@
       "style": { "navigationStyle": "custom" }
     },
     {
-      "path": "pages/home/PublicProfile",
+      "path": "pages/home/publicProfile",
       "style": { "navigationStyle": "custom" }
     },
     {
