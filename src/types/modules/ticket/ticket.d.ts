@@ -9,6 +9,7 @@ export interface Ticket {
   status: 'pending' | 'used';
   qrCodeUrl: string;
   createdAt: string;
+  coverUrl: string;
 }
 
 

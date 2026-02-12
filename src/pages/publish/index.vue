@@ -36,24 +36,22 @@
 			<!-- 活动信息容器（白色背景） -->
 			<view class="form-info-container">
 				<!-- 报名时间 -->
-				<TimeSelect 
-					label="报名时间"
-					v-model:startValue="signupStartValue"
-					v-model:endValue="signupEndValue"
-					v-model:isShowPicker="isShowSignupPicker"
-					v-model:errorMessage="signupTimeError"
-					@toggle="toggleSignupPicker"
-				/>
+			<TimeSelect 
+				label="报名时间"
+				v-model:startValue="signupStartValue"
+				v-model:endValue="signupEndValue"
+				v-model:isShowPicker="isShowSignupPicker"
+				v-model:errorMessage="signupTimeError"
+			/>
 
-				<!-- 活动时间 -->
-				<TimeSelect 
-					label="活动时间"
-					v-model:startValue="startValue"
-					v-model:endValue="endValue"
-					v-model:isShowPicker="isShowPicker"
-					v-model:errorMessage="timeError"
-					@toggle="togglePicker"
-				/>
+			<!-- 活动时间 -->
+			<TimeSelect 
+				label="活动时间"
+				v-model:startValue="startValue"
+				v-model:endValue="endValue"
+				v-model:isShowPicker="isShowPicker"
+				v-model:errorMessage="timeError"
+			/>
 
 				<!-- 活动地点 -->
 				<LocationSelect 
@@ -105,26 +103,28 @@
 			</view>
 
 			<!-- 标签选择器 -->
-			<view v-if="isShowTagPicker" class="tag-picker-container">
-				<view class="tag-picker-content">
-					<view class="tag-picker-header">
-						<text class="tag-picker-title">选择标签</text>
-						<view class="tag-picker-close" @click="toggleTagPicker">×</view>
-					</view>
-					<view class="tag-picker-body">
-						<view v-for="tag in tags" :key="tag.id" 
-						     class="tag-picker-item" 
-						     :class="{ active: selectedTags.includes(tag.id) }"
-						     :style="selectedTags.includes(tag.id) ? { backgroundColor: tag.color, color: '#fff' } : {}"
-						     @click="selectTag(tag.id)">
-							{{ tag.name }}
-						</view>
-					</view>
-					<view class="tag-picker-footer">
-						<button class="tag-picker-confirm" @click="toggleTagPicker">确定</button>
+		<view v-if="isShowTagPicker" class="tag-picker-container">
+			<view class="tag-picker-content">
+				<view class="tag-picker-header">
+					<text class="tag-picker-title">选择标签</text>
+					<view class="tag-picker-close" @click="toggleTagPicker">×</view>
+				</view>
+				<view class="tag-picker-body">
+					<view v-for="tag in tags" :key="tag.id" 
+					     class="tag-picker-item" 
+					     :class="{ active: selectedTags.includes(tag.id) }"
+					     :style="selectedTags.includes(tag.id) ? { backgroundColor: tag.color, color: '#fff' } : {}"
+					     @click="selectTag(tag.id)">
+						{{ tag.name }}
 					</view>
 				</view>
+				<view class="tag-picker-footer">
+					<button class="tag-picker-confirm" @click="toggleTagPicker">确定</button>
+				</view>
 			</view>
+		</view>
+
+		<!-- 日历选择器组件由TimeSelect组件内部处理 -->
 
 			<!-- 活动详情 -->
 			<view class="detail-section">
@@ -170,25 +170,24 @@ const contactPhone = ref<string>('')
 const selectedTags = ref<number[]>([1, 2, 3]) // 默认标签ID，可根据实际选择修改
 const tags = ref<Tag[]>([]) // 存储从接口获取的标签数据
 const isShowTagPicker = ref<boolean>(false) // 控制标签选择器显示/隐藏
-// 日期选择相关的变量和逻辑已移至TimeSelect组件
+// 日历选择器相关的变量和逻辑
 const startValue = ref<number>(Date.now())
 const endValue = ref<number>(Date.now())
 const signupStartValue = ref<number>(Date.now())
 const signupEndValue = ref<number>(Date.now())
+
 const isShowPicker = ref<boolean>(false)
 const isShowSignupPicker = ref<boolean>(false)
 const timeError = ref<string>('')
 const signupTimeError = ref<string>('')
 
-// 切换选择器显示/隐藏
-const togglePicker = (): void => {
-	isShowPicker.value = !isShowPicker.value
-}
 
-// 切换报名时间选择器显示/隐藏
-const toggleSignupPicker = (): void => {
-	isShowSignupPicker.value = !isShowSignupPicker.value
-}
+
+
+
+
+
+
 
 // 切换标签选择器显示/隐藏
 const toggleTagPicker = async (): Promise<void> => {
@@ -236,10 +235,7 @@ const selectTag = (tagId: number): void => {
 	}
 }
 
-// 监听结束时间变化，更新store
-watch(endValue, (newValue) => {
-	publishStore.setEndTime(newValue)
-})
+
 
 // 提交表单
 const submitForm = async () => {
@@ -656,84 +652,7 @@ const goBackHome = () => {
 		resize: none;
 	}
 
-	/* 新增：遮罩层样式 - 全屏、半透明、覆盖整个页面 */
-	.picker-mask {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.1);
-		/* 淡灰色遮罩，可调整透明度 */
-		z-index: 999;
-		/* 遮罩层级低于组件，高于页面其他内容 */
-	}
-
-	/* 组件包裹层：使用fixed定位确保在屏幕上正确显示 */
-	.picker-wrap {
-		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		/* 配合z-index生效 */
-		z-index: 1000;
-		/* 高于遮罩，保证组件在最上层 */
-		background-color: #fff;
-		border-radius: 16rpx;
-		padding: 20rpx;
-		width: 90%;
-		max-width: 500rpx;
-	}
-
-	/* 新增：顶部确定按钮容器 */
-	.picker-header {
-		display: flex;
-		justify-content: flex-end;
-		margin-bottom: 20rpx;
-	}
-
-	/* 新增：确定按钮样式 */
-	.confirm-btn {
-		padding: 10rpx 40rpx;
-		background-color: #f97316;
-		color: #fff;
-		border-radius: 20rpx;
-		font-size: 24rpx;
-		font-weight: 500;
-		cursor: pointer;
-		transition: background-color 0.3s ease;
-	}
-
-	.confirm-btn:hover { 
-			background-color: #ea580c;
-		}
-
-		/* 错误信息样式 */
-		.time-error-message {
-			margin-top: 20rpx;
-			font-size: 22rpx;
-			color: #ef4444;
-			text-align: center;
-			padding: 10rpx;
-			background-color: #fef2f2;
-			border-radius: 8rpx;
-			border: 1rpx solid #fee2e2;
-		}
-
-		/* 选择器部分样式 */
-		.picker-section {
-			margin-bottom: 30rpx;
-		}
-
-		/* 选择器部分标签样式 */
-		.picker-section-label {
-			display: block;
-			font-size: 24rpx;
-			color: #333;
-			font-weight: 500;
-			margin-bottom: 15rpx;
-			padding-left: 10rpx;
-		}
+	
 
 	/* 自定义标题样式：调整宽度和位置，避免与提交按钮重叠 */
 	:deep(.standard-header .nav-title) {

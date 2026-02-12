@@ -30,8 +30,8 @@
 					<view v-for="ticket in tickets" :key="ticket.id" class="time-item">
 						<view class="time-item-left">
 							<view class="i-running">
-								<wd-icon class-prefix="iconfont" name="running" size="68rpx" color="#f97316" />
-							</view>
+					<image :src="ticket.coverUrl" class="ticket-image" mode="aspectFill" />
+				</view>
 							<view class="event-info">
 								<view class="event-title">{{ ticket.eventName }}</view>
 								<view class="event-time">
@@ -217,7 +217,8 @@ const fetchTicketDetails = async (isRefresh: boolean = false) => {
 				ticketNumber: item.ticketCode || '',
 				status: item.status === 1 ? 'used' : 'pending', // 将数字状态转换为字符串
 				qrCodeUrl: '', // 默认空值
-				createdAt: new Date().toISOString() // 当前时间
+				createdAt: new Date().toISOString(), // 当前时间
+				coverUrl: item.activityImageUrl || '' // 活动封面图片URL
 			}
 		})
 		// 过滤掉无效票券
@@ -267,16 +268,17 @@ const showQRCode = async (ticket: Ticket) => {
 		if (detailResult && detailResult.data) {
 			// 使用后端返回的详情数据
 			selectedTicket.value = {
-				id: detailResult.data.ticketId?.toString() || ticket.id,
-				eventId: detailResult.data.activityId?.toString() || ticket.eventId,
-				eventName: detailResult.data.activityName || ticket.eventName,
-				eventTime: detailResult.data.activityTime || ticket.eventTime,
-				eventLocation: ticket.eventLocation,
-				ticketNumber: detailResult.data.ticketCode || ticket.ticketNumber,
-				status: ticket.status,
-				qrCodeUrl: detailResult.data.qrCodeUrl || ticket.qrCodeUrl,
-				createdAt: ticket.createdAt
-			}
+					id: detailResult.data.ticketId?.toString() || ticket.id,
+					eventId: detailResult.data.activityId?.toString() || ticket.eventId,
+					eventName: detailResult.data.activityName || ticket.eventName,
+					eventTime: detailResult.data.activityTime || ticket.eventTime,
+					eventLocation: ticket.eventLocation,
+					ticketNumber: detailResult.data.ticketCode || ticket.ticketNumber,
+					status: ticket.status,
+					qrCodeUrl: detailResult.data.qrCodeUrl || ticket.qrCodeUrl,
+					createdAt: ticket.createdAt,
+					coverUrl: ticket.coverUrl
+				}
 			// 更新二维码值
 			qrCodeValue.value = detailResult.data.qrCodeUrl || `https://ticket.campus-hub.com/event/${ticket.id}`
 			// 从 qrCodeUrl 中提取 TOTP 码
@@ -721,6 +723,14 @@ onMounted(() => {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	overflow: hidden;
+}
+
+.ticket-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	border-radius: 16rpx;
 }
 
 .time-value {
