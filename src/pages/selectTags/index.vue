@@ -31,10 +31,13 @@
             >
               <wd-icon
                 v-if="!isImageUrl(tag.tagIcon)"
+                class-prefix="iconfont"
                 :name="tag.tagIcon || 'star-on'"
-                size="14px"
+                size="28rpx"
                 class="tag-icon"
-                custom-style="margin-right: 6px;"
+                :style="{
+                  color: tag.tagColor,
+                }"
               />
 
               <image
@@ -284,7 +287,7 @@ $theme-orange-light: #fff7ed;
 
       // --- 选中状态 ---
       &.is-selected {
-        background-color: $theme-orange-light;
+        background-color: $theme-orange-light; // 选中背景
         border-color: rgba($theme-orange, 0.3);
 
         .tag-text {
