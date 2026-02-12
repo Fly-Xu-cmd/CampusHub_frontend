@@ -140,6 +140,7 @@
               >
                 <wd-icon
                   v-if="!isImageUrl(tag.tagIcon)"
+                  class-prefix="iconfont"
                   :name="tag.tagIcon || 'star-on'"
                   size="14px"
                   class="tag-icon"

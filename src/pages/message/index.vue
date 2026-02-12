@@ -67,9 +67,9 @@
         <text class="empty-desc">报名活动后自动加入群聊</text>
       </view>
 
-      <!-- 加载中 -->
+      <!-- 骨架屏 -->
       <view class="loading-state" v-else>
-        <AsyncLoading text="加载中..." />
+        <MessageListSkeleton :count="5" />
       </view>
     </view>
   </CommonLayout>
@@ -542,7 +542,7 @@ onUnmounted(() => {
   // 加载状态
   .loading-state {
     @include flex(column, center, center);
-    padding: 120rpx 0;
+    width: 100%;
   }
 }
 </style>

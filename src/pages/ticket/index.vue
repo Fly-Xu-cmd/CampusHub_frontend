@@ -30,8 +30,9 @@
 					<view v-for="ticket in tickets" :key="ticket.id" class="time-item">
 						<view class="time-item-left">
 							<view class="i-running">
-								<wd-icon class-prefix="iconfont" name="running" size="68rpx" color="#f97316" />
-							</view>
+					<image v-if="ticket.coverUrl && isImageUrl(ticket.coverUrl)" :src="ticket.coverUrl" class="ticket-image" mode="aspectFill" @error="handleImageError(ticket)" />
+					<wd-icon v-else class-prefix="iconfont" name="morentupian" size="68rpx" color="#f97316" />
+				</view>
 							<view class="event-info">
 								<view class="event-title">{{ ticket.eventName }}</view>
 								<view class="event-time">
@@ -179,6 +180,37 @@ const formatEventTime = (eventTime: string) => {
 	return `${month}.${day} ${timePart}`
 }
 
+// 判断是否为合法的图片URL
+const isImageUrl = (url: string): boolean => {
+	if (!url || typeof url !== 'string') return false
+	
+	// 去除首尾空格
+	const trimmedUrl = url.trim()
+	if (!trimmedUrl) return false
+	
+	// 检查是否为"null"、"undefined"等无效值
+	const invalidValues = ['null', 'undefined', 'none', 'false', '0']
+	if (invalidValues.includes(trimmedUrl.toLowerCase())) return false
+	
+	// 检查是否为常见的图片URL格式
+	const imageUrlRegex = /^(https?:\/\/\S+\.|\/\S+\.|data:image\/)[^\s]+$/i
+	return imageUrlRegex.test(trimmedUrl)
+}
+
+// 验证图片URL并返回处理后的值
+const validateImageUrl = (url: any): string => {
+	if (isImageUrl(url)) {
+		return typeof url === 'string' ? url.trim() : ''
+	}
+	return ''
+}
+
+// 处理图片加载失败
+const handleImageError = (ticket: any) => {
+	// 当图片加载失败时，将coverUrl设置为空字符串，这样在下一次渲染时就会显示默认图标
+	ticket.coverUrl = ''
+}
+
 // 从API获取票券列表
 const fetchTicketDetails = async (isRefresh: boolean = false) => {
 	if (isRefresh) {
@@ -217,7 +249,8 @@ const fetchTicketDetails = async (isRefresh: boolean = false) => {
 				ticketNumber: item.ticketCode || '',
 				status: item.status === 1 ? 'used' : 'pending', // 将数字状态转换为字符串
 				qrCodeUrl: '', // 默认空值
-				createdAt: new Date().toISOString() // 当前时间
+				createdAt: new Date().toISOString(), // 当前时间
+				coverUrl: validateImageUrl(item.activityImageUrl) // 活动封面图片URL
 			}
 		})
 		// 过滤掉无效票券
@@ -267,16 +300,17 @@ const showQRCode = async (ticket: Ticket) => {
 		if (detailResult && detailResult.data) {
 			// 使用后端返回的详情数据
 			selectedTicket.value = {
-				id: detailResult.data.ticketId?.toString() || ticket.id,
-				eventId: detailResult.data.activityId?.toString() || ticket.eventId,
-				eventName: detailResult.data.activityName || ticket.eventName,
-				eventTime: detailResult.data.activityTime || ticket.eventTime,
-				eventLocation: ticket.eventLocation,
-				ticketNumber: detailResult.data.ticketCode || ticket.ticketNumber,
-				status: ticket.status,
-				qrCodeUrl: detailResult.data.qrCodeUrl || ticket.qrCodeUrl,
-				createdAt: ticket.createdAt
-			}
+					id: detailResult.data.ticketId?.toString() || ticket.id,
+					eventId: detailResult.data.activityId?.toString() || ticket.eventId,
+					eventName: detailResult.data.activityName || ticket.eventName,
+					eventTime: detailResult.data.activityTime || ticket.eventTime,
+					eventLocation: ticket.eventLocation,
+					ticketNumber: detailResult.data.ticketCode || ticket.ticketNumber,
+					status: ticket.status,
+					qrCodeUrl: detailResult.data.qrCodeUrl || ticket.qrCodeUrl,
+					createdAt: ticket.createdAt,
+					coverUrl: ticket.coverUrl
+				}
 			// 更新二维码值
 			qrCodeValue.value = detailResult.data.qrCodeUrl || `https://ticket.campus-hub.com/event/${ticket.id}`
 			// 从 qrCodeUrl 中提取 TOTP 码
@@ -721,6 +755,14 @@ onMounted(() => {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	overflow: hidden;
+}
+
+.ticket-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	border-radius: 16rpx;
 }
 
 .time-value {

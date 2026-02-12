@@ -44,186 +44,223 @@
         </view>
         <!-- 已登录状态 -->
         <template v-else>
-        <view class="header-section">
-          <view class="top-bar">
-            <view class="avatar-wrapper">
-              <image :src="avatarUrl" class="avatar-img" mode="aspectFill" />
-              <!-- 头像徽章：显示前2个兴趣标签 -->
-              <view v-if="displayInterestTags.length > 0" class="avatar-badges">
-                <view
-                  v-for="(tag, index) in displayInterestTags.slice(0, 2)"
-                  :key="tag.id"
-                  class="badge-item"
-                  :class="getTagColorClass(index)"
-                >
-                  {{ tag.tagName }}
+          <view class="header-section">
+            <view class="top-bar">
+              <view class="avatar-wrapper">
+                <!-- 头像加载失败时显示图标兜底 -->
+                <view v-if="avatarLoadError" class="avatar-fallback">
+                  <wd-icon
+                    class-prefix="iconfont"
+                    name="morentouxiang"
+                    size="190rpx"
+                    color="#94a3b8"
+                  />
                 </view>
+                <!-- 正常显示头像 -->
+                <wd-avatar
+                  v-else
+                  :src="avatarUrl"
+                  size="180rpx"
+                  shape="round"
+                  mode="aspectFill"
+                  custom-class="profile-avatar"
+                  @error="handleAvatarError"
+                />
+                <!-- 头像徽章：显示前2个兴趣标签 -->
+                <view
+                  v-if="displayInterestTags.length > 0"
+                  class="avatar-badges"
+                >
+                  <view
+                    v-for="(tag, index) in displayInterestTags.slice(0, 2)"
+                    :key="tag.id"
+                    class="badge-item"
+                    :class="getTagColorClass(index)"
+                  >
+                    <wd-icon
+                      v-if="tag.tagIcon"
+                      class-prefix="iconfont"
+                      :name="tag.tagIcon"
+                      size="24rpx"
+                      custom-style="margin-right:4rpx"
+                    ></wd-icon>
+                    {{ tag.tagName }}
+                  </view>
+                </view>
+              </view>
+
+              <view class="settings-btn" @click="handleToSettings">
+                <wd-icon name="setting" size="20px" color="#64748b"></wd-icon>
               </view>
             </view>
 
-            <view class="settings-btn" @click="handleToSettings">
-              <wd-icon name="setting" size="20px" color="#64748b"></wd-icon>
+            <view class="user-info">
+              <text class="nickname">{{
+                userInfoRef.nickname || "默认名"
+              }}</text>
+              <text class="bio">{{ userInfoRef.introduction || "" }}</text>
             </view>
-          </view>
 
-          <view class="user-info">
-            <text class="nickname">{{ userInfoRef.nickname || "默认名" }}</text>
-            <text class="bio">{{ userInfoRef.introduction || "" }}</text>
-          </view>
-
-          <!-- 兴趣标签行 -->
-          <view class="tags-row">
-            <!-- 有兴趣标签时显示 -->
-            <template v-if="displayInterestTags.length > 0">
+            <!-- 兴趣标签行 -->
+            <view class="tags-row">
+              <!-- 有兴趣标签时显示 -->
+              <template v-if="displayInterestTags.length > 0">
+                <view
+                  v-for="(tag, index) in displayInterestTags"
+                  :key="tag.id"
+                  class="tag-item"
+                  :class="getTagColorClass(index)"
+                >
+                  <wd-icon
+                    v-if="tag.tagIcon"
+                    class-prefix="iconfont"
+                    :name="tag.tagIcon"
+                    size="12px"
+                    custom-style="margin-right:4rpx"
+                  ></wd-icon>
+                  {{ tag.tagName }}
+                </view>
+              </template>
+              <!-- 无兴趣标签时显示兜底提示 -->
               <view
-                v-for="(tag, index) in displayInterestTags"
-                :key="tag.id"
-                class="tag-item"
-                :class="getTagColorClass(index)"
+                v-else
+                class="tag-item placeholder"
+                @click="handleToAddInterests"
               >
                 <wd-icon
-                  v-if="tag.tagIcon"
                   class-prefix="iconfont"
-                  :name="tag.tagIcon"
+                  name="add"
                   size="12px"
                   custom-style="margin-right:4rpx"
                 ></wd-icon>
-                {{ tag.tagName }}
+                添加兴趣
               </view>
-            </template>
-            <!-- 无兴趣标签时显示兜底提示 -->
-            <view
-              v-else
-              class="tag-item placeholder"
-              @click="handleToAddInterests"
-            >
-              <wd-icon
-                class-prefix="iconfont"
-                name="add"
-                size="12px"
-                custom-style="margin-right:4rpx"
-              ></wd-icon>
-              添加兴趣
+            </view>
+
+            <view class="stats-row">
+              <view class="stat-item" @click="handleToMyPublished">
+                <text class="num">{{ userInfoRef.initiateNum || 0 }}</text>
+                <text class="label">发布</text>
+              </view>
+              <view class="stat-item" @click="handleToJoined">
+                <text class="num">{{ userInfoRef.activitiesNum || 0 }}</text>
+                <text class="label">参与</text>
+              </view>
+              <view class="stat-item">
+                <text class="num green">{{ userInfoRef.credit || 0 }}</text>
+                <text class="label">信用分</text>
+              </view>
             </view>
           </view>
+        </template>
 
-          <view class="stats-row">
-            <view class="stat-item" @click="handleToMyPublished">
-              <text class="num">{{ userInfoRef.initiateNum || 0 }}</text>
-              <text class="label">发布</text>
-            </view>
-            <view class="stat-item" @click="handleToJoined">
-              <text class="num">{{ userInfoRef.activitiesNum || 0 }}</text>
-              <text class="label">参与</text>
-            </view>
-            <view class="stat-item">
-              <text class="num green">{{ userInfoRef.credit || 0 }}</text>
-              <text class="label">信用分</text>
-            </view>
-          </view>
-        </view>
-      </template>
-
-      <!-- 已登录状态的内容区域 -->
-      <template v-if="isAuthenticated">
-        <view class="content-section">
-          <view class="status-card">
-            <view class="status-item" @click="handleToPending">
-              <wd-icon
-                class-prefix="iconfont"
-                name="calendar-check"
-                size="60rpx"
-                color="#f97316"
-                custom-style="margin-bottom:8rpx"
-              ></wd-icon>
-              <text class="status-label">待参加</text>
-            </view>
-            <view class="divider-v"></view>
-            <view class="status-item" @click="handleToJoined">
-              <wd-icon
-                class-prefix="iconfont"
-                name="lishi"
-                size="60rpx"
-                color="#3b82f6"
-                custom-style="margin-bottom:8rpx"
-              ></wd-icon>
-              <text class="status-label">已参加</text>
-            </view>
-            <view class="divider-v"></view>
-            <view class="status-item" @click="handleScanQRCode">
-              <wd-icon
-                class-prefix="iconfont"
-                name="scan"
-                size="60rpx"
-                color="#10b981"
-                custom-style="margin-bottom:8rpx"
-              ></wd-icon>
-              <text class="status-label">扫码核销</text>
-            </view>
-          </view>
-
-          <view class="menu-list">
-            <view class="menu-item border-bottom" @click="handleToMyPublished">
-              <view class="menu-left">
-                <view class="icon-box orange-bg">
-                  <wd-icon
-                    class-prefix="iconfont"
-                    name="qizhi-"
-                    size="42rpx"
-                    color="#f97316"
-                  ></wd-icon>
-                </view>
-                <text class="menu-text">我发起的活动</text>
+        <!-- 已登录状态的内容区域 -->
+        <template v-if="isAuthenticated">
+          <view class="content-section">
+            <view class="status-card">
+              <view class="status-item" @click="handleToPending">
+                <wd-icon
+                  class-prefix="iconfont"
+                  name="calendar-check"
+                  size="60rpx"
+                  color="#f97316"
+                  custom-style="margin-bottom:8rpx"
+                ></wd-icon>
+                <text class="status-label">待参加</text>
               </view>
-              <wd-icon name="arrow-right" size="16px" color="#cbd5e1"></wd-icon>
+              <view class="divider-v"></view>
+              <view class="status-item" @click="handleToJoined">
+                <wd-icon
+                  class-prefix="iconfont"
+                  name="lishi"
+                  size="60rpx"
+                  color="#3b82f6"
+                  custom-style="margin-bottom:8rpx"
+                ></wd-icon>
+                <text class="status-label">已参加</text>
+              </view>
+              <view class="divider-v"></view>
+              <view class="status-item" @click="handleScanQRCode">
+                <wd-icon
+                  class-prefix="iconfont"
+                  name="scan"
+                  size="60rpx"
+                  color="#10b981"
+                  custom-style="margin-bottom:8rpx"
+                ></wd-icon>
+                <text class="status-label">扫码核销</text>
+              </view>
             </view>
 
-            <view class="menu-item" @click="handleToVerify">
-              <view class="menu-left">
-                <view class="icon-box blue-bg">
-                  <wd-icon
-                    class-prefix="iconfont"
-                    name="graduation-cap"
-                    size="36rpx"
-                    color="#3b82f6"
-                  ></wd-icon>
+            <view class="menu-list">
+              <view
+                class="menu-item border-bottom"
+                @click="handleToMyPublished"
+              >
+                <view class="menu-left">
+                  <view class="icon-box orange-bg">
+                    <wd-icon
+                      class-prefix="iconfont"
+                      name="qizhi-"
+                      size="42rpx"
+                      color="#f97316"
+                    ></wd-icon>
+                  </view>
+                  <text class="menu-text">我发起的活动</text>
                 </view>
-                <text class="menu-text">学生认证</text>
+                <wd-icon
+                  name="arrow-right"
+                  size="16px"
+                  color="#cbd5e1"
+                ></wd-icon>
               </view>
-              <view class="menu-right">
-                <!-- 未认证 -->
-                <view
-                  v-if="verifyStatus === 'not_applied'"
-                  class="status-tag neutral"
-                >
-                  未认证
+
+              <view class="menu-item" @click="handleToVerify">
+                <view class="menu-left">
+                  <view class="icon-box blue-bg">
+                    <wd-icon
+                      class-prefix="iconfont"
+                      name="graduation-cap"
+                      size="36rpx"
+                      color="#3b82f6"
+                    ></wd-icon>
+                  </view>
+                  <text class="menu-text">学生认证</text>
                 </view>
-                <!-- 审核中 -->
-                <view
-                  v-else-if="verifyStatus === 'pending'"
-                  class="status-tag warning"
-                >
-                  审核中
-                </view>
-                <!-- 已通过 -->
-                <view
-                  v-else-if="verifyStatus === 'verified'"
-                  class="status-tag success"
-                >
-                  已通过
-                </view>
-                <!-- 已拒绝 -->
-                <view
-                  v-else-if="verifyStatus === 'rejected'"
-                  class="status-tag danger"
-                >
-                  未通过
+                <view class="menu-right">
+                  <!-- 未认证 -->
+                  <view
+                    v-if="verifyStatus === 'not_applied'"
+                    class="status-tag neutral"
+                  >
+                    未认证
+                  </view>
+                  <!-- 审核中 -->
+                  <view
+                    v-else-if="verifyStatus === 'pending'"
+                    class="status-tag warning"
+                  >
+                    审核中
+                  </view>
+                  <!-- 已通过 -->
+                  <view
+                    v-else-if="verifyStatus === 'verified'"
+                    class="status-tag success"
+                  >
+                    已通过
+                  </view>
+                  <!-- 已拒绝 -->
+                  <view
+                    v-else-if="verifyStatus === 'rejected'"
+                    class="status-tag danger"
+                  >
+                    未通过
+                  </view>
                 </view>
               </view>
             </view>
           </view>
-        </view>
-      </template>
+        </template>
       </view>
     </ClientOnly>
   </CommonLayout>
@@ -240,6 +277,9 @@ const userStore = useUserStore();
 // 使用绝对路径确保静态资源正确加载
 const defaultAvatar = "/static/default_avatar.png";
 const loading = ref(false);
+
+// 头像加载失败状态
+const avatarLoadError = ref(false);
 
 // 学生认证进度数据
 const authProgress = ref<GetStudentAuthProgressData>({});
@@ -271,6 +311,11 @@ const avatarUrl = computed(() => {
   }
   return url;
 });
+
+// 头像加载错误处理
+const handleAvatarError = () => {
+  avatarLoadError.value = true;
+};
 
 // 学生认证状态
 const verifyStatus = computed(() => {
@@ -321,6 +366,8 @@ const mapNeedAction = (action: string | undefined): string => {
 onShow(async () => {
   if (isAuthenticated.value) {
     loading.value = true;
+    // 重置头像加载错误状态
+    avatarLoadError.value = false;
     try {
       // 并行获取个人资料和认证进度
       const [profileRes, authRes] = await Promise.allSettled([
@@ -428,7 +475,7 @@ const handleScanQRCode = () => {
 
 .profile-container {
   @include flex(column, flex-start, stretch);
-  height: 100vh;
+  height: 100%;
 }
 
 /* --- 未登录占位符 --- */
@@ -529,18 +576,29 @@ const handleScanQRCode = () => {
     .avatar-wrapper {
       position: relative;
 
-      .avatar-img {
+      // 头像加载失败时的兜底样式
+      .avatar-fallback {
         width: 180rpx;
         height: 180rpx;
         border-radius: 50%;
-        border: 8rpx solid $surface-color; // 白色边框
+        border: 8rpx solid $surface-color;
+        box-shadow: $shadow-lg;
+        background: #f1f5f9;
+        @include flex(row, center, center);
+      }
+
+      // 使用深度选择器自定义 wd-avatar 样式
+      :deep(.wd-avatar) {
+        width: 180rpx !important;
+        height: 180rpx !important;
+        border: 8rpx solid $surface-color;
         box-shadow: $shadow-lg;
       }
 
       .avatar-badges {
         position: absolute;
-        bottom: 10rpx;
-        right: -$spacing-md;
+        bottom: 0;
+        right: -50%;
         @include flex(row, flex-start, center);
         background: $surface-color;
         padding: 4rpx;
@@ -553,6 +611,7 @@ const handleScanQRCode = () => {
           padding: 4rpx 10rpx;
           border-radius: 8rpx;
           margin-left: 4rpx;
+          @include flex(row, center, center);
 
           &:first-child {
             margin-left: 0;

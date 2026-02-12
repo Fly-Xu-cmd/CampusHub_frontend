@@ -28,12 +28,12 @@
     >
       <!-- 加载状态 -->
       <view v-if="loading && !notifications.length" class="loading-state">
-        <AsyncLoading text="加载中..." />
+        <NotificationSkeleton :count="6" />
       </view>
 
       <!-- 空状态 -->
       <view v-else-if="!loading && !notifications.length" class="empty-state">
-        <wd-icon name="comment" size="120rpx" color="#ccc" />
+        <wd-icon name="chat" size="120rpx" color="#ccc" />
         <text class="empty-text">暂无系统消息</text>
       </view>
 
@@ -285,7 +285,7 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 100rpx 0;
+  width: 100%;
 }
 
 // 空状态
