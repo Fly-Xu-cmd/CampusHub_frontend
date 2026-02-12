@@ -30,6 +30,7 @@ export interface PostUserDetailsRequest {
   gender: string;
   introduction: string;
   nickname: string;
+  interestTagIds: number[];
   [property: string]: any;
 }
 // 更新用户兴趣标签请求数据

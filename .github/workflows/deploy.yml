@@ -1,0 +1,149 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # 构建和测试
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Build H5 SSR
+        run: npm run build:h5:ssr
+        env:
+          VITE_PROD_BASE_URL: ${{ secrets.VITE_PROD_BASE_URL }}
+          VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
+          VITE_GEETEST_ID: ${{ secrets.VITE_GEETEST_ID }}
+          VITE_DEBUG: 'false'
+
+      - name: Build WeChat Mini Program
+        run: npm run build:mp-weixin
+        env:
+          VITE_PROD_BASE_URL: ${{ secrets.VITE_PROD_BASE_URL }}
+          VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
+          VITE_GEETEST_ID: ${{ secrets.VITE_GEETEST_ID }}
+          VITE_DEBUG: 'false'
+
+      - name: Upload H5 build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: h5-ssr-build
+          path: dist/build/h5/
+          retention-days: 7
+
+      - name: Upload WeChat Mini Program build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mp-weixin-build
+          path: dist/build/mp-weixin/
+          retention-days: 7
+
+  # 部署到服务器 (H5 SSR)
+  deploy-h5:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Download H5 build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: h5-ssr-build
+          path: ./h5-build
+
+      - name: Deploy to server via SSH
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          source: "./h5-build/*"
+          target: ${{ secrets.DEPLOY_PATH || '/var/www/campushub' }}
+          strip_components: 1
+
+      - name: Restart server service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH || '/var/www/campushub' }}
+            pm2 restart campus-hub || pm2 start server.js --name campus-hub
+
+  # 上传微信小程序到微信云 (可选)
+  # 需要配置微信小程序上传密钥
+  # deploy-mp-weixin:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+  #
+  #   steps:
+  #     - name: Download WeChat Mini Program build
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: mp-weixin-build
+  #         path: ./mp-weixin-build
+  #
+  #     - name: Upload to WeChat
+  #       # 使用 miniprogram-ci 上传
+  #       run: |
+  #         npx miniprogram-ci upload \
+  #           --pp ./mp-weixin-build \
+  #           --pkp ${{ secrets.WECHAT_PRIVATE_KEY_PATH }} \
+  #           --appid ${{ secrets.WECHAT_APPID }} \
+  #           -r 1 \
+  #           --uv ${{ github.sha }} \
+  #           --enable-es6 true
+
+  # 部署通知
+  notify:
+    needs: [build, deploy-h5]
+    runs-on: ubuntu-latest
+    if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+
+    steps:
+      - name: Send deployment notification
+        run: |
+          echo "Deployment completed!"
+          echo "Status: ${{ needs.deploy-h5.result }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"

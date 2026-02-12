@@ -13,7 +13,7 @@
       "style": { "navigationStyle": "custom" }
     },
     {
-      "path": "pages/home/PublicProfile",
+      "path": "pages/home/publicProfile",
       "style": { "navigationStyle": "custom" }
     },
     {
@@ -90,6 +90,11 @@
     {
       "path": "pages/profile/verify",
       "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/activity/verify",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
     },
     {
       "path": "pages/settings/edit-profile",

@@ -68,24 +68,25 @@ const pageSize = 12;
 
 const hasMore = computed(() => activities.value.length < total.value);
 
-// 格式化时间显示
-const formatTime = (timeStr: string) => {
+// 格式化时间显示 - 支持时间戳和字符串格式
+const formatTime = (time: string | number) => {
   try {
-    const date = new Date(timeStr);
+    const date = typeof time === "number" ? new Date(time) : new Date(time);
     const month = date.getMonth() + 1;
     const day = date.getDate();
     const hour = date.getHours().toString().padStart(2, "0");
     const minute = date.getMinutes().toString().padStart(2, "0");
     return `${month}.${day} ${hour}:${minute}`;
   } catch {
-    return timeStr;
+    return typeof time === "string" ? time : "";
   }
 };
 
-// 计算倒计时文本
-const getCountdownText = (timeStr: string) => {
+// 计算倒计时文本 - 支持时间戳和字符串格式
+const getCountdownText = (time: string | number) => {
   try {
-    const activityTime = new Date(timeStr).getTime();
+    const activityTime =
+      typeof time === "number" ? time : new Date(time).getTime();
     const now = Date.now();
     const diff = activityTime - now;
 
@@ -139,7 +140,7 @@ const loadMore = () => {
 // 跳转到活动详情
 const handleToDetail = (id: number) => {
   uni.navigateTo({
-    url: `/pages/activity/detail?id=${id}`,
+    url: `/pages/home/detail?id=${id}`,
   });
 };
 

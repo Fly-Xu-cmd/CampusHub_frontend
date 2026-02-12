@@ -28,45 +28,14 @@
           <view class="members-count">{{ params.member_count }}人</view>
         </view>
         <view class="members-list">
-          <!-- 群主 -->
-          <view class="member-item">
-            <view class="member-avatar">
-              <image src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
-            </view>
-            <view class="member-info">
-              <view class="member-name">Kevin</view>
-              <view class="member-role">群主</view>
-            </view>
-            <view class="member-more">⋯</view>
-          </view>
-
           <!-- 群成员 -->
-          <view class="member-item">
+          <view class="member-item" v-for="member in members" :key="member.user_id">
             <view class="member-avatar">
-              <image src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
+              <image :src="member.avatar" mode="aspectFill"></image>
             </view>
             <view class="member-info">
-              <view class="member-name">Alice</view>
-            </view>
-            <view class="member-more">⋯</view>
-          </view>
-
-          <view class="member-item">
-            <view class="member-avatar">
-              <image src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
-            </view>
-            <view class="member-info">
-              <view class="member-name">Bob</view>
-            </view>
-            <view class="member-more">⋯</view>
-          </view>
-
-          <view class="member-item">
-            <view class="member-avatar">
-              <image src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&crop=face" mode="aspectFill"></image>
-            </view>
-            <view class="member-info">
-              <view class="member-name">Charlie</view>
+              <view class="member-name">{{ member.username || "默认名"}}</view>
+              <view v-if="member.role === 'owner'" class="member-role">群主</view>
             </view>
             <view class="member-more">⋯</view>
           </view>
@@ -109,36 +78,21 @@
 </template>
 
 <script setup lang="ts">
+import { getMembers } from '@/api/message/router';
 import { ref, onMounted } from 'vue';
 // 从URL参数获取群ID
 import { useRoute } from 'vue-router';
 const route = useRoute();
 const params = route.query;
 
-// 模拟群成员数据
-const members = ref([
-  {
-    id: 1,
-    name: 'Kevin',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face',
-    role: '群主'
-  },
-  {
-    id: 2,
-    name: 'Alice',
-    avatar: 'https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=100&h=100&fit=crop&crop=face'
-  },
-  {
-    id: 3,
-    name: 'Bob',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face'
-  },
-  {
-    id: 4,
-    name: 'Charlie',
-    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&crop=face'
-  }
-]);
+onMounted(() => {
+  // 获取群聊成员
+  getMembers(params.group_id as string).then(res => {
+    members.value = res.data.members;
+  })
+})
+// 群成员数据
+const members = ref();
 
 // 添加成员
 const addMember = () => {
