@@ -475,7 +475,7 @@ const handleScanQRCode = () => {
 
 .profile-container {
   @include flex(column, flex-start, stretch);
-  height: 100vh;
+  height: 100%;
 }
 
 /* --- 未登录占位符 --- */

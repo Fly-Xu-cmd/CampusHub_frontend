@@ -1,6 +1,10 @@
 <template>
   <view class="layout-wrapper" :style="{ '--theme-color': '#f97316' }">
-    <view class="header-bg">
+    <view
+      class="header-bg"
+      :class="{ 'transparent-bg': headerType === 'transparent' }"
+      :style="headerType === 'transparent' ? { background: 'transparent', backdropFilter: 'none' } : {}"
+    >
       <view
         v-if="headerType === 'home'"
         class="nav-bar home-header"
@@ -170,7 +174,13 @@ const contentStyle = computed(() => {
 
   // 动态计算高度，涉及系统变量，保留 px 混合计算
   if (props.headerType === "transparent") {
-    return { height: "100vh", ...style };
+    // 透明模式：内容上移覆盖导航栏，实现真正的透明效果
+    const totalHeader = systemStore.statusBarHeight + systemStore.navBarHeight;
+    return {
+      height: `calc(100vh - ${totalHeader}px)`,
+      marginTop: `-${totalHeader}px`,
+      ...style,
+    };
   }
 
   if (props.headerType === "home") {
@@ -271,6 +281,12 @@ const goSystemMessage = () => {
   // #ifdef H5
   backdrop-filter: blur(10px);
   // #endif
+
+  // 透明模式下的背景处理
+  &.transparent-bg {
+    background: transparent !important;
+    backdrop-filter: none !important;
+  }
 }
 
 .nav-bar {
@@ -353,7 +369,7 @@ const goSystemMessage = () => {
 
 /* --- Transparent Header --- */
 .transparent-header {
-  background-color: transparent; // 透明模式背景应该是透明的
+  background: transparent; // 透明模式背景应该是透明的
   @include flex(row, flex-start, center);
 
   .glass-btn {

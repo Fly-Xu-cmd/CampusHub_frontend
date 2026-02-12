@@ -23,10 +23,15 @@
           </view>
         </view>
 
+        <!-- 骨架屏 - 搜索时显示 -->
+        <view v-if="loading && hasSearched" class="loading-state">
+          <ActivityCardSkeleton :count="4" />
+        </view>
+
         <!-- 活动列表 -->
         <view
+          v-else-if="searchResults.length > 0 || hasSearched"
           class="activity-list"
-          v-if="searchResults.length > 0 || hasSearched"
         >
           <view
             class="activity-item"
@@ -52,9 +57,6 @@
           <view class="load-more" v-if="hasMore && !loading" @click="loadMore">
             <text>加载更多</text>
           </view>
-          <view class="load-more" v-if="loading">
-            <text>加载中...</text>
-          </view>
           <view class="no-more" v-if="!hasMore && searchResults.length > 0">
             <text>没有更多了</text>
           </view>
@@ -65,7 +67,7 @@
           class="empty-state"
           v-if="hasSearched && searchResults.length === 0 && !loading"
         >
-          <wd-icon name="search-outline" size="80rpx" color="#cbd5e1"></wd-icon>
+          <wd-icon name="search" size="80rpx" color="#cbd5e1"></wd-icon>
           <text class="empty-text">未找到相关活动</text>
         </view>
 
@@ -329,6 +331,12 @@ const handleVerify = async () => {
       }
     }
   }
+}
+
+/* 骨架屏 */
+.loading-state {
+  @include flex(row, center, center);
+  widows: 100%;
 }
 
 /* 活动列表 */
