@@ -60,7 +60,11 @@
             :class="{ active: activeTag === 0 }"
             @click="selectTag(0)"
           >
-            <view class="iconfont" style="font-size: 30rpx;" />
+            <wd-icon
+              class-prefix="iconfont"
+              name="quanbu"
+              size="30rpx"
+            />
             <text>全部类型</text>
           </view>
           <view
@@ -70,11 +74,11 @@
             :class="{ active: activeTag === tag.id }"
             @click="selectTag(tag.id)"
           >
-            <view
+            <wd-icon
               v-if="tag.icon"
-              class="iconfont"
-              :class="tag.icon"
-              style="font-size: 30rpx"
+              class-prefix="iconfont"
+              :name="tag.icon"
+              size="30rpx"
             />
             <text>{{ tag.name }}</text>
           </view>
