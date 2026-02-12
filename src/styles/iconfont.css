@@ -17,6 +17,46 @@
 }
 
 /* 定义图标类名 */
+.iconfont-zhaopin:before {
+  content: "\e68c";
+}
+
+.iconfont-jingji:before {
+  content: "\e60c";
+}
+
+.iconfont-qita:before {
+  content: "\e629";
+}
+
+.iconfont-zhiyuanfuwu:before {
+  content: "\e763";
+}
+
+.iconfont-morentouxiang:before {
+  content: "\e730";
+}
+
+.iconfont-morentupian:before {
+  content: "\e6c9";
+}
+
+.iconfont-wenyiyanchu:before {
+  content: "\e717";
+}
+
+.iconfont-shetuanhuodong:before {
+  content: "\e684";
+}
+
+.iconfont-xueshujiangzuo:before {
+  content: "\e871";
+}
+
+.iconfont-scan:before {
+  content: "\e69a";
+}
+
 .iconfont-yueliang:before {
   content: "\e603";
 }

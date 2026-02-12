@@ -3,9 +3,23 @@
     
     <!-- 活动图片 -->
     <view class="activity-image-container">
-      <image class="activity-image" 
-        :src="activityDetail?.coverUrl" 
-        mode="aspectFill" />
+      <wd-img 
+        class="activity-image" 
+        :src="activityDetail?.coverUrl || '默认图'" 
+        mode="aspectFill" >
+        <template #error>
+          <wd-icon 
+            class-prefix="iconfont" 
+            name="morentupian" 
+            size="600rpx"
+            color="#f0f0f0"
+          >
+          </wd-icon>
+        </template>
+        <template #loading>
+          <AsyncLoading text="加载中..." />
+        </template>
+      </wd-img>
       <!-- 报名状态标签 -->
       <view class="status-tag"
         :style="{
@@ -19,7 +33,9 @@
       </view>
       <!-- 活动标题 -->
       <view class="activity-title">
-        <text>{{ activityDetail?.title || '无标题' }}</text>
+        <text>
+          {{ activityDetail?.title || '无标题' }}
+        </text>
       </view>
     </view>
     
@@ -27,11 +43,25 @@
     <view class="activity-content">
       
       <!-- 发起人信息 -->
-      <view class="organizer-info" @click="viewPubilcProfil(activityDetail.organizerId)">
-        <image class="organizer-avatar" 
-          :src="activityDetail?.organizerAvatar" mode="aspectFill" />
+      <view class="organizer-info" 
+        @click="viewPubilcProfil(activityDetail.organizerId)">
+        <wd-img class="organizer-avatar" 
+          :src="activityDetail?.organizerAvatar || '默认图'" 
+          mode="aspectFill" >
+          <template #error>
+            <wd-icon 
+              class-prefix="iconfont" 
+              name="morentouxiang" 
+              size="70rpx" 
+              color="#999999">
+            </wd-icon>
+          </template>
+
+        </wd-img>
         <view class="organizer-text">
-          <text class="organizer-name">{{ activityDetail?.organizerName || '默认名' }}</text>
+          <text class="organizer-name">
+            {{ activityDetail?.organizerName || '未知用户' }}
+          </text>
           <text class="organizer-detail">点击查看发起人详情</text>
         </view>
         <wd-icon name="arrow-right" size="35rpx" color="#999" />
@@ -251,11 +281,12 @@ const viewPubilcProfil = (id: number) => {
   .activity-image {
     width: 100%;
     height: 100%;
+    text-align: center;
     object-fit: cover;
   }
   .status-tag {
     position: absolute;
-    bottom: 160rpx;
+    bottom: 170rpx;
     left: $spacing-md;
     background-color: $primary-color;
     padding: 2rpx 20rpx;
@@ -271,7 +302,7 @@ const viewPubilcProfil = (id: number) => {
   .activity-title {
     position: absolute;
     left: $spacing-md;
-    bottom: 80rpx;
+    bottom: 90rpx;
     text {
       font-size: 48rpx;
       font-weight: $font-weight-bold;
@@ -304,6 +335,7 @@ const viewPubilcProfil = (id: number) => {
   .organizer-avatar {
     width: 70rpx;
     height: 70rpx;
+    overflow: hidden;
     border-radius: 50%;
     margin-right: $spacing-sm;
   }

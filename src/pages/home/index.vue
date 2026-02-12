@@ -1,16 +1,41 @@
 <template>
-  <CommonLayout headerType="home" contentBg="$background-color" :showTabBar="true" padding="0 8rpx">
-    <scroll-view class="content" 
-      @scrolltolower="handleScrollToLower"
-      scroll-y>
+  <CommonLayout
+    headerType="home"
+    contentBg="$background-color"
+    :showTabBar="true"
+    padding="0 8rpx"
+  >
+    <scroll-view class="content" @scrolltolower="handleScrollToLower" scroll-y
+      refresher-enabled="true"
+      :refresher-threshold="50"
+      refresher-default-style="none"
+      refresher-background="#f8f8f8" 
+      :refresher-triggered="isRefreshing"
+      @refresherrefresh="onRefresh">
+      <!-- 自定义下拉刷新插槽 -->
+      <template #refresher>
+        <view class="custom-refresher">
+          <view class="refresher-content" :class="{ 'refreshing': isRefreshing }">
+            <view class="refresher-icon">
+              <wd-icon name="refresh" size="40rpx" color="#f97316" :class="{ 'spin': isRefreshing }" />
+            </view>
+            <text class="refresher-text">{{ isRefreshing ? '刷新中...' : '下拉刷新' }}</text>
+          </view>
+        </view>
+      </template>
       <view class="search-section">
-        <view class="search-container" >
-          <wd-icon name="search" size="32rpx" color="#999999" class="search-icon" />
-          <wd-search 
+        <view class="search-container">
+          <wd-icon
+            name="search"
+            size="32rpx"
+            color="#999999"
+            class="search-icon"
+          />
+          <wd-search
             v-model="searchQuery"
-            hide-cancel 
-            placeholder="搜索活动..." 
-            placeholder-left 
+            hide-cancel
+            placeholder="搜索活动..."
+            placeholder-left
             custom-class="custom-search"
             :class="{ 'search-focused': isSearchFocused }"
             @focus="isSearchFocused = true"
@@ -25,13 +50,12 @@
         <text class="recommend-title">推荐活动</text>
         <view class="recommend-line"></view>
       </view>
-      
-      
+
       <!-- 标签行 -->
       <view class="tag-row">
         <scroll-view scroll-x class="tag-scroll" show-scrollbar="false">
-          <view 
-            key="0" 
+          <view
+            key="0"
             class="tag-item"
             :class="{ active: activeTag === 0 }"
             @click="selectTag(0)"
@@ -39,14 +63,19 @@
             <view class="iconfont" style="font-size: 30rpx;" />
             <text>全部类型</text>
           </view>
-          <view 
-            v-for="tag in tags" 
-            :key="tag.id" 
+          <view
+            v-for="tag in tags"
+            :key="tag.id"
             class="tag-item"
             :class="{ active: activeTag === tag.id }"
             @click="selectTag(tag.id)"
           >
-            <view v-if="tag.icon" class="iconfont" :class="tag.icon" style="font-size: 30rpx;" />
+            <view
+              v-if="tag.icon"
+              class="iconfont"
+              :class="tag.icon"
+              style="font-size: 30rpx"
+            />
             <text>{{ tag.name }}</text>
           </view>
         </scroll-view>
@@ -56,29 +85,36 @@
         <view v-if="loading" class="loading">
           <AsyncLoading text="加载中..." />
         </view>
-        <view v-else-if="activities?.length === 0" class="empty">
+        <view v-else-if="!activities?.length" class="empty">
           <text>暂无活动</text>
         </view>
         <view v-else>
-          <view 
-            v-for="activity in activities" 
-            :key="activity.id" 
+          <view
+            v-for="activity in activities"
+            :key="activity.id"
             class="activity-card"
             @click="viewDetail(activity.id)"
           >
             <!-- 活动图片 -->
             <view class="card-image-container">
               <wd-img 
-                :src="activity.coverUrl"
+                :src="activity.coverUrl || '默认图'"
                 class="card-image" 
                 mode="aspectFill" 
               >
                 <template #error>
-                  <wd-icon name=""></wd-icon>
+                  <wd-icon 
+                    class-prefix="iconfont" 
+                    name="morentupian" 
+                    size="460rpx"
+                    color="#f0f0f0"
+                  >
+                  </wd-icon>
                 </template>
                 <template #loading>
                   <AsyncLoading text="加载中..." />
                 </template>
+
               </wd-img>
               <!-- 报名状态 -->
               <view class="registration-status"
@@ -89,39 +125,46 @@
                          '#000000'
                 }"
               >
-                <view class="iconfont" style="font-size: 25rpx;" 
-                :class="{'iconfont-remen': activity.status === 2, 'iconfont-people': activity.status === 3}"
-                v-if="!(activity.status === 4)"
+                <view 
+                  class="iconfont" style="font-size: 25rpx;" 
+                  :class="{'iconfont-remen': activity.status === 2, 'iconfont-people': activity.status === 3}"
+                  v-if="!(activity.status === 4)"
                 />
                 <text>{{ activity.statusText }}</text>
               </view>
               <!-- 人数信息 -->
               <view class="participant-count">
                 <text>
-                  {{ activity.currentParticipants }}/{{ activity.maxParticipants }}人
+                  {{ activity.currentParticipants }}/{{
+                    activity.maxParticipants
+                  }}人
                 </text>
               </view>
             </view>
-            
+
             <!-- 活动标题 -->
             <text class="activity-title">{{ activity.title }}</text>
-            
+
             <!-- 活动标签 -->
             <view class="activity-tags">
-              <view 
-                v-for="tag in activity.tags" 
-                :key="tag.id" 
+              <view
+                v-for="tag in activity.tags"
+                :key="tag.id"
                 class="activity-tag"
                 :style="{
                   backgroundColor: tag.color  
                 }"
 
               >
-                <view class="iconfont" :class="tag.icon" style="font-size: 25rpx;" />
+                <wd-icon
+                  class-prefix="iconfont"
+                  :name="tag.icon"
+                  size="25rpx"
+                />
                 <text>{{ tag.name }}</text>
               </view>
             </view>
-            
+
             <!-- 活动信息 -->
             <view class="activity-info">
               <view class="info-item">
@@ -134,28 +177,39 @@
                 <text>{{ activity.location }}</text>
               </view>
             </view>
-            
+
             <!-- 底部信息 -->
             <view class="card-footer">
               <view class="organizer">
-                <image 
-                  :src="activity.organizerAvatar"
-                  @error="handleImageError($event, activity, 'organizerAvatar')"
+                <wd-img 
+                  :src="activity.organizerAvatar || '默认图'"
                   class="organizer-avatar" 
                   mode="aspectFill" 
-                />
-                <text>{{ activity.organizerName }}</text>
+                >
+                  <template #error>
+                    <wd-icon 
+                    class-prefix="iconfont" 
+                    name="morentouxiang" 
+                    size="48rpx"
+                    color="#999999"
+                    >
+                    </wd-icon>
+                  </template>
+
+                </wd-img>
+                <text>{{ activity.organizerName || '未知用户' }}</text>
               </view>
               <view class="action-button">
                 <text>查看详情</text>
-                <wd-icon name="arrow-right1" size="28rpx" style="font-weight: 600;"/>
+                <wd-icon
+                  name="arrow-right1"
+                  size="28rpx"
+                  style="font-weight: 600"
+                />
               </view>
             </view>
           </view>
-          <wd-loadmore
-            :state="state"
-            @reload="loadMore"
-          />
+          <wd-loadmore :state="state" @reload="loadMore" />
         </view>
       </view>
     </scroll-view>
@@ -166,40 +220,32 @@
 import { ref, onMounted } from 'vue';
 import { getActivityCategoryList, getActivityList, searchActivity } from '@/api/home/router';
 
-const defaultCoverImage = ref('/static/default_cover.png');
-const defaultAvatarImage = ref('/static/default_avatar.png');
-
-const handleImageError = (event: any, activity: any, field: string) => {
-  console.log(event)
-  if (field === 'coverUrl') {
-    activity.coverUrl = defaultCoverImage.value;
-  } else if (field === 'organizerAvatar') {
-    activity.organizerAvatar = defaultAvatarImage.value;
-  }
-};
 // 时间格式化函数：将10位时间戳转换为"周五 19:00"格式
 const formatTime = (timestamp: number) => {
   const date = new Date(timestamp * 1000); // 转换为毫秒
-  const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const weekDays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
   const weekDay = weekDays[date.getDay()];
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
   return `${weekDay} ${hours}:${minutes}`;
 };
+
 onMounted(async () => {
   // 获取活动分类列表
   await getCategories();
 
   // 获取活动列表
-  await getActivities();
+  getActivities();
 });
 
 const tags = ref(); // 活动分类列表
 // 获取活动分类列表
 const getCategories = async () => {
-  const { data: { list: Categories } } = await getActivityCategoryList();
+  const {
+    data: { list: Categories },
+  } = await getActivityCategoryList();
   tags.value = Categories;
-}
+};
 
 const activeTag = ref<number>(0); // 当前选中的标签
 // 选择标签
@@ -226,14 +272,14 @@ const getActivities = async () => {
   pagination.value = data.pagination;
   state.value = 'loading';
   isSearch.value = false;
-}
+};
 const isSearch = ref(false); // 是否搜索
 const searchQuery = ref(''); // 搜索框的值
 const isSearchFocused = ref(false); // 搜索框是否聚焦
 // 搜索活动
 const search = async () => {
   const keyword = searchQuery.value.trim()
-  if (!keyword){
+  if (!keyword) {
     // 非空判断
     return
   }
@@ -246,10 +292,19 @@ const search = async () => {
   loading.value = false;
   activities.value = data.list;
   isSearch.value = true;
+};
+
+const isRefreshing = ref(false); // 是否刷新中
+// 下拉刷新
+const onRefresh = async () => {
+  isRefreshing.value = true;
+  await getActivities();
+  isRefreshing.value = false;
 }
 
+// 上拉加载更多
 const handleScrollToLower = () => {
-  if (isSearch.value){
+  if (isSearch.value) {
     state.value = 'finished';
     return;
   }
@@ -264,7 +319,7 @@ const state = ref('loading'); // 加载状态
 const loadMore = async () => {
   try {
     const { data } = await getActivityList({
-      page: pagination.value.page+1,
+      page: pagination.value.page + 1,
       pageSize: 10,
       categoryId: activeTag.value,
       status: -1,
@@ -272,9 +327,9 @@ const loadMore = async () => {
     const list = data.list;
     pagination.value = data.pagination;
     const total = pagination.value.total
-    if (activities.value.length < total){
+    if (activities.value.length < total) {
       activities.value = [...activities.value, ...list];
-    }else{
+    } else {
       state.value = 'finished';
     }
   } catch (error) {
@@ -282,10 +337,9 @@ const loadMore = async () => {
   }
 }
 
-
 const viewDetail = (activityId: number) => {
   uni.navigateTo({
-    url: `/pages/home/detail?id=${activityId}`
+    url: `/pages/home/detail?id=${activityId}`,
   });
 };
 </script>
@@ -303,7 +357,6 @@ $tag-inactive-color: #111;
   display: flex;
   flex-direction: column;
   height: 80vh;
-  overflow-y: auto;
 }
 
 .search-section {
@@ -369,6 +422,14 @@ $tag-inactive-color: #111;
 .tag-scroll {
   white-space: nowrap;
   height: 100rpx;
+  ::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .tag-item {
@@ -385,11 +446,11 @@ $tag-inactive-color: #111;
   transition: all 0.3s ease;
   border: 1rpx solid transparent;
   box-shadow: $shadow-sm;
-  
+
   &:last-child {
     margin-right: 0;
   }
-  
+
   &.active {
     background-color: $tag-active-bg;
     color: $tag-active-color;
@@ -423,29 +484,34 @@ $tag-inactive-color: #111;
   overflow: hidden;
   box-shadow: 0 8rpx 10rpx 10rpx rgba(249, 115, 22, 0.05);
   background-color: $surface-color;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   padding: 25rpx;
   &:active {
     transform: translateY(2rpx);
     box-shadow: $shadow-sm;
   }
-  
+
   &:last-child {
     margin-bottom: 0;
   }
 }
 /* 卡片图片容器 */
 .card-image-container {
-    position: relative;
-    height: 400rpx;
+  position: relative;
+  height: 400rpx;
+
   .card-image {
     width: 100%;
     height: 100%;
+    text-align: center;
+    overflow: hidden;
     object-fit: cover;
     background-color: $background-color;
     border-radius: $border-radius-xl;
   }
-  
+
   /* 报名状态 */
   .registration-status {
     @include flex(row, center, center);
@@ -460,7 +526,7 @@ $tag-inactive-color: #111;
     color: $primary-color;
     font-weight: $font-weight-semibold;
   }
-  
+
   /* 人数信息 */
   .participant-count {
     position: absolute;
@@ -491,7 +557,7 @@ $tag-inactive-color: #111;
   @include flex(row, flex-start, center);
   gap: 12rpx;
   padding: 0 20rpx 20rpx;
-  
+
   .activity-tag {
     @include flex(row, center, center);
     gap: 6rpx;
@@ -510,9 +576,9 @@ $tag-inactive-color: #111;
   margin-left: 20rpx;
   margin-right: 20rpx;
   margin-bottom: 20rpx;
-  padding: 10rpx 20rpx;
-  gap: $spacing-sm;
-  background-color: #f8fafc; 
+  padding: 20rpx 20rpx;
+  gap: $spacing-md;
+  background-color: #f8fafc;
   border-radius: $border-radius-md;
 
   .log {
@@ -526,34 +592,33 @@ $tag-inactive-color: #111;
     gap: 10rpx;
     font-size: 22rpx;
     color: $text-secondary;
-    
   }
-  
 }
 
 /* 底部信息 */
 .card-footer {
   @include flex(row, space-between, center);
   padding: 20rpx;
-  
+
   .organizer {
     @include flex(row, center, center);
     gap: 12rpx;
-    
+
     .organizer-avatar {
       width: 48rpx;
       height: 48rpx;
       border-radius: 50%;
+      overflow: hidden;
       background-color: $background-color;
     }
-    
+
     text {
       font-size: 24rpx;
       color: $text-secondary;
       font-weight: $font-weight-medium;
     }
   }
-  
+
   .action-button {
     @include flex(row, center, center);
     gap: 12rpx;
@@ -564,7 +629,63 @@ $tag-inactive-color: #111;
     font-size: 24rpx;
     font-weight: $font-weight-bold;
     box-shadow: $shadow-md;
-    
+  }
+}
+
+/* 自定义下拉刷新样式 */
+.custom-refresher {
+  width: 100%;
+  height: 120rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f8f8f8;
+}
+
+.refresher-content {
+  @include flex(row, center, center);
+  gap: 16rpx;
+  padding: 20rpx;
+  border-radius: $border-radius-full;
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: $shadow-sm;
+  transition: all 0.3s ease;
+}
+
+.refresher-content.refreshing {
+  background-color: rgba(255, 255, 255, 1);
+  box-shadow: $shadow-md;
+}
+
+.refresher-icon {
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.refresher-icon .spin {
+  animation: spin 0.5s linear infinite;
+}
+
+.refresher-text {
+  font-size: 28rpx;
+  font-weight: $font-weight-medium;
+  color: $text-primary;
+  transition: all 0.3s ease;
+}
+
+.refresher-content.refreshing .refresher-text {
+  color: $primary-color;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>
