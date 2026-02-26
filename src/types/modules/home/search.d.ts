@@ -27,10 +27,20 @@ export interface List {
   maxParticipants?: number;
   status?: number;
   statusText?: string;
+  registrationStatus: number;
+  registrationStatusText: string;
   tags?: Tag[];
   
   viewCount?: number;
   createdAt?: number;
+  [property: string]: any;
+}
+
+export interface Tag {
+  color: string;
+  icon: string;
+  id: number;
+  name: string;
   [property: string]: any;
 }
 

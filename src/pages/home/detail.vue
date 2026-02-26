@@ -29,13 +29,13 @@
         <!-- 报名状态标签 -->
         <view class="status-tag"
           :style="{
-            backgroundColor: activityDetail.status === 2 ? '#f97316' :
-                             activityDetail.status === 3 ? '#4ade80' :
-                             activityDetail.status === 4 ? '#666666' :
+            backgroundColor: activityDetail.registrationStatus === 1 ? '#4ade80' :
+                             activityDetail.registrationStatus === 2 ? '#f97316' :
+                             activityDetail.registrationStatus === 3 ? '#666666' :
                               '#000000'
           }"
         >
-          <text class="status-text">{{ activityDetail?.statusText || '报名中' }}</text>
+          <text class="status-text">{{ activityDetail?.registrationStatusText || '进行中' }}</text>
         </view>
         <!-- 活动标题 -->
         <view class="activity-title">
@@ -309,11 +309,12 @@ const viewPubilcProfil = (id: number) => {
   }
   .status-tag {
     position: absolute;
-    bottom: 170rpx;
+    bottom: 160rpx;
     left: $spacing-md;
     background-color: $primary-color;
     padding: 2rpx 20rpx;
     border-radius: $border-radius-md;
+    box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.3);
     .status-text {
       color: $text-light;
       line-height: 40rpx;
@@ -325,7 +326,7 @@ const viewPubilcProfil = (id: number) => {
   .activity-title {
     position: absolute;
     left: $spacing-md;
-    bottom: 90rpx;
+    bottom: 80rpx;
     text {
       font-size: 48rpx;
       font-weight: $font-weight-bold;

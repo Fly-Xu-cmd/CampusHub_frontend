@@ -121,21 +121,21 @@
                 </template>
 
               </wd-img>
-              <!-- 报名状态 -->
+              <!-- 报名状态 未开始报名，报名中，报名已截止-->
               <view class="registration-status"
                 :style="{
-                  color: activity.status === 2 ? '$primary-color' : 
-                         activity.status === 3 ? '#4ade80' : 
-                         activity.status === 4 ? '#666666' : 
+                  color: activity.registrationStatus === 1 ? '#4ade80' : 
+                         activity.registrationStatus === 2 ? '$primary-color' : 
+                         activity.registrationStatus === 3 ? '#666666' : 
                          '#000000'
                 }"
               >
                 <view 
                   class="iconfont" style="font-size: 25rpx;" 
-                  :class="{'iconfont-remen': activity.status === 2, 'iconfont-people': activity.status === 3}"
-                  v-if="!(activity.status === 4)"
+                  :class="{'iconfont-people': activity.registrationStatus === 1, 'iconfont-remen': activity.registrationStatus === 2}"
+                  v-if="!(activity.registrationStatus === 3)"
                 />
-                <text>{{ activity.statusText }}</text>
+                <text>{{ activity.registrationStatusText }}</text>
               </view>
               <!-- 人数信息 -->
               <view class="participant-count">
@@ -214,7 +214,8 @@
               </view>
             </view>
           </view>
-          <wd-loadmore :state="state" @reload="loadMore" />
+          <wd-loadmore :state="state" @reload="loadMore" 
+          finished-text="暂无更多活动" />
         </view>
       </view>
     </scroll-view>
@@ -531,6 +532,7 @@ $tag-inactive-color: #111;
     font-size: 22rpx;
     color: $primary-color;
     font-weight: $font-weight-semibold;
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3);
   }
 
   /* 人数信息 */
@@ -543,6 +545,7 @@ $tag-inactive-color: #111;
     border-radius: $border-radius-full;
     font-size: 20rpx;
     color: #fff;
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3);
   }
 }
 
