@@ -1,131 +1,138 @@
 <template>
   <CommonLayout headerType="transparent" padding="0 0">
     
-    <!-- 活动图片 -->
-    <view class="activity-image-container">
-      <wd-img 
-        class="activity-image" 
-        :src="activityDetail?.coverUrl || '默认图'" 
-        mode="aspectFill" >
-        <template #error>
-          <wd-icon 
-            class-prefix="iconfont" 
-            name="morentupian" 
-            size="600rpx"
-            color="#f0f0f0"
-          >
-          </wd-icon>
-        </template>
-        <template #loading>
-          <AsyncLoading text="加载中..." />
-        </template>
-      </wd-img>
-      <!-- 报名状态标签 -->
-      <view class="status-tag"
-        :style="{
-          backgroundColor: activityDetail.status === 2 ? '#f97316' :
-                           activityDetail.status === 3 ? '#4ade80' :
-                           activityDetail.status === 4 ? '#666666' :
-                            '#000000'
-        }"
-      >
-        <text class="status-text">{{ activityDetail?.statusText || '报名中' }}</text>
-      </view>
-      <!-- 活动标题 -->
-      <view class="activity-title">
-        <text>
-          {{ activityDetail?.title || '无标题' }}
-        </text>
-      </view>
-    </view>
+    <!-- 骨架屏 -->
+    <ActivityDetailSkeleton v-if="loading" />
     
-    <!-- 活动内容 -->
-    <view class="activity-content">
-      
-      <!-- 发起人信息 -->
-      <view class="organizer-info" 
-        @click="viewPubilcProfil(activityDetail.organizerId)">
-        <wd-img class="organizer-avatar" 
-          :src="activityDetail?.organizerAvatar || '默认图'" 
+    <!-- 实际内容 -->
+    <template v-else>
+      <!-- 活动图片 -->
+      <view class="activity-image-container">
+        <wd-img 
+          class="activity-image" 
+          :src="activityDetail?.coverUrl || '默认图'" 
           mode="aspectFill" >
           <template #error>
             <wd-icon 
               class-prefix="iconfont" 
-              name="morentouxiang" 
-              size="70rpx" 
-              color="#999999">
+              name="morentupian" 
+              size="600rpx"
+              color="#e9e9e9"
+              custom-style="margin-top: 20rpx"
+            >
             </wd-icon>
           </template>
-
+          <template #loading>
+            <AsyncLoading text="加载中..." />
+          </template>
         </wd-img>
-        <view class="organizer-text">
-          <text class="organizer-name">
-            {{ activityDetail?.organizerName || '未知用户' }}
-          </text>
-          <text class="organizer-detail">点击查看发起人详情</text>
+        <!-- 报名状态标签 -->
+        <view class="status-tag"
+          :style="{
+            backgroundColor: activityDetail.status === 2 ? '#f97316' :
+                             activityDetail.status === 3 ? '#4ade80' :
+                             activityDetail.status === 4 ? '#666666' :
+                              '#000000'
+          }"
+        >
+          <text class="status-text">{{ activityDetail?.statusText || '报名中' }}</text>
         </view>
-        <wd-icon name="arrow-right" size="35rpx" color="#999" />
-      </view>
-      
-      <!-- 报名和地点信息 -->
-      <view class="info-cards">
-        <view class="info-card time-card">
-          <view class="info-label">
-            <wd-icon name="time" size="28rpx" color="#999" /> TIME
-          </view>
-          <text class="info-value">
-            {{ formatDate(activityDetail?.activityStartTime) }}
+        <!-- 活动标题 -->
+        <view class="activity-title">
+          <text>
+            {{ activityDetail?.title || '默认标题' }}
           </text>
-        </view>
-        <view class="info-card location-card">
-          <view class="info-label">
-            <wd-icon name="location" size="28rpx" color="#999" /> LOCATION
-          </view>
-          <text class="info-value">{{ activityDetail?.addressDetail }}</text>
         </view>
       </view>
       
-      <!-- 活动详情 -->
-      <view class="activity-details">
-        <view class="details-header">
-          <text class="details-title">活动详情</text>
+      <!-- 活动内容 -->
+      <view class="activity-content">
+        
+        <!-- 发起人信息 -->
+        <view class="organizer-info" 
+          @click="viewPubilcProfil(activityDetail.organizerId)">
+          <wd-img class="organizer-avatar" 
+            :src="activityDetail?.organizerAvatar || '默认图'" 
+            mode="aspectFill" >
+            <template #error>
+              <wd-icon 
+                class-prefix="iconfont" 
+                name="morentouxiang" 
+                size="70rpx" 
+                color="#999999">
+              </wd-icon>
+            </template>
+
+          </wd-img>
+          <view class="organizer-text">
+            <text class="organizer-name">
+              {{ activityDetail?.organizerName || '默认昵称' }}
+            </text>
+            <text class="organizer-detail">点击查看发起人详情</text>
+          </view>
+          <wd-icon name="arrow-right" size="35rpx" color="#999" />
         </view>
-        <view class="details-content">
-          <text class="details-text">
-            {{ activityDetail?.content || '欢迎来到CampusHub！' }}
-          </text>
+        
+        <!-- 报名和地点信息 -->
+        <view class="info-cards">
+          <view class="info-card time-card">
+            <view class="info-label">
+              <wd-icon name="time" size="28rpx" color="#999" /> TIME
+            </view>
+            <text class="info-value">
+              {{ formatDate(activityDetail?.activityStartTime) }}
+            </text>
+          </view>
+          <view class="info-card location-card">
+            <view class="info-label">
+              <wd-icon name="location" size="28rpx" color="#999" /> LOCATION
+            </view>
+            <text class="info-value">{{ activityDetail?.addressDetail }}</text>
+          </view>
+        </view>
+        
+        <!-- 活动详情 -->
+        <view class="activity-details">
+          <view class="details-header">
+            <text class="details-title">活动详情</text>
+          </view>
+          <view class="details-content">
+            <text class="details-text">
+              {{ activityDetail?.content || '欢迎来到CampusHub！' }}
+            </text>
+          </view>
         </view>
       </view>
-    </view>
-    
-    <!-- 底部报名按钮 -->
-    <view class="bottom-button">
-      <view class="button-row">
-        <button
-          v-if="!isSigned"
-          class="register-button primary"
-          @click="sign"
-        >
-          <text class="register-text">立即报名</text>
-        </button>
-        <button
-          v-else
-          class="register-button cancel"
-          @click="unSign"
-        >
-          <text class="register-text">取消报名</text>
-        </button>
-        <!-- 群聊按钮 -->
-        <button
-          v-if="isSigned && groupId"
-          class="chat-button"
-          @click="enterChat"
-        >
-          <wd-icon name="chat" size="40rpx" color="#fff"></wd-icon>
-          <text class="chat-text">群聊</text>
-        </button>
+      
+      <!-- 底部报名按钮 -->
+      <view class="bottom-button">
+        <view class="button-row">
+          <button
+            v-if="!isSigned"
+            class="register-button primary"
+            @click="sign"
+          >
+            <text class="register-text">立即报名</text>
+          </button>
+          <button
+            v-else
+            class="register-button cancel"
+            @click="unSign"
+          >
+            <text class="register-text">取消报名</text>
+          </button>
+          <!-- 群聊按钮 -->
+          <button
+            v-if="isSigned && groupId"
+            class="chat-button"
+            @click="enterChat"
+          >
+            <wd-icon name="chat" size="40rpx" color="#fff"></wd-icon>
+            <text class="chat-text">群聊</text>
+          </button>
+        </view>
       </view>
-    </view>
+    </template>
 
   </CommonLayout>
 </template>
@@ -134,6 +141,7 @@
 import { getActivityDetail, signActivity, cancelSign, getWaitList } from "@/api/home/router";
 import { ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
+import ActivityDetailSkeleton from "@/components/ActivityDetailSkeleton/ActivityDetailSkeleton.vue";
 
 // 时间格式化函数：将10位时间戳转换为"10.24 19:00"格式
 const formatDate = (timestamp: number) => {
@@ -155,6 +163,9 @@ const activityDetail = ref<any>({});
 // 记录是否报名
 const isSigned = ref(false);
 
+// 加载状态
+const loading = ref(true);
+
 onLoad((options: any) => {
   activityId = options.id;
   if (activityId) {
@@ -169,18 +180,30 @@ const fetchActivityDetail = () => {
     activityDetail.value = res.data.activity;
     // 假设活动详情中包含群组ID，或者通过活动ID获取
     // groupId = res.data.group_id;
+    loading.value = false;
+  }).catch(() => {
+    loading.value = false;
   });
 };
 
 // 检查报名状态
 const checkSignStatus = async () => {
-  const {
-    data: { items },
-  } = await getWaitList({
-    type: "待参加",
-  });
-  // 检查是否报名
-  isSigned.value = items?.some((item: any) => item.id == Number(activityId));
+  try {
+    const {
+      data: { items },
+    } = await getWaitList({
+      type: "待参加",
+    });
+    // 检查是否报名
+    isSigned.value = items?.some((item: any) => item.id == Number(activityId));
+  } catch (error) {
+    console.error('检查报名状态失败:', error);
+  } finally {
+    // 确保即使报名状态检查失败也关闭加载
+    if (!loading.value) {
+      loading.value = false;
+    }
+  }
 };
 
 // 报名活动
@@ -262,7 +285,7 @@ const enterChat = () => {
 // 查看发起人详情
 const viewPubilcProfil = (id: number) => {
   uni.navigateTo({
-    url: `/pages/home/PublicProfile?id=${id}`,
+    url: `/pages/home/publicProfile?id=${id}`,
   });
 };
 </script>
@@ -277,7 +300,7 @@ const viewPubilcProfil = (id: number) => {
   position: relative;
   width: 100%;
   height: 600rpx;
-  margin-top: -100rpx;
+  margin-top: -65rpx;
   .activity-image {
     width: 100%;
     height: 100%;
@@ -308,6 +331,7 @@ const viewPubilcProfil = (id: number) => {
       font-weight: $font-weight-bold;
       color: $text-light;
       line-height: 1.4;
+      text-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.5);
     }
   }  
 }
@@ -322,6 +346,7 @@ const viewPubilcProfil = (id: number) => {
   background-color: $surface-color;
   border-top-left-radius: 50rpx;
   border-top-right-radius: 50rpx;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
 }
 
 /* 发起人信息 */

@@ -1,13 +1,26 @@
 <template>
   <CommonLayout headerType="standard" title="用户详情" padding="0 8rpx">
-    <view class="profile-container">  
+    <!-- 骨架屏 -->
+    <PublicProfileSkeleton v-if="loading" />
+    
+    <!-- 实际内容 -->
+    <view v-else class="profile-container">  
       <!-- 用户信息部分 -->
       <view class="user-info-section">
         <view class="avatar-wrapper">
-          <image :src="userInfo?.avatarUrl" class="avatar" mode="aspectFill" />
+          <wd-img :src="userInfo?.avatarUrl || '默认图'" class="avatar" mode="aspectFill" >
+            <template #error>
+              <wd-icon 
+                class-prefix="iconfont" 
+                name="morentouxiang" 
+                size="200rpx" 
+                color="#999999">
+              </wd-icon>
+            </template>
+          </wd-img>
         </view>
-        <text class="username">{{ userInfo?.nickname }}</text>
-        <text class="bio">{{ userInfo?.introduction }}</text>
+        <text class="username">{{ userInfo?.nickname || '默认昵称' }}</text>
+        <text class="bio">{{ userInfo?.introduction || '默认介绍' }}</text>
         <view class="tags-row">
           <view 
             v-for="tag in tags" 
@@ -15,6 +28,7 @@
             class="tag-item"
             :style="{ backgroundColor: tag.tagColor }"
           >
+            <wd-icon class-prefix="iconfont" :name="tag.tagIcon" size="25rpx" />
             <text>{{ tag.tagName }}</text>
           </view>
         </view>
@@ -31,10 +45,20 @@
             :key="activity.id" 
             class="activity-item"
           >
-            <image :src="activity.imageUrl" class="activity-image" mode="aspectFill" />
+            <wd-img :src="activity.imageUrl || '默认图'" class="activity-image" mode="aspectFill" >
+              <template #error>
+                <wd-icon 
+                  class-prefix="iconfont" 
+                  name="morentupian" 
+                  size="120rpx" 
+                  color="#e9e9e9"
+                  >
+                </wd-icon>
+              </template>
+            </wd-img>
             <view class="activity-info">
              <text class="activity-title">
-                {{ activity.name }}
+                {{ activity.name || '默认标题' }}
                 {{ '(' + activity.status + ')' }}
               </text>
               <text class="activity-time">{{ activity.time }}</text>
@@ -57,10 +81,20 @@
             :key="activity.id" 
             class="activity-item"
           >
-            <image :src="activity.imageUrl" class="activity-image" mode="aspectFill" />
+            <wd-img :src="activity.imageUrl || '默认图'" class="activity-image" mode="aspectFill" >
+              <template #error>
+                <wd-icon 
+                  class-prefix="iconfont" 
+                  name="morentupian" 
+                  size="120rpx" 
+                  color="#e9e9e9"
+                  custom-style="margin-top: 20rpx;"
+                ></wd-icon>
+              </template>
+            </wd-img>
             <view class="activity-info">
               <text class="activity-title">
-                {{ activity.name }}
+                {{ activity.name || '默认标题' }}
                 {{ '(' + activity.status + ')' }}
               </text>
               <text class="activity-time">{{ activity.time }}</text>
@@ -79,8 +113,13 @@
 import { getUserHome } from '@/api/home/router'
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router'
+import PublicProfileSkeleton from '@/components/PublicProfileSkeleton/PublicProfileSkeleton.vue'
+
 const route = useRoute()
 const userId = route.query.id
+
+// 加载状态
+const loading = ref(true)
 
 onMounted(() => {
   getUserHome(userId as string).then((res) => {
@@ -88,6 +127,9 @@ onMounted(() => {
     tags.value = res.data.tags
     publishedActivities.value = res.data.publishedActivities.list
     joinedActivities.value = res.data.joinedActivities.list
+    loading.value = false
+  }).catch(() => {
+    loading.value = false
   })
 });
 // 用户数据
@@ -156,7 +198,10 @@ const joinedActivities = ref();
     gap: $spacing-sm;
 
     .tag-item {
-      padding: 8rpx 24rpx;
+      display: flex;
+      align-items: center;
+      gap: $spacing-xs;
+      padding: 8rpx 20rpx;
       border-radius: $border-radius-full;
       font-size: $font-size-xs;
       font-weight: $font-weight-medium;
@@ -191,7 +236,7 @@ const joinedActivities = ref();
       border-radius: $border-radius-xl;
       box-shadow: $shadow-sm;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
-
+      
       &:active {
         transform: translateY(2rpx);
         box-shadow: $shadow-sm;
@@ -201,7 +246,9 @@ const joinedActivities = ref();
         width: 160rpx;
         height: 160rpx;
         border-radius: $border-radius-md;
+        border: 2rpx solid $border-color;
         background-color: $background-color;
+        overflow: hidden;
       }
 
       .activity-info {

@@ -4,6 +4,7 @@
     contentBg="$background-color"
     :showTabBar="true"
     padding="0 8rpx"
+    :enableScroll="false"
   >
     <scroll-view class="content" @scrolltolower="handleScrollToLower" scroll-y
       refresher-enabled="true"
@@ -111,7 +112,7 @@
                     class-prefix="iconfont" 
                     name="morentupian" 
                     size="460rpx"
-                    color="#f0f0f0"
+                    color="#e9e9e9"
                   >
                   </wd-icon>
                 </template>
@@ -361,6 +362,7 @@ $tag-inactive-color: #111;
   display: flex;
   flex-direction: column;
   height: 80vh;
+
 }
 
 .search-section {
