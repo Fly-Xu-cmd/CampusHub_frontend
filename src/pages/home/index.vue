@@ -6,13 +6,15 @@
     padding="0 8rpx"
     :enableScroll="false"
   >
-    <scroll-view class="content" @scrolltolower="handleScrollToLower" scroll-y
+    <scroll-view class="content" :scroll-top="scrollTop" @scrolltolower="handleScrollToLower" scroll-y
+      :scroll-with-animation="true"
       refresher-enabled="true"
       :refresher-threshold="50"
       refresher-default-style="none"
       refresher-background="#f8f8f8" 
       :refresher-triggered="isRefreshing"
-      @refresherrefresh="onRefresh">
+      @refresherrefresh="onRefresh"
+      @scroll="handleScroll">
       <!-- 自定义下拉刷新插槽 -->
       <template #refresher>
         <view class="custom-refresher">
@@ -219,12 +221,21 @@
         </view>
       </view>
     </scroll-view>
+    
+    <!-- 回到顶部按钮 -->
+    <view v-if="showBackTop" class="back-to-top" @click="scrollToTop">
+      <wd-icon name="arrow-up" size="40rpx" color="#fff" />
+    </view>
   </CommonLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getActivityCategoryList, getActivityList, searchActivity } from '@/api/home/router';
+
+// 回到顶部相关
+const scrollTop = ref(0);
+const showBackTop = ref(false);
 
 // 时间格式化函数：将10位时间戳转换为"周五 19:00"格式
 const formatTime = (timestamp: number) => {
@@ -347,6 +358,22 @@ const viewDetail = (activityId: number) => {
   uni.navigateTo({
     url: `/pages/home/detail?id=${activityId}`,
   });
+};
+
+// 滚动事件处理
+const handleScroll = (event: any) => {
+  // 当滚动距离超过300rpx时显示回到顶部按钮
+  showBackTop.value = event.detail.scrollTop > 300;
+};
+
+// 回到顶部
+const scrollToTop = () => {
+  // 重置scrollTop值为0，触发滚动到顶部
+  scrollTop.value = 0;
+  // 延迟重置scrollTop，以便下次滚动时能正常工作
+  setTimeout(() => {
+    scrollTop.value = -1;
+  }, 100);
 };
 </script>
 
@@ -695,6 +722,28 @@ $tag-inactive-color: #111;
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* 回到顶部按钮 */
+.back-to-top {
+  position: fixed;
+  bottom: 180rpx;
+  right: 30rpx;
+  width: 90rpx;
+  height: 90rpx;
+  background-color: rgba(249, 115, 22,0.9);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: $shadow-md;
+  z-index: 999;
+  transition: all 0.3s ease;
+  
+  &:active {
+    transform: scale(0.9);
+    box-shadow: $shadow-sm;
   }
 }
 </style>

@@ -154,12 +154,17 @@ onLoad(() => {
 const mpCapsuleSpace = computed(() => {
   // #ifdef MP-WEIXIN
   return `${systemStore.capsuleWidth + systemStore.capsuleRight + 10}px`;
+
+  // #endif
+  return "0px";
 });
 
 // 2. 标题最大宽度
 const titleMaxWidth = computed(() => {
   // #ifdef MP-WEIXIN
   return `calc(100vw - 220rpx)`;
+  // #endif
+  return "60%";
 });
 
 // 3. 内容区域样式
