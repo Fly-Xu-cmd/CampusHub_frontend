@@ -24,13 +24,17 @@ export interface InterestTag {
 export interface PostUserDetailsRequest {
   age: number;
   /**
-   * 要上传的头像图片
+   * 要上传的头像图片的id
    */
-  avatar_image: string;
+  avatarId: number;
+  avatarUrl?: string;
   gender: string;
+  /**
+   * 标签id
+   */
+  interestTagIds: string[];
   introduction: string;
   nickname: string;
-  interestTagIds: number[];
   [property: string]: any;
 }
 // 更新用户兴趣标签请求数据
@@ -46,8 +50,10 @@ export interface PostUserInterestsRequest {
 
 // 修改用户密码请求数据
 export interface PostUserPasswordRequest {
-  originPassword: string;
-  newPassword: string;
+  qq_code: string;
+  qq_email: string;
+  new_password: string;
+
   [property: string]: any;
 }
 

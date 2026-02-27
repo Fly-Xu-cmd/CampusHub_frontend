@@ -37,6 +37,5 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    ssr: { format: "cjs" },
   };
 });

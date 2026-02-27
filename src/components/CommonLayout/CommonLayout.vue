@@ -3,7 +3,11 @@
     <view
       class="header-bg"
       :class="{ 'transparent-bg': headerType === 'transparent' }"
-      :style="headerType === 'transparent' ? { background: 'transparent', backdropFilter: 'none' } : {}"
+      :style="
+        headerType === 'transparent'
+          ? { background: 'transparent', backdropFilter: 'none' }
+          : {}
+      "
     >
       <view
         v-if="headerType === 'home'"
@@ -100,6 +104,7 @@
     >
       <slot></slot>
       <view
+        v-if="isSafeArea"
         class="safe-area-spacer"
         :style="{ height: footerSpacerHeight }"
       ></view>
@@ -128,6 +133,7 @@ interface Props {
   padding?: string;
   systemMessageCount?: number; // 新增系统消息数量
   enableScroll?: boolean; // 控制是否启用内部scroll-view滚动
+  isSafeArea?: boolean; // 是否启用底部安全区域适配
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -138,6 +144,7 @@ const props = withDefaults(defineProps<Props>(), {
   showBorder: false,
   rightText: "提交",
   enableScroll: true,
+  isSafeArea: true,
 });
 
 const emit = defineEmits(["rightClick"]);

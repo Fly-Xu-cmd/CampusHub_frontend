@@ -1,11 +1,14 @@
 <template>
   <CommonLayout
     headerType="none"
-    contentBg="#f6faff"
+    :contentBg="isAuthenticated ? 'fff' : '#f6faff'"
     padding="0 0"
     :showTabBar="true"
+    :isSafeArea="false"
   >
-    <ClientOnly>
+    <ClientOnly
+      style="background: linear-gradient(180deg, #f6faff 0%, #ffffff 100%)"
+    >
       <view class="profile-container">
         <!-- 未登录状态占位符 -->
         <view v-if="!isAuthenticated" class="guest-placeholder">

@@ -26,7 +26,7 @@ const apiUrls = {
   getProfile: "/api/v1/users/details",
   updateProfile: "/api/v1/users/details",
   updateInterests: "/api/v1/interests",
-  updatePassword: "/api/v1/users/info/password",
+  updatePassword: "/api/v1/users/info/password/qq_email",
   getAuthProgress: "/api/v1/verify/student/current",
   postStudentAuth: "/api/v1/verify/student/apply",
   postStudentAuthConfirm: "/api/v1/verify/student/confirm",
@@ -61,9 +61,7 @@ export const updateProfileWithAvatar = (data: PostUserDetailsRequest) => {
     interestTagIds: data.interestTagIds,
   };
 
-  return upload<Response<UserDetailsData>>(apiUrls.updateProfile, formData, [
-    "avatar_image",
-  ]);
+  return upload<Response<UserDetailsData>>(apiUrls.updateProfile, formData);
 };
 
 // 更新用户兴趣标签
@@ -101,7 +99,6 @@ export const postStudentAuthWithFiles = (data: PostStudentAuthRequest) => {
   return upload<Response<PostStudentAuthData>>(
     apiUrls.postStudentAuth,
     formData,
-    ["front_image", "back_image"],
   );
 };
 

@@ -182,7 +182,8 @@
 import { ref, computed, nextTick } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useUserStore } from "@/store/user";
-import { updateProfileWithAvatar } from "@/api/profile/router";
+import { updateProfile } from "@/api/profile/router";
+import { postId } from "@/api/publish/router";
 import { getTags } from "@/api/tags/router";
 import type { PostUserDetailsRequest } from "@/types/modules/profile";
 import type { InterestTag } from "@/types/modules/profile";
@@ -191,6 +192,7 @@ const userStore = useUserStore();
 const loading = ref(false);
 const hasNewAvatar = ref(false);
 const newAvatarPath = ref("");
+const newAvatarId = ref(0);
 const isDataReady = ref(false); // 数据是否已准备好
 
 // 年龄范围：10-80岁
@@ -206,7 +208,7 @@ const formData = ref({
   gender: "",
   age: 0,
   introduction: "",
-  interestTagIds: [] as number[],
+  interestTagIds: [] as string[],
 });
 
 // 头像URL（优先显示新选择的上传头像）
@@ -239,7 +241,7 @@ const fetchTags = async () => {
 
 // 切换标签选择
 const toggleTag = (tagId: number) => {
-  const index = formData.value.interestTagIds.indexOf(tagId);
+  const index = formData.value.interestTagIds.indexOf(tagId + "");
   if (index > -1) {
     formData.value.interestTagIds.splice(index, 1);
   } else {
@@ -248,13 +250,13 @@ const toggleTag = (tagId: number) => {
       uni.showToast({ title: "最多选择10个标签", icon: "none" });
       return;
     }
-    formData.value.interestTagIds.push(tagId);
+    formData.value.interestTagIds.push(tagId + "");
   }
 };
 
 // 判断标签是否被选中
 const isTagSelected = (tagId: number) => {
-  return formData.value.interestTagIds.includes(tagId);
+  return formData.value.interestTagIds.includes(tagId + "");
 };
 
 // 判断是否为图片URL
@@ -274,7 +276,8 @@ onLoad(() => {
       gender: userInfo.gender || "",
       age: userInfo.age ? Number(userInfo.age) : 0,
       introduction: userInfo.introduction || "",
-      interestTagIds: userInfo.interestTags?.map((tag) => tag.id) || [],
+      interestTagIds:
+        userInfo.interestTags?.map((tag) => tag.id + "") || ([] as string[]),
     };
     isDataReady.value = true;
   });
@@ -295,13 +298,39 @@ const chooseAvatar = () => {
     sizeType: ["compressed"], // 选择压缩后的图片
     sourceType: ["album", "camera"],
     success: (res) => {
-      const tempFilePath = res.tempFilePaths[0];
-      newAvatarPath.value = tempFilePath;
-      hasNewAvatar.value = true;
-      console.log("选择的头像路径:", tempFilePath);
+      const filePath = res.tempFilePaths[0];
+
+      // 显示上传中提示
+      uni.showLoading({ title: "上传中...", mask: true });
+
+      // 调用上传接口获取头像ID
+      postId(filePath, "avatar")
+        .then((response) => {
+          uni.hideLoading();
+
+          // upload 函数返回格式：{ data: { code: 0, data: { id, ... } } }
+          if (response.data && response.data.data && response.data.data.id) {
+            newAvatarId.value = response.data.data.id; // 获取新的头像ID
+            hasNewAvatar.value = true;
+            newAvatarPath.value = filePath; // 显示新选择的头像
+            uni.showToast({
+              title: "头像上传成功",
+              icon: "success",
+              duration: 1500,
+            });
+          } else {
+            uni.showToast({ title: "上传头像失败，请重试", icon: "none" });
+          }
+        })
+        .catch((error) => {
+          uni.hideLoading();
+          console.error("上传头像失败:", error);
+          // 错误提示已在 upload 函数中处理，这里不需要再提示
+        });
     },
     fail: (err) => {
       console.error("选择图片失败:", err);
+      uni.showToast({ title: "选择图片失败", icon: "none" });
     },
   });
 };
@@ -334,12 +363,12 @@ const handleSave = async () => {
       gender: formData.value.gender,
       age: formData.value.age,
       introduction: formData.value.introduction.trim(),
-      avatar_image: hasNewAvatar.value ? newAvatarPath.value : "",
+      avatarId: hasNewAvatar.value ? newAvatarId.value : 0,
       interestTagIds: formData.value.interestTagIds,
     };
 
     // 使用支持头像上传的接口
-    const response = await updateProfileWithAvatar(requestData);
+    const response = await updateProfile(requestData);
 
     uni.hideLoading();
     uni.showToast({ title: "保存成功", icon: "success" });

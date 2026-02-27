@@ -658,33 +658,56 @@ export const del = <T>(
  * 文件上传函数（支持 multipart/form-data，可上传多个文件）
  * @param url 上传地址
  * @param formData 表单数据，包含文件路径/File对象和其他字段
- * @param fileFields 文件字段名数组，指定哪些字段是文件
  * @param options 请求选项
+ * @description
+ * 自动识别文件字段：
+ * - string 类型的本地文件路径（包含路径分隔符 / 或 \）
+ * - File、Blob 对象
+ * - 其他值作为普通表单字段（数组会自动序列化为 JSON 字符串）
  */
-export const upload = <T>(
+export const upload = async <T>(
   url: string,
   formData: Record<string, any>,
-  fileFields: string[],
   options?: Omit<RequestOptions, "url" | "method" | "data">,
 ): Promise<T> => {
-  return new Promise((resolve, reject) => {
-    // 检查是否所有文件字段都有值
-    const hasAllFiles = fileFields.every((field) => {
-      const value = formData[field];
-      return value && (typeof value === "string" || value instanceof File);
-    });
-
-    if (!hasAllFiles) {
-      reject(new Error("缺少必需的文件字段"));
-      return;
-    }
-
-    // 构建 formData（非文件字段）
+  // 自动识别文件字段
+  const identifyFileFields = (
+    data: Record<string, any>,
+  ): { fileFields: string[]; otherFields: Record<string, any> } => {
+    const fileFields: string[] = [];
     const otherFields: Record<string, any> = {};
-    for (const [key, value] of Object.entries(formData)) {
-      if (!fileFields.includes(key) && value !== undefined && value !== null) {
-        // 数组类型需要序列化为 JSON 字符串
+
+    for (const [key, value] of Object.entries(data)) {
+      if (value === undefined || value === null) {
+        continue;
+      }
+
+      // 判断是否为文件字段
+      const isFile =
+        // File 或 Blob 对象
+        value instanceof File ||
+        value instanceof Blob ||
+        // 字符串类型的本地文件路径或 blob URL
+        (typeof value === "string" &&
+          (
+            // blob URL（H5 环境 uni.chooseImage 返回的格式）
+            value.startsWith("blob:") ||
+            // 本地文件路径（包含路径分隔符，且不是外部 URL）
+            (
+              (value.includes("/") || value.includes("\\")) &&
+              !value.startsWith("http://") &&
+              !value.startsWith("https://") &&
+              !value.startsWith("data:")
+            )
+          ));
+
+      if (isFile) {
+        fileFields.push(key);
+      } else {
+        // 普通字段
         if (Array.isArray(value)) {
+          otherFields[key] = JSON.stringify(value);
+        } else if (typeof value === "object") {
           otherFields[key] = JSON.stringify(value);
         } else {
           otherFields[key] = String(value);
@@ -692,125 +715,171 @@ export const upload = <T>(
       }
     }
 
-    // 获取 token
-    const token = uni.getStorageSync("accessToken");
+    return { fileFields, otherFields };
+  };
 
-    // #ifdef H5
-    // H5 环境：使用 FormData + fetch
-    const formDataObj = new FormData();
+  const { fileFields, otherFields } = identifyFileFields(formData);
 
-    // 添加普通字段
-    Object.entries(otherFields).forEach(([key, value]) => {
-      formDataObj.append(key, value);
-    });
+  // 验证是否至少有一个文件
+  if (fileFields.length === 0) {
+    throw new Error("未找到要上传的文件");
+  }
 
-    // 辅助函数：将文件路径转换为 File
-    const convertPathToFile = async (
-      filePath: string,
-      fieldName: string,
-    ): Promise<void> => {
-      try {
-        const response = await fetch(filePath);
-        const blob = await response.blob();
-        const fileName = filePath.split("/").pop() || `image_${Date.now()}.jpg`;
-        const file = new File([blob], fileName, {
-          type: blob.type || "image/jpeg",
-        });
-        formDataObj.append(fieldName, file);
-      } catch (e) {
-        console.error(`转换文件失败: ${fieldName}`, e);
-        throw new Error(`文件 ${fieldName} 转换失败`);
-      }
-    };
+  // 应用请求拦截器获取配置
+  const config = applyRequestInterceptors({
+    ...options,
+    url,
+    method: "POST",
+  });
 
-    // 处理文件字段
-    const filePromises = fileFields.map((field) => {
-      const value = formData[field];
-      if (value instanceof File) {
-        // 直接是 File 对象
-        formDataObj.append(field, value);
-        return Promise.resolve();
-      } else if (typeof value === "string") {
-        // 是文件路径，需要转换
-        return convertPathToFile(value, field);
-      }
+  // 处理 URL（复用 http 方法的逻辑）
+  let requestUrl = url;
+  if (!url.startsWith("http")) {
+    const isH5 =
+      typeof window !== "undefined" && systemInfo.uniPlatform === "web";
+    if (!isH5) {
+      requestUrl = BASE_URL + url;
+    }
+  }
+
+  logger.info(`Upload: POST ${requestUrl}`, {
+    fileFields,
+    otherFields,
+  });
+
+  // #ifdef H5
+  // H5 环境：使用 FormData + fetch
+  const formDataObj = new FormData();
+
+  // 添加普通字段
+  Object.entries(otherFields).forEach(([key, value]) => {
+    formDataObj.append(key, value);
+  });
+
+  // 辅助函数：将文件路径转换为 File
+  const convertPathToFile = async (
+    filePath: string,
+    fieldName: string,
+  ): Promise<void> => {
+    try {
+      const response = await fetch(filePath);
+      const blob = await response.blob();
+      // 从路径中提取文件名，或生成默认文件名
+      const fileName =
+        filePath.split("/").pop()?.split("\\").pop() ||
+        `file_${Date.now()}.bin`;
+      const file = new File([blob], fileName, { type: blob.type || "" });
+      formDataObj.append(fieldName, file);
+    } catch (e) {
+      logger.error(`文件转换失败: ${fieldName}`, e);
+      throw new Error(`文件 ${fieldName} 读取失败`);
+    }
+  };
+
+  // 处理文件字段
+  const filePromises = fileFields.map((field) => {
+    const value = formData[field];
+    if (value instanceof File || value instanceof Blob) {
+      // 直接是 File/Blob 对象
+      formDataObj.append(field, value);
       return Promise.resolve();
+    } else if (typeof value === "string") {
+      // 是文件路径，需要转换
+      return convertPathToFile(value, field);
+    }
+    return Promise.resolve();
+  });
+
+  try {
+    // 所有文件处理完成后发送请求
+    await Promise.all(filePromises);
+
+    const response = await fetch(requestUrl, {
+      method: "POST",
+      headers: {
+        Authorization: config.header?.Authorization || "",
+        "X-Client-Info": config.header?.["X-Client-Info"] || userAgent,
+        // 不设置 Content-Type，让浏览器自动设置 multipart/form-data 边界
+      },
+      body: formDataObj,
     });
 
-    // 所有文件处理完成后发送请求
-    Promise.all(filePromises)
-      .then(() => {
-        return fetch(BASE_URL + url, {
-          method: "POST",
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-            // 不设置 Content-Type，让浏览器自动设置 multipart/form-data 边界
-          },
-          body: formDataObj,
-        });
-      })
-      .then((response) => response.json())
-      .then((result) => {
-        if (result.code === 0) {
-          resolve({ data: result } as T);
-        } else {
-          const businessMessage =
-            getBusinessCodeMessage(result.code) || result.message || "上传失败";
-          if (options?.showErrorToast !== false) {
-            uni.showToast({
-              title: businessMessage,
-              icon: "none",
-              duration: 2000,
-            });
-          }
-          reject(new Error(`业务错误(${result.code}): ${businessMessage}`));
-        }
-      })
-      .catch((err) => {
-        const errorMessage =
-          ErrorCodeMap[err.message] || err.message || "上传失败";
-        if (options?.showErrorToast !== false) {
-          uni.showToast({ title: errorMessage, icon: "none", duration: 2000 });
-        }
-        reject(new Error(errorMessage));
-      });
-    // #endif
+    const result = await response.json();
+    logger.info(`Upload Response:`, result);
 
-    // #ifndef H5
-    // 非H5环境（小程序/App）：使用 uni.uploadFile
-    // 构建文件列表
-    interface UploadFileItem {
-      name: string;
-      uri: string;
-    }
-    const files: UploadFileItem[] = [];
+    // 业务码处理（复用 http 方法的逻辑）
+    if (result.code !== 0) {
+      const businessCode = result.code;
+      const businessMessage =
+        result.message || getBusinessCodeMessage(businessCode);
 
-    for (const field of fileFields) {
-      const value = formData[field];
-      if (value) {
-        files.push({
-          name: field,
-          uri: value,
-        });
+      // Token 错误处理
+      if (isTokenError(businessCode)) {
+        if (isRefreshTokenError(businessCode)) {
+          handleTokenError();
+          handleBusinessError(businessCode, businessMessage, config);
+          throw new Error(`业务错误(${businessCode}): ${businessMessage}`);
+        }
+
+        // 尝试刷新 Token
+        if (options?.autoRefresh !== false) {
+          await attemptTokenRefresh();
+          // Token 已刷新并保存到 storage，重新上传
+          return upload<T>(url, formData, options);
+        }
+
+        handleTokenError();
       }
+
+      // 显示错误提示
+      if (options?.showErrorToast !== false) {
+        handleBusinessError(businessCode, businessMessage, config);
+      }
+
+      throw new Error(`业务错误(${businessCode}): ${businessMessage}`);
     }
 
-    if (files.length === 0) {
-      reject(new Error("没有找到要上传的文件"));
-      return;
+    // 成功返回
+    return { data: result } as T;
+  } catch (err: any) {
+    // 网络错误处理
+    const errorMessage = err.message || "上传失败";
+    if (options?.showErrorToast !== false) {
+      uni.showToast({
+        title: errorMessage,
+        icon: "none",
+        duration: 2000,
+      });
     }
+    throw err;
+  }
+  // #endif
 
+  // #ifndef H5
+  // 非H5环境（小程序/App）：使用 uni.uploadFile
+  interface UploadFileItem {
+    name: string;
+    uri: string;
+  }
+
+  const files: UploadFileItem[] = fileFields.map((field) => ({
+    name: field,
+    uri: formData[field],
+  }));
+
+  return new Promise((resolve, reject) => {
     uni.uploadFile({
-      url: BASE_URL + url,
+      url: requestUrl,
       files: files,
       formData: otherFields,
       header: {
-        Authorization: token ? `Bearer ${token}` : "",
+        Authorization: config.header?.Authorization || "",
+        "X-Client-Info": config.header?.["X-Client-Info"] || userAgent,
         ...(options?.header || {}),
       },
       timeout: options?.timeout || 30000,
       success: (res) => {
-        // uni.uploadFile 的 res.data 是字符串类型，需要解析
+        // 解析响应数据
         let responseData: any;
         try {
           responseData =
@@ -819,84 +888,62 @@ export const upload = <T>(
           responseData = res.data;
         }
 
-        // 构造标准响应格式
-        const processedResponse: Response = {
-          statusCode: res.statusCode, 
-          data: responseData,
-          header: (res as any).header || {},
-          errMsg: res.errMsg,
-        };
+        logger.info(`Upload Response:`, responseData);
 
-        // 业务码处理
+        // 业务码处理（复用 http 方法的逻辑）
         if (responseData && typeof responseData === "object") {
           if (responseData.code === 0) {
-            // 成功
-            resolve(processedResponse as T);
+            // 成功返回
+            resolve({ data: responseData } as T);
           } else {
             // 业务错误
+            const businessCode = responseData.code;
             const businessMessage =
-              getBusinessCodeMessage(responseData.code) ||
               responseData.message ||
-              "请求失败";
-
-            // 显示错误提示（除非禁用）
-            if (options?.showErrorToast !== false) {
-              uni.showToast({
-                title: businessMessage,
-                icon: "none",
-                duration:
-                  responseData.code === 2016 ||
-                  responseData.code === 2301 ||
-                  responseData.code === 2105
-                    ? 2500
-                    : 2000,
-              });
-            }
+              getBusinessCodeMessage(businessCode);
 
             // Token 错误处理
-            if (isTokenError(responseData.code)) {
-              // 如果是刷新 Token 无效错误（2055/2056），直接清除登录状态
-              if (isRefreshTokenError(responseData.code)) {
+            if (isTokenError(businessCode)) {
+              if (isRefreshTokenError(businessCode)) {
                 handleTokenError();
+                handleBusinessError(businessCode, businessMessage, config);
                 reject(
-                  new Error(
-                    `业务错误(${responseData.code}): ${businessMessage}`,
-                  ),
+                  new Error(`业务错误(${businessCode}): ${businessMessage}`),
                 );
                 return;
               }
 
-              // 其他 Token 错误，尝试刷新
+              // 尝试刷新 Token
               if (options?.autoRefresh !== false) {
                 attemptTokenRefresh()
                   .then(() => {
                     // Token 刷新成功，重新上传
-                    upload<T>(url, formData, fileFields, options)
-                      .then(resolve)
-                      .catch(reject);
+                    upload<T>(url, formData, options).then(resolve).catch(reject);
                   })
-                  .catch((error) => {
-                    console.error("Token 刷新失败:", error);
+                  .catch(() => {
                     handleTokenError();
                     reject(
-                      new Error(
-                        `业务错误(${responseData.code}): ${businessMessage}`,
-                      ),
+                      new Error(`业务错误(${businessCode}): ${businessMessage}`),
                     );
                   });
                 return;
               }
             }
 
-            reject(
-              new Error(`业务错误(${responseData.code}): ${businessMessage}`),
-            );
+            // 显示错误提示
+            if (options?.showErrorToast !== false) {
+              handleBusinessError(businessCode, businessMessage, config);
+            }
+
+            reject(new Error(`业务错误(${businessCode}): ${businessMessage}`));
           }
         } else {
-          resolve(processedResponse as T);
+          // 响应格式不是标准对象，直接返回
+          resolve({ data: responseData } as T);
         }
       },
       fail: (err) => {
+        logger.error(`Upload Fail: ${requestUrl}`, err);
         // 网络错误处理
         const errorMessage =
           ErrorCodeMap[err.errMsg] || err.errMsg || "网络请求失败";
@@ -912,6 +959,6 @@ export const upload = <T>(
         reject(new Error(errorMessage));
       },
     });
-    // #endif
   });
+  // #endif
 };
