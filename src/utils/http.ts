@@ -85,7 +85,7 @@ const env = import.meta.env.MODE;
 // 根据环境设置 BASE_URL
 const BASE_URL =
   env === "production"
-    ? import.meta.env.VITE_PROD_BASE_URL || "https://192.168.10.9"
+    ? import.meta.env.VITE_PROD_BASE_URL || "http://192.168.10.9"
     : import.meta.env.VITE_BASE_URL || "http://192.168.10.9";
 
 // 获取系统信息用于 User-Agent
