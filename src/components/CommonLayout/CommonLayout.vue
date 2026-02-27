@@ -93,10 +93,10 @@
     </view>
 
     <scroll-view
-      scroll-y
+      :scroll-y="props.enableScroll"
       class="main-content"
       :style="contentStyle"
-      :enable-back-to-top="true"
+      :enable-back-to-top="props.enableScroll"
     >
       <slot></slot>
       <view
@@ -127,6 +127,7 @@ interface Props {
   contentBg?: string;
   padding?: string;
   systemMessageCount?: number; // 新增系统消息数量
+  enableScroll?: boolean; // 控制是否启用内部scroll-view滚动
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -136,6 +137,7 @@ const props = withDefaults(defineProps<Props>(), {
   showTabBar: false,
   showBorder: false,
   rightText: "提交",
+  enableScroll: true,
 });
 
 const emit = defineEmits(["rightClick"]);
@@ -152,6 +154,7 @@ onLoad(() => {
 const mpCapsuleSpace = computed(() => {
   // #ifdef MP-WEIXIN
   return `${systemStore.capsuleWidth + systemStore.capsuleRight + 10}px`;
+
   // #endif
   return "0px";
 });
