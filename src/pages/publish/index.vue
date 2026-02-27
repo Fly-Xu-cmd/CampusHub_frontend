@@ -22,7 +22,6 @@
 			upload-text="上传活动封面/视频"
 		/>
 			<!-- 上传组件 -->
-
 			<!-- 活动标题 -->
 		<view class="form-item title-item">
 			<input type="text" v-model="activityTitle" placeholder="活动标题" class="title-input" placeholder-style="color: #999;">
@@ -102,28 +101,6 @@
 				</view>
 			</view>
 
-			<!-- 标签选择器 -->
-		<view v-if="isShowTagPicker" class="tag-picker-container">
-			<view class="tag-picker-content">
-				<view class="tag-picker-header">
-					<text class="tag-picker-title">选择标签</text>
-					<view class="tag-picker-close" @click="toggleTagPicker">×</view>
-				</view>
-				<view class="tag-picker-body">
-					<view v-for="tag in tags" :key="tag.id" 
-					     class="tag-picker-item" 
-					     :class="{ active: selectedTags.includes(tag.id) }"
-					     :style="selectedTags.includes(tag.id) ? { backgroundColor: tag.color, color: '#fff' } : {}"
-					     @click="selectTag(tag.id)">
-						{{ tag.name }}
-					</view>
-				</view>
-				<view class="tag-picker-footer">
-					<button class="tag-picker-confirm" @click="toggleTagPicker">确定</button>
-				</view>
-			</view>
-		</view>
-
 		<!-- 日历选择器组件由TimeSelect组件内部处理 -->
 
 			<!-- 活动详情 -->
@@ -158,7 +135,7 @@ interface Tag {
 }
 
 	const publishStore = usePublishStore()
-	const activityTitle = ref<string>('')
+const activityTitle = ref<string>('')
 const activityDetail = ref<string>('')
 const fileList = ref<any[]>([])
 const peopleLimit = ref<number>(20)
@@ -180,13 +157,6 @@ const isShowPicker = ref<boolean>(false)
 const isShowSignupPicker = ref<boolean>(false)
 const timeError = ref<string>('')
 const signupTimeError = ref<string>('')
-
-
-
-
-
-
-
 
 
 // 切换标签选择器显示/隐藏
@@ -641,16 +611,16 @@ const goBackHome = () => {
 	}
 
 	.detail-textarea {
-		width: 100%;
-		min-height: 200rpx;
-		padding: 20rpx;
-		font-size: 26rpx;
-		color: #333;
-		border: 1rpx solid #f0f0f0;
-		border-radius: 16rpx;
-		box-sizing: border-box;
-		resize: none;
-	}
+	width: 100%;
+	min-height: 200rpx;
+	padding: 20rpx;
+	font-size: 26rpx;
+	color: #333;
+	border: 1rpx solid #000000;
+	border-radius: 16rpx;
+	box-sizing: border-box;
+	resize: none;
+}
 
 	
 
