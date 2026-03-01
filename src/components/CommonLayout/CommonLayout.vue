@@ -152,7 +152,16 @@ const systemStore = useSystemStore();
 
 onLoad(() => {
   // 1. 初始化系统布局信息
+  // 仅在客户端初始化，避免 SSR 时调用 uni.getWindowInfo()
+  // #ifdef H5
+  if (!import.meta.env.SSR) {
+    systemStore.initSystemInfo();
+  }
+  // #endif
+
+  // #ifndef H5
   systemStore.initSystemInfo();
+  // #endif
 });
 
 // --- 核心计算逻辑 ---

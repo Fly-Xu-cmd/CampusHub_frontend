@@ -479,6 +479,7 @@ const handleScanQRCode = () => {
 .profile-container {
   @include flex(column, flex-start, stretch);
   height: 100%;
+  width: 100%;
 }
 
 /* --- 未登录占位符 --- */
@@ -564,6 +565,7 @@ const handleScanQRCode = () => {
 
 /* --- 头部区域 --- */
 .header-section {
+  padding: $spacing-sm;
   background-color: $surface-color; // #ffffff
   padding-bottom: $spacing-xl; // 32rpx
   padding-top: $spacing-xl; // 32rpx

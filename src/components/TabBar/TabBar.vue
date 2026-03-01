@@ -39,7 +39,8 @@ import { useSystemStore } from '@/store/system';
 
 const systemStore = useSystemStore();
 
-// 使用 ref 而不是 computed，避免 SSR 不匹配
+// 添加客户端挂载标志，避免 SSR 不匹配
+const isMounted = ref(false);
 const currentPath = ref('');
 
 // 计算底部位置：基础距离 + 安全区域高度
@@ -55,10 +56,16 @@ const tabBarBottom = computed(() => {
 onMounted(() => {
   const pages = getCurrentPages();
   currentPath.value = pages[pages.length - 1]?.route || '';
+  isMounted.value = true;
 });
 
 // 判断是否是激活的 tab
 const isActiveTab = (path: string): boolean => {
+  // SSR 时统一返回 false，避免不匹配
+  if (!isMounted.value) {
+    return false;
+  }
+
   // 移除查询参数并比较
   const basePath = (route: string) => {
     const match = route.match(/^\/pages\/[^\/]+/);

@@ -13,6 +13,8 @@ import type {
   WSJoinGroupMessage,
   WSLeaveGroupMessage,
   WSMarkReadMessage,
+  WSStudentAuthUpdateData,
+  WSVerifyProgressData,
 } from "@/types/modules/chat";
 
 type WebSocketEventCallback = (data?: any) => void;
@@ -239,6 +241,16 @@ class ChatWebSocket {
 
       case "pong":
         // 心跳响应，不做处理
+        break;
+
+      case "student_auth_update":
+        // 学生认证状态更新
+        this.emit("studentAuthUpdate", message.data);
+        break;
+
+      case "verify_progress":
+        // 认证进度实时更新
+        this.emit("verifyProgress", message.data);
         break;
 
       default:

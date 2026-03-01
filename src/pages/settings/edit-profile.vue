@@ -208,7 +208,7 @@ const formData = ref({
   gender: "",
   age: 0,
   introduction: "",
-  interestTagIds: [] as string[],
+  interestTagIds: [] as number[],
 });
 
 // 头像URL（优先显示新选择的上传头像）
@@ -216,7 +216,9 @@ const avatarUrl = computed(() => {
   if (hasNewAvatar.value && newAvatarPath.value) {
     return newAvatarPath.value;
   }
-  return userStore.userInfo.avatarUrl || "/static/default_avatar.png";
+  return userStore.userInfo.avatarUrl && userStore.userInfo.avatarId
+    ? userStore.userInfo.avatarUrl
+    : "/static/default_avatar.png";
 });
 
 // 获取标签列表
@@ -241,7 +243,7 @@ const fetchTags = async () => {
 
 // 切换标签选择
 const toggleTag = (tagId: number) => {
-  const index = formData.value.interestTagIds.indexOf(tagId + "");
+  const index = formData.value.interestTagIds.indexOf(tagId);
   if (index > -1) {
     formData.value.interestTagIds.splice(index, 1);
   } else {
@@ -250,13 +252,13 @@ const toggleTag = (tagId: number) => {
       uni.showToast({ title: "最多选择10个标签", icon: "none" });
       return;
     }
-    formData.value.interestTagIds.push(tagId + "");
+    formData.value.interestTagIds.push(tagId);
   }
 };
 
 // 判断标签是否被选中
 const isTagSelected = (tagId: number) => {
-  return formData.value.interestTagIds.includes(tagId + "");
+  return formData.value.interestTagIds.includes(tagId);
 };
 
 // 判断是否为图片URL
@@ -277,7 +279,7 @@ onLoad(() => {
       age: userInfo.age ? Number(userInfo.age) : 0,
       introduction: userInfo.introduction || "",
       interestTagIds:
-        userInfo.interestTags?.map((tag) => tag.id + "") || ([] as string[]),
+        userInfo.interestTags?.map((tag) => tag.id) || ([] as number[]),
     };
     isDataReady.value = true;
   });

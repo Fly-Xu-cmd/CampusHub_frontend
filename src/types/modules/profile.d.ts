@@ -32,7 +32,7 @@ export interface PostUserDetailsRequest {
   /**
    * 标签id
    */
-  interestTagIds: string[];
+  interestTagIds: number[];
   introduction: string;
   nickname: string;
   [property: string]: any;
@@ -168,7 +168,7 @@ export interface PostStudentAuthRequest {
   /**
    * 学生证详情面照片（jpg/jpeg/png，最大5MB）
    */
-  back_image: string;
+  back_image_url: string;
   /**
    * 院系
    */
@@ -176,7 +176,7 @@ export interface PostStudentAuthRequest {
   /**
    * 学生证正面照片（jpg/jpeg/png，最大5MB）
    */
-  front_image: string;
+  front_image_url: string;
   /**
    * 姓名
    */

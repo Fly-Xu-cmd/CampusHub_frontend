@@ -54,10 +54,12 @@ declare global {
 
 /**
  * Dynamically loads the Geetest v4 SDK script.
+ * 仅在 H5 环境下可用，其他平台会直接 reject
  * @returns Promise that resolves when the script is loaded
  */
 export const loadGeetestScript = (): Promise<void> => {
   return new Promise((resolve, reject) => {
+    // #ifdef H5
     if (typeof window === "undefined") {
       reject(new Error("Geetest requires a browser environment"));
       return;
@@ -93,5 +95,10 @@ export const loadGeetestScript = (): Promise<void> => {
       reject(err);
     };
     document.body.appendChild(script);
+    // #endif
+
+    // #ifndef H5
+    reject(new Error("Geetest is only supported in H5 environment"));
+    // #endif
   });
 };

@@ -1,8 +1,8 @@
 <template>
   <CommonLayout headerType="standard" title="账号安全" showBack>
-    <view class="page-padding">
-      <ClientOnly>
-        <template #default>
+    <ClientOnly>
+      <template #default>
+        <view class="page-padding">
           <view class="menu-group">
             <view class="menu-item border-b" @click="handleEmailDisabled">
               <text class="label">QQ邮箱</text>
@@ -21,110 +21,126 @@
               <wd-icon name="arrow-right" size="14px" color="#cbd5e1"></wd-icon>
             </view>
           </view>
-        </template>
-        <template #placeholder>
+
+          <view class="menu-group danger-zone">
+            <view class="menu-item center" @click="openLogoffFlow">
+              <text class="label danger-text">注销账号</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 注销验证码弹窗 -->
+        <view
+          v-if="showLogoffDialog"
+          class="modal-overlay"
+          @click="cancelLogoff"
+        >
+          <view class="modal-container" @click.stop>
+            <view class="modal-header">
+              <text class="modal-title">注销账号</text>
+              <view class="modal-close" @click="cancelLogoff">
+                <wd-icon name="close" size="20px" color="#999"></wd-icon>
+              </view>
+            </view>
+
+            <view class="modal-body">
+              <view class="warning-box">
+                <wd-icon
+                  name="error-warning"
+                  size="18px"
+                  color="#f97316"
+                ></wd-icon>
+                <text class="warning-text"
+                  >注销后账号数据将永久删除，无法恢复</text
+                >
+              </view>
+
+              <view class="email-info">
+                <text class="email-label">验证码已发送至</text>
+                <text class="email-value">{{ maskedEmail }}</text>
+              </view>
+
+              <button
+                class="resend-btn"
+                @click="sendDeleteQQCode"
+                :disabled="sending"
+                hover-class="btn-hover"
+              >
+                <wd-icon
+                  name="refresh"
+                  size="14px"
+                  :color="sending ? '#ccc' : '#f97316'"
+                ></wd-icon>
+                <text>{{
+                  sending ? "发送中..." : codeSent ? "重新发送" : "发送验证码"
+                }}</text>
+              </button>
+
+              <view class="code-input-wrapper">
+                <input
+                  class="code-input"
+                  placeholder="请输入6位验证码"
+                  placeholder-class="placeholder"
+                  v-model="codeInput"
+                  type="number"
+                  maxlength="6"
+                  @input="onCodeInput"
+                />
+              </view>
+
+              <view class="error-message" v-if="codeError">
+                <wd-icon
+                  name="error-fill"
+                  size="14px"
+                  color="#e74c3c"
+                ></wd-icon>
+                <text>{{ codeError }}</text>
+              </view>
+            </view>
+
+            <view class="modal-footer">
+              <button
+                class="cancel-btn"
+                hover-class="btn-hover"
+                @click="cancelLogoff"
+              >
+                取消
+              </button>
+              <button
+                class="confirm-btn danger"
+                hover-class="btn-hover"
+                @click="confirmLogoff"
+                :disabled="submitting"
+              >
+                {{ submitting ? "提交中..." : "确认注销" }}
+              </button>
+            </view>
+          </view>
+        </view>
+      </template>
+      <template #placeholder>
+        <view class="page-padding">
           <view class="menu-group">
-            <view class="menu-item border-b" @click="handleEmailDisabled">
+            <view class="menu-item border-b">
               <text class="label">QQ邮箱</text>
               <view class="right-val">
                 <text class="val">加载中...</text>
-                <text class="disabled-badge">功能开发中</text>
-                <wd-icon
-                  name="arrow-right"
-                  size="14px"
-                  color="#cbd5e1"
-                ></wd-icon>
               </view>
             </view>
-            <view class="menu-item" @click="toPassword">
+            <view class="menu-item">
               <text class="label">修改密码</text>
               <wd-icon name="arrow-right" size="14px" color="#cbd5e1"></wd-icon>
             </view>
           </view>
-        </template>
-      </ClientOnly>
 
-      <view class="menu-group danger-zone">
-        <view class="menu-item center" @click="openLogoffFlow">
-          <text class="label danger-text">注销账号</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 注销验证码弹窗 -->
-    <view v-if="showLogoffDialog" class="modal-overlay" @click="cancelLogoff">
-      <view class="modal-container" @click.stop>
-        <view class="modal-header">
-          <text class="modal-title">注销账号</text>
-          <view class="modal-close" @click="cancelLogoff">
-            <wd-icon name="close" size="20px" color="#999"></wd-icon>
+          <view class="menu-group danger-zone">
+            <view class="menu-item center">
+              <text class="label danger-text">注销账号</text>
+            </view>
           </view>
         </view>
-
-        <view class="modal-body">
-          <view class="warning-box">
-            <wd-icon name="error-warning" size="18px" color="#f97316"></wd-icon>
-            <text class="warning-text">注销后账号数据将永久删除，无法恢复</text>
-          </view>
-
-          <view class="email-info">
-            <text class="email-label">验证码已发送至</text>
-            <text class="email-value">{{ maskedEmail }}</text>
-          </view>
-
-          <button
-            class="resend-btn"
-            @click="sendDeleteQQCode"
-            :disabled="sending"
-            hover-class="btn-hover"
-          >
-            <wd-icon
-              name="refresh"
-              size="14px"
-              :color="sending ? '#ccc' : '#f97316'"
-            ></wd-icon>
-            <text>{{
-              sending ? "发送中..." : codeSent ? "重新发送" : "发送验证码"
-            }}</text>
-          </button>
-
-          <view class="code-input-wrapper">
-            <input
-              class="code-input"
-              placeholder="请输入6位验证码"
-              placeholder-class="placeholder"
-              v-model="codeInput"
-              type="number"
-              maxlength="6"
-              @input="onCodeInput"
-            />
-          </view>
-
-          <view class="error-message" v-if="codeError">
-            <wd-icon name="error-fill" size="14px" color="#e74c3c"></wd-icon>
-            <text>{{ codeError }}</text>
-          </view>
-        </view>
-
-        <view class="modal-footer">
-          <button
-            class="cancel-btn"
-            hover-class="btn-hover"
-            @click="cancelLogoff"
-          >
-            取消
-          </button>
-          <button
-            class="confirm-btn danger"
-            hover-class="btn-hover"
-            @click="confirmLogoff"
-            :disabled="submitting"
-          >
-            {{ submitting ? "提交中..." : "确认注销" }}
-          </button>
-        </view>
-      </view>
-    </view>
+      </template>
+    </ClientOnly>
   </CommonLayout>
 </template>
 
@@ -232,7 +248,8 @@ const confirmLogoff = async () => {
       });
     }, 1000);
   } catch (error: any) {
-    codeError.value = "验证码错误，请重新输入";
+    console.log("error", error);
+    codeError.value = error.response?.data?.message || "注销失败，请重试";
   } finally {
     submitting.value = false;
   }
@@ -245,9 +262,13 @@ const confirmLogoff = async () => {
 
 .page-padding {
   padding: $spacing-md;
+  flex: 1;
+  width: 100%;
+  @include flex(column, flex-start, center);
 }
 
 .menu-group {
+  width: 100%;
   background: $surface-color;
   border-radius: $border-radius-lg;
   border: 1rpx solid $border-light;

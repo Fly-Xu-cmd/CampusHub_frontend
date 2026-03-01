@@ -80,7 +80,7 @@
           <text class="label">确认新密码</text>
           <view class="input-inner">
             <input
-              class="custom-input"
+              class="real-input"
               placeholder="验证码"
               placeholder-class="placeholder-style"
               v-model="formData.qqCode"
@@ -339,6 +339,28 @@ const handleSave = async () => {
       .real-input {
         flex: 1;
         font-size: $font-size-sm;
+      }
+      .custom-input {
+        flex: 1;
+        font-size: 30rpx;
+        color: $text-primary;
+        font-weight: 600;
+        height: 40rpx;
+      }
+      .verify-btn {
+        background-color: $text-primary; // 黑色按钮
+        color: #fff;
+        font-size: 24rpx;
+        font-weight: 700;
+        padding: 20rpx 30rpx;
+        border-radius: 24rpx;
+        transition: opacity 0.3s;
+        white-space: nowrap;
+
+        &.disabled {
+          background-color: #e2e8f0;
+          color: #94a3b8;
+        }
       }
     }
   }

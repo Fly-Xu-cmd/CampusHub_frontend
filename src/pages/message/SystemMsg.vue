@@ -13,7 +13,13 @@
       </view>
 
       <view v-if="notifications.length > 0" class="header-actions">
-        <view class="mark-all" @click="readAll"> 全部已读 </view>
+        <view
+          class="mark-all"
+          @click="readAll"
+          v-if="userStore.hasUnReadSystemMessage"
+        >
+          全部已读
+        </view>
       </view>
     </view>
 
