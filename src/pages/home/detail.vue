@@ -339,6 +339,7 @@ const viewPubilcProfil = (id: number) => {
 
 /* 活动内容 */
 .activity-content {
+  height: calc(100% - 485rpx);
   position: relative;
   top: -55rpx;
   z-index: 666;
