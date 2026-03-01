@@ -188,6 +188,8 @@ onMounted(() => {
 }
 
 .list-container {
+  width: 100%;
+  height: 100%;
   padding: $spacing-md;
 }
 
@@ -282,12 +284,7 @@ onMounted(() => {
     width: 160rpx;
     height: 160rpx;
     border-radius: $border-radius-md;
-    background: linear-gradient(
-      90deg,
-      #f0f0f0 25%,
-      #e0e0e0 50%,
-      #f0f0f0 75%
-    );
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 200% 100%;
     animation: skeleton-loading 1.5s infinite;
     flex-shrink: 0;
@@ -302,12 +299,7 @@ onMounted(() => {
     .skeleton-title {
       width: 80%;
       height: 40rpx;
-      background: linear-gradient(
-        90deg,
-        #f0f0f0 25%,
-        #e0e0e0 50%,
-        #f0f0f0 75%
-      );
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
       background-size: 200% 100%;
       animation: skeleton-loading 1.5s infinite;
       border-radius: 4rpx;
@@ -316,12 +308,7 @@ onMounted(() => {
     .skeleton-meta {
       width: 60%;
       height: 28rpx;
-      background: linear-gradient(
-        90deg,
-        #f0f0f0 25%,
-        #e0e0e0 50%,
-        #f0f0f0 75%
-      );
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
       background-size: 200% 100%;
       animation: skeleton-loading 1.5s infinite;
       border-radius: 4rpx;
@@ -330,12 +317,7 @@ onMounted(() => {
     .skeleton-status {
       width: 40%;
       height: 28rpx;
-      background: linear-gradient(
-        90deg,
-        #f0f0f0 25%,
-        #e0e0e0 50%,
-        #f0f0f0 75%
-      );
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
       background-size: 200% 100%;
       animation: skeleton-loading 1.5s infinite;
       border-radius: 4rpx;
