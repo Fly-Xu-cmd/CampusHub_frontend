@@ -105,6 +105,7 @@
 
 /* 活动内容 */
 .activity-content {
+  height: calc(100% - 380rpx);
   position: relative;
   top: -55rpx;
   z-index: 666;

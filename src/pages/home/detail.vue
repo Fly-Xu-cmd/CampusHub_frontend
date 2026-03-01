@@ -35,7 +35,9 @@
                               '#000000'
           }"
         >
-          <text class="status-text">{{ activityDetail?.registrationStatusText || '进行中' }}</text>
+          <text class="status-text">
+            {{ activityDetail?.registrationStatusText || '报名中' }}
+          </text>
         </view>
         <!-- 活动标题 -->
         <view class="activity-title">
@@ -97,36 +99,42 @@
             <text class="details-title">活动详情</text>
           </view>
           <view class="details-content">
-            <text class="details-text">
-              {{ activityDetail?.content || '欢迎来到CampusHub！' }}
+            <text v-if="activityDetail?.content" class="details-text">
+              {{ activityDetail?.content }}
             </text>
+            <view v-else class="empty-content">
+              <wd-img class="empty-img" src="/static/empty-content.png" mode="aspectFill" />
+              <text class="empty-text">暂无内容</text>
+            </view>
           </view>
         </view>
       </view>
       
       <!-- 底部报名按钮 -->
       <view class="bottom-button">
-        <view class="button-row">
-          <button
-            v-if="!isSigned"
-            class="register-button primary"
-            @click="sign"
-          >
-            <text class="register-text">立即报名</text>
+        <!-- 1 报名按钮 -->
+        <view v-if="!isSigned" class="button-row">
+          <button v-if="activityDetail?.registrationStatus === 2"
+          class="register-button primary" 
+          @click="sign">
+            <text class="register-text">
+              立即报名
+            </text>
           </button>
-          <button
-            v-else
-            class="register-button cancel"
-            @click="unSign"
-          >
+          <button v-else class="register-button" @click="sign">
+            <text class="register-text">
+              {{ activityDetail?.registrationStatusText }}
+            </text>
+          </button>
+        </view>
+        <!-- 2 取消按钮 -->
+        <view v-else class="button-row">
+          <!-- 取消按钮 -->
+          <button  class="register-button cancel" @click="unSign">
             <text class="register-text">取消报名</text>
           </button>
           <!-- 群聊按钮 -->
-          <button
-            v-if="isSigned && groupId"
-            class="chat-button"
-            @click="enterChat"
-          >
+          <button class="chat-button" @click="enterChat">
             <wd-icon name="chat" size="40rpx" color="#fff"></wd-icon>
             <text class="chat-text">群聊</text>
           </button>
@@ -141,7 +149,6 @@
 import { getActivityDetail, signActivity, cancelSign, getWaitList } from "@/api/home/router";
 import { ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import ActivityDetailSkeleton from "@/components/ActivityDetailSkeleton/ActivityDetailSkeleton.vue";
 
 // 时间格式化函数：将10位时间戳转换为"10.24 19:00"格式
 const formatDate = (timestamp: number) => {
@@ -155,7 +162,6 @@ const formatDate = (timestamp: number) => {
 
 // 获取传入的活动ID参数
 let activityId = "";
-let groupId = ""; // 群聊ID
 
 // 活动详情数据
 const activityDetail = ref<any>({});
@@ -178,8 +184,6 @@ onLoad((options: any) => {
 const fetchActivityDetail = () => {
   getActivityDetail(String(activityId)).then((res) => {
     activityDetail.value = res.data.activity;
-    // 假设活动详情中包含群组ID，或者通过活动ID获取
-    // groupId = res.data.group_id;
     loading.value = false;
   }).catch(() => {
     loading.value = false;
@@ -216,30 +220,16 @@ const sign = () => {
       });
       isSigned.value = true;
 
-      // TODO: 报名成功后获取群组ID
-      // 如果后端在报名响应中返回了群组ID
-      // groupId = res.data.group_id;
+      uni.showModal({
+        title: "提示",
+        content: "是否进入活动群聊？",
+        success: (modalRes) => {
+          if (modalRes.confirm) {
+            enterChat();
+          }
+        },
+      });
 
-      // 延迟后提示进入群聊
-      setTimeout(() => {
-        if (groupId) {
-          enterChat();
-        } else {
-          uni.showModal({
-            title: "提示",
-            content: "是否进入活动群聊？",
-            success: (modalRes) => {
-              if (modalRes.confirm) {
-                // TODO: 通过活动ID获取群组ID
-                // getGroupByActivityId(activityId).then(res => {
-                //   groupId = res.data.group_id;
-                //   enterChat();
-                // });
-              }
-            },
-          });
-        }
-      }, 500);
     } else {
       uni.showToast({
         title: res.data.reason,
@@ -258,7 +248,6 @@ const unSign = () => {
         icon: "success",
       });
       isSigned.value = false;
-      groupId = ""; // 取消报名后清空群组ID
     } else {
       uni.showToast({
         title: "取消报名失败",
@@ -270,15 +259,8 @@ const unSign = () => {
 
 // 进入群聊
 const enterChat = () => {
-  if (!groupId) {
-    uni.showToast({
-      title: "群聊尚未开通",
-      icon: "none",
-    });
-    return;
-  }
   uni.navigateTo({
-    url: `/pages/message/chat?group_id=${groupId}`,
+    url: `/pages/message/index`,
   });
 };
 
@@ -339,7 +321,7 @@ const viewPubilcProfil = (id: number) => {
 
 /* 活动内容 */
 .activity-content {
-  height: calc(100% - 485rpx);
+  height: calc(100% - 380rpx);
   position: relative;
   top: -55rpx;
   z-index: 666;
@@ -437,6 +419,23 @@ const viewPubilcProfil = (id: number) => {
       color: $text-secondary;
       line-height: 1.4;
     }
+    .empty-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 300rpx;
+      .empty-img {
+        width: 100%;
+        flex: 1;
+        margin: $spacing-md 0 ;
+      }
+      .empty-text {
+        font-size: 26rpx;
+        color: $text-tertiary;
+      }
+    }
   }
 }
 
@@ -457,7 +456,7 @@ const viewPubilcProfil = (id: number) => {
     .register-button {
       flex: 1;
       height: 100rpx;
-      background-color: #111;
+      background-color: #666666;
       color: $text-light;
       border-radius: 45rpx;
       font-size: 28rpx;
@@ -466,11 +465,17 @@ const viewPubilcProfil = (id: number) => {
       justify-content: center;
 
       &.cancel {
-        background-color: red;
+        background-color: black;
       }
 
       &.primary {
-        background-color: $primary-color;
+        background: linear-gradient(135deg, $primary-color 0%, lighten($primary-color, 10%) 100%);
+        box-shadow: 0 4rpx 16rpx rgba($primary-color, 0.4);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+        &:active {
+          box-shadow: 0 2rpx 8rpx rgba($primary-color, 0.3);
+        }
       }
     }
 
