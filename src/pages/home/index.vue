@@ -12,17 +12,31 @@
       :refresher-threshold="50"
       refresher-default-style="none"
       refresher-background="#f8f8f8" 
-      :refresher-triggered="isRefreshing"
+      :refresher-triggered="Refresher === 'isRefreshing'"
+      @refresherpulling="Refresher = 'isPulling'"
       @refresherrefresh="onRefresh"
       @scroll="handleScroll">
       <!-- 自定义下拉刷新插槽 -->
       <template #refresher>
         <view class="custom-refresher">
-          <view class="refresher-content" :class="{ 'refreshing': isRefreshing }">
+          <view v-if="Refresher === 'isPulling'" class="refresher-content" >
             <view class="refresher-icon">
-              <wd-icon name="refresh" size="40rpx" color="#f97316" :class="{ 'spin': isRefreshing }" />
+              <wd-icon name="refresh" size="40rpx" color="#666666" />
             </view>
-            <text class="refresher-text">{{ isRefreshing ? '刷新中...' : '下拉刷新' }}</text>
+            <text class="refresher-text">
+              {{ '下拉刷新' }}
+            </text>
+          </view>
+          <view v-else class="refresher-content" >
+            <view class="refresher-icon">
+              <wd-icon 
+              :name="Refresher === 'isRefreshing' ? 'refresh' : 'check-bold'" size="40rpx" 
+              :color="Refresher === 'isRefreshing' ? '#f97316' : '#4ade80'" 
+              :class="{ 'spin': Refresher === 'isRefreshing' }" />
+            </view>
+            <text class="refresher-text">
+              {{ Refresher === 'isRefreshing' ? '刷新中...' : '刷新完成' }}
+            </text>
           </view>
         </view>
       </template>
@@ -204,7 +218,7 @@
                   </template>
 
                 </wd-img>
-                <text>{{ activity.organizerName || '未知用户' }}</text>
+                <text>{{ activity.organizerName || '默认昵称' }}</text>
               </view>
               <view class="action-button">
                 <text>查看详情</text>
@@ -311,12 +325,12 @@ const search = async () => {
   isSearch.value = true;
 };
 
-const isRefreshing = ref(false); // 是否刷新中
+const Refresher = ref<string>("isEnd")
 // 下拉刷新
 const onRefresh = async () => {
-  isRefreshing.value = true;
+  Refresher.value = "isRefreshing";
   await getActivities();
-  isRefreshing.value = false;
+  Refresher.value = "isEnd";
 }
 
 // 上拉加载更多
@@ -389,7 +403,7 @@ $tag-inactive-color: #111;
 .content {
   display: flex;
   flex-direction: column;
-  height: 80vh;
+  height: 82vh;
 
 }
 
@@ -683,15 +697,12 @@ $tag-inactive-color: #111;
   gap: 16rpx;
   padding: 20rpx;
   border-radius: $border-radius-full;
-  background-color: rgba(255, 255, 255, 0.9);
-  box-shadow: $shadow-sm;
-  transition: all 0.3s ease;
-}
-
-.refresher-content.refreshing {
   background-color: rgba(255, 255, 255, 1);
   box-shadow: $shadow-md;
+  transition: all 0.3s ease;
+
 }
+
 
 .refresher-icon {
   width: 40rpx;
@@ -710,10 +721,6 @@ $tag-inactive-color: #111;
   font-weight: $font-weight-medium;
   color: $text-primary;
   transition: all 0.3s ease;
-}
-
-.refresher-content.refreshing .refresher-text {
-  color: $primary-color;
 }
 
 @keyframes spin {
