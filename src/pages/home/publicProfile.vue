@@ -209,7 +209,8 @@ const joinedActivities = ref();
   .tags-row {
     @include flex(row, center, center);
     gap: $spacing-sm;
-
+    flex-wrap: wrap;
+    padding: 0 $spacing-lg;
     .tag-item {
       display: flex;
       align-items: center;

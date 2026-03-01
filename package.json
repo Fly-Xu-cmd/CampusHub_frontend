@@ -54,12 +54,13 @@
     "@dcloudio/uni-mp-weixin": "3.0.0-4080420251103001",
     "@dcloudio/uni-mp-xhs": "3.0.0-4080420251103001",
     "@dcloudio/uni-quickapp-webview": "3.0.0-4080420251103001",
-    "vue-i18n": "^9.14.4",
-    "wot-design-uni": "^1.14.0",
-    "vue": "3.2.47",
     "@vue/server-renderer": "3.2.47",
     "pinia": "2.0.36",
-    "vue-demi": "0.14.6"
+    "qrcode": "^1.5.4",
+    "vue": "3.2.47",
+    "vue-demi": "0.14.6",
+    "vue-i18n": "^9.14.4",
+    "wot-design-uni": "^1.14.0"
   },
   "devDependencies": {
     "@dcloudio/types": "^3.4.19",
