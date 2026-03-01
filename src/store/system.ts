@@ -22,17 +22,22 @@ export const useSystemStore = defineStore("system", {
 
   actions: {
     initSystemInfo() {
+      // H5 平台：检查是否为 SSR，如果是 SSR 则跳过初始化
+      // #ifdef H5
+      if (import.meta.env.SSR) {
+        console.log("SSR 模式：跳过系统信息初始化");
+        return;
+      }
+      // #endif
+
       try {
         // 1. 获取系统窗口信息
-        // 注意：uni.getWindowInfo() 是新版 API，但在部分老版本基础库可能不支持，
-        // 如果遇到兼容问题，可回退使用 uni.getSystemInfoSync()
         const windowInfo = uni.getWindowInfo();
 
         this.statusBarHeight = windowInfo.statusBarHeight || 0;
         this.windowWidth = windowInfo.windowWidth || 375;
 
         // 【核心补充】获取底部安全区域高度
-        // iOS 全面屏通常是 34px，安卓通常是 0
         this.safeAreaInsetsBottom = windowInfo.safeAreaInsets?.bottom || 0;
 
         // 2. 处理微信小程序特有逻辑 (胶囊对齐)
@@ -55,9 +60,6 @@ export const useSystemStore = defineStore("system", {
         // #ifdef H5
         this.navBarHeight = 44;
         this.statusBarHeight = 20; // 【新增】H5 默认状态栏高度（当作top padding）
-        // H5 端如果是在普通浏览器，safeAreaInsetsBottom 可能是 0
-        // 但如果是在 Safari PWA 模式下，可能需要读取 env(safe-area-inset-bottom)
-        // 这里暂时保持 API 读取的值，通常足够使用
         // #endif
 
         // 4. 计算总高度 (状态栏 + 导航栏)

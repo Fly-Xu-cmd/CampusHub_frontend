@@ -1,11 +1,14 @@
 <template>
   <CommonLayout
     headerType="none"
-    contentBg="#f6faff"
+    :contentBg="isAuthenticated ? 'fff' : '#f6faff'"
     padding="0 0"
     :showTabBar="true"
+    :isSafeArea="false"
   >
-    <ClientOnly>
+    <ClientOnly
+      style="background: linear-gradient(180deg, #f6faff 0%, #ffffff 100%)"
+    >
       <view class="profile-container">
         <!-- 未登录状态占位符 -->
         <view v-if="!isAuthenticated" class="guest-placeholder">
@@ -476,6 +479,7 @@ const handleScanQRCode = () => {
 .profile-container {
   @include flex(column, flex-start, stretch);
   height: 100%;
+  width: 100%;
 }
 
 /* --- 未登录占位符 --- */
@@ -561,6 +565,7 @@ const handleScanQRCode = () => {
 
 /* --- 头部区域 --- */
 .header-section {
+  padding: $spacing-sm;
   background-color: $surface-color; // #ffffff
   padding-bottom: $spacing-xl; // 32rpx
   padding-top: $spacing-xl; // 32rpx

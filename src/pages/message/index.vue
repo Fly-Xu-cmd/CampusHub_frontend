@@ -34,7 +34,7 @@
         >
           <view class="message-avatar">
             <image
-              :src="group.avatar || defaultAvatar"
+              :src="group.coverUrl || defaultAvatar"
               mode="aspectFill"
             ></image>
             <view
@@ -154,6 +154,13 @@ const handleNewMessage = (data: any) => {
   } else {
     // 群聊不存在，刷新整个列表
     fetchGroups();
+  }
+};
+
+const handleNewSystemMessage = (data: any) => {
+  console.log("[消息列表] 收到通知:", data);
+  if (data.type === "notification") {
+    fetchUnreadCount();
   }
 };
 
@@ -339,6 +346,7 @@ onMounted(async () => {
   const ws = getWebSocket();
   if (ws) {
     ws.on("newMessage", handleNewMessage);
+    ws.on("notification", handleNewSystemMessage);
     console.log("[消息列表] 已注册 WebSocket 新消息监听");
   }
 });
@@ -348,6 +356,7 @@ onUnmounted(() => {
   const ws = getWebSocket();
   if (ws) {
     ws.off("newMessage", handleNewMessage);
+    ws.off("notification", handleNewSystemMessage);
     console.log("[消息列表] 已移除 WebSocket 新消息监听");
   }
 });

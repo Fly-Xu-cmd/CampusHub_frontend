@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         "/api": {
-          target: env.VITE_BASE_URL || "http://192.168.10.9:8888",
+          target: env.VITE_BASE_URL || "http://192.168.10.9",
           changeOrigin: true, // 关键：启用跨域
           // 不需要路径重写，因为我们的 API 路径已经以 /api 开头
         },
@@ -37,6 +37,6 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    ssr: { format: "cjs" },
+    base: "http://192.168.10.9:3029/", // 设置基础路径，确保资源正确加载
   };
 });
