@@ -25,13 +25,13 @@
 
       <view class="form-section">
         <view class="input-wrap">
-          <text class="label">当前密码</text>
+          <text class="label">QQ邮箱</text>
           <view class="input-inner">
             <input
               class="real-input"
-              placeholder="请输入当前密码"
+              placeholder="请输入QQ邮箱"
               :password="!showCurrentPassword"
-              v-model="formData.currentPassword"
+              v-model="formData.qqEmail"
             />
             <wd-icon
               :name="showCurrentPassword ? 'browse-off' : 'browse'"
@@ -75,6 +75,27 @@
             ></wd-icon>
           </view>
         </view>
+
+        <view class="input-wrap">
+          <text class="label">确认新密码</text>
+          <view class="input-inner">
+            <input
+              class="real-input"
+              placeholder="验证码"
+              placeholder-class="placeholder-style"
+              v-model="formData.qqCode"
+              type="number"
+              maxlength="6"
+            />
+            <view
+              class="verify-btn"
+              :class="{ disabled: timer > 0 }"
+              @click="getVerifyCode"
+            >
+              {{ timer > 0 ? `${timer}s后重试` : "获取验证码" }}
+            </view>
+          </view>
+        </view>
       </view>
 
       <view class="forget-tip" @click="toForgotPassword">忘记当前密码？</view>
@@ -100,10 +121,13 @@ import type { PostUserPasswordRequest } from "@/types/modules/profile";
 const userStore = useUserStore();
 const loading = ref(false);
 const formData = ref({
-  currentPassword: "",
+  qqEmail: "",
   newPassword: "",
   confirmPassword: "",
+  qqCode: "",
 });
+
+const timer = ref(0);
 
 // 密码可见性状态
 const showCurrentPassword = ref(false);
@@ -112,6 +136,7 @@ const showConfirmPassword = ref(false);
 
 // 密码强度验证正则（至少8位，包含字母和数字）
 const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+const qqEmailRegex = /^[1-9][0-9]{4,10}@qq\.com$/;
 
 const toBack = () => {
   uni.navigateBack();
@@ -130,6 +155,34 @@ const toggleConfirmPassword = () => {
   showConfirmPassword.value = !showConfirmPassword.value;
 };
 
+const getVerifyCode = async () => {
+  if (timer.value > 0) {
+    return; // 防止重复点击
+  }
+
+  if (!qqEmailRegex.test(formData.value.qqEmail)) {
+    uni.showToast({ title: "请输入正确的QQ邮箱地址", icon: "none" });
+    return;
+  }
+
+  try {
+    await userStore.requestPasswordResetCode(formData.value.qqEmail);
+    uni.showToast({ title: "验证码已发送，请注意查收", icon: "success" });
+    timer.value = 60; // 设置60秒倒计时
+
+    const countdown = setInterval(() => {
+      if (timer.value > 0) {
+        timer.value -= 1;
+      } else {
+        clearInterval(countdown);
+      }
+    }, 1000);
+  } catch (error) {
+    console.error("获取验证码失败:", error);
+    uni.showToast({ title: "获取验证码失败，请重试", icon: "none" });
+  }
+};
+
 // 跳转到忘记密码页面
 const toForgotPassword = () => {
   uni.navigateTo({ url: "/pages/login/index?action=resetPassword" });
@@ -138,9 +191,10 @@ const toForgotPassword = () => {
 const handleSave = async () => {
   // 表单验证
   if (
-    !formData.value.currentPassword ||
+    !formData.value.qqEmail ||
     !formData.value.newPassword ||
-    !formData.value.confirmPassword
+    !formData.value.confirmPassword ||
+    !formData.value.qqCode
   ) {
     uni.showToast({ title: "请填写完整信息", icon: "none" });
     return;
@@ -156,16 +210,17 @@ const handleSave = async () => {
     return;
   }
 
-  if (formData.value.newPassword === formData.value.currentPassword) {
-    uni.showToast({ title: "新密码不能与当前密码相同", icon: "none" });
+  if (!qqEmailRegex.test(formData.value.qqEmail)) {
+    uni.showToast({ title: "请输入正确的QQ邮箱地址", icon: "none" });
     return;
   }
 
   loading.value = true;
   try {
     const passwordData: PostUserPasswordRequest = {
-      originPassword: formData.value.currentPassword,
-      newPassword: formData.value.newPassword,
+      qq_email: formData.value.qqEmail,
+      new_password: formData.value.newPassword,
+      qq_code: formData.value.qqCode,
     };
 
     await updatePassword(passwordData);
@@ -284,6 +339,28 @@ const handleSave = async () => {
       .real-input {
         flex: 1;
         font-size: $font-size-sm;
+      }
+      .custom-input {
+        flex: 1;
+        font-size: 30rpx;
+        color: $text-primary;
+        font-weight: 600;
+        height: 40rpx;
+      }
+      .verify-btn {
+        background-color: $text-primary; // 黑色按钮
+        color: #fff;
+        font-size: 24rpx;
+        font-weight: 700;
+        padding: 20rpx 30rpx;
+        border-radius: 24rpx;
+        transition: opacity 0.3s;
+        white-space: nowrap;
+
+        &.disabled {
+          background-color: #e2e8f0;
+          color: #94a3b8;
+        }
       }
     }
   }

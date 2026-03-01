@@ -20,7 +20,7 @@
         @click="handleToDetail(activity.id)"
       >
         <image
-          :src="activity.imageUrl || defaultImage"
+          :src="activity.coverUrl || defaultImage"
           class="cover-img"
           mode="aspectFill"
         />

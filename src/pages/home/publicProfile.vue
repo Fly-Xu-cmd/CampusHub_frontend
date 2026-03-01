@@ -2,29 +2,34 @@
   <CommonLayout headerType="standard" title="用户详情" padding="0 8rpx">
     <!-- 骨架屏 -->
     <PublicProfileSkeleton v-if="loading" />
-    
+
     <!-- 实际内容 -->
-    <view v-else class="profile-container">  
+    <view v-else class="profile-container">
       <!-- 用户信息部分 -->
       <view class="user-info-section">
         <view class="avatar-wrapper">
-          <wd-img :src="userInfo?.avatarUrl || '默认图'" class="avatar" mode="aspectFill" >
+          <wd-img
+            :src="userInfo?.avatarUrl || '默认图'"
+            class="avatar"
+            mode="aspectFill"
+          >
             <template #error>
-              <wd-icon 
-                class-prefix="iconfont" 
-                name="morentouxiang" 
-                size="200rpx" 
-                color="#999999">
+              <wd-icon
+                class-prefix="iconfont"
+                name="morentouxiang"
+                size="200rpx"
+                color="#999999"
+              >
               </wd-icon>
             </template>
           </wd-img>
         </view>
-        <text class="username">{{ userInfo?.nickname || '默认昵称' }}</text>
-        <text class="bio">{{ userInfo?.introduction || '默认介绍' }}</text>
+        <text class="username">{{ userInfo?.nickname || "默认昵称" }}</text>
+        <text class="bio">{{ userInfo?.introduction || "默认介绍" }}</text>
         <view class="tags-row">
-          <view 
-            v-for="tag in tags" 
-            :key="tag.id" 
+          <view
+            v-for="tag in tags"
+            :key="tag.id"
             class="tag-item"
             :style="{ backgroundColor: tag.tagColor }"
           >
@@ -40,26 +45,30 @@
           <text class="section-title">Ta发布的活动</text>
         </view>
         <view class="activity-list">
-          <view 
-            v-for="activity in publishedActivities" 
-            :key="activity.id" 
+          <view
+            v-for="activity in publishedActivities"
+            :key="activity.id"
             class="activity-item"
           >
-            <wd-img :src="activity.imageUrl || '默认图'" class="activity-image" mode="aspectFill" >
+            <wd-img
+              :src="activity.imageUrl || '默认图'"
+              class="activity-image"
+              mode="aspectFill"
+            >
               <template #error>
-                <wd-icon 
-                  class-prefix="iconfont" 
-                  name="morentupian" 
-                  size="120rpx" 
+                <wd-icon
+                  class-prefix="iconfont"
+                  name="morentupian"
+                  size="120rpx"
                   color="#e9e9e9"
-                  >
+                >
                 </wd-icon>
               </template>
             </wd-img>
             <view class="activity-info">
-             <text class="activity-title">
-                {{ activity.name || '默认标题' }}
-                {{ '(' + activity.status + ')' }}
+              <text class="activity-title">
+                {{ activity.name || "默认标题" }}
+                {{ "(" + activity.status + ")" }}
               </text>
               <text class="activity-time">{{ activity.time }}</text>
             </view>
@@ -76,17 +85,21 @@
           <text class="section-title">Ta参加的活动</text>
         </view>
         <view class="activity-list">
-          <view 
-            v-for="activity in joinedActivities" 
-            :key="activity.id" 
+          <view
+            v-for="activity in joinedActivities"
+            :key="activity.id"
             class="activity-item"
           >
-            <wd-img :src="activity.imageUrl || '默认图'" class="activity-image" mode="aspectFill" >
+            <wd-img
+              :src="activity.imageUrl || '默认图'"
+              class="activity-image"
+              mode="aspectFill"
+            >
               <template #error>
-                <wd-icon 
-                  class-prefix="iconfont" 
-                  name="morentupian" 
-                  size="120rpx" 
+                <wd-icon
+                  class-prefix="iconfont"
+                  name="morentupian"
+                  size="120rpx"
                   color="#e9e9e9"
                   custom-style="margin-top: 20rpx;"
                 ></wd-icon>
@@ -94,8 +107,8 @@
             </wd-img>
             <view class="activity-info">
               <text class="activity-title">
-                {{ activity.name || '默认标题' }}
-                {{ '(' + activity.status + ')' }}
+                {{ activity.name || "默认标题" }}
+                {{ "(" + activity.status + ")" }}
               </text>
               <text class="activity-time">{{ activity.time }}</text>
             </view>
@@ -110,27 +123,28 @@
 </template>
 
 <script setup lang="ts">
-import { getUserHome } from '@/api/home/router'
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router'
-import PublicProfileSkeleton from '@/components/PublicProfileSkeleton/PublicProfileSkeleton.vue'
+import { getUserHome } from "@/api/home/router";
+import { ref, onMounted } from "vue";
+import { useRoute } from "vue-router";
 
-const route = useRoute()
-const userId = route.query.id
+const route = useRoute();
+const userId = route.query.id;
 
 // 加载状态
-const loading = ref(true)
+const loading = ref(true);
 
 onMounted(() => {
-  getUserHome(userId as string).then((res) => {
-    userInfo.value = res.data.userInfo
-    tags.value = res.data.tags
-    publishedActivities.value = res.data.publishedActivities.list
-    joinedActivities.value = res.data.joinedActivities.list
-    loading.value = false
-  }).catch(() => {
-    loading.value = false
-  })
+  getUserHome(userId as string)
+    .then((res) => {
+      userInfo.value = res.data.userInfo;
+      tags.value = res.data.tags;
+      publishedActivities.value = res.data.publishedActivities.list;
+      joinedActivities.value = res.data.joinedActivities.list;
+      loading.value = false;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
 });
 // 用户数据
 const userInfo = ref();
@@ -142,7 +156,6 @@ const publishedActivities = ref();
 
 // 已参加的活动
 const joinedActivities = ref();
-
 </script>
 
 <style lang="scss" scoped>
@@ -235,8 +248,10 @@ const joinedActivities = ref();
       background-color: $surface-color;
       border-radius: $border-radius-xl;
       box-shadow: $shadow-sm;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+
       &:active {
         transform: translateY(2rpx);
         box-shadow: $shadow-sm;

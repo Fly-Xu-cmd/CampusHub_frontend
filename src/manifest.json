@@ -1,6 +1,6 @@
 {
-    "name" : "",
-    "appid" : "",
+    "name" : "CampusHub",
+    "appid" : "__UNI__61D2011",
     "description" : "",
     "versionName" : "1.0.0",
     "versionCode" : "100",
@@ -61,7 +61,7 @@
     "h5" : {
         "router" : {
             "mode" : "history",
-            "base" : "./"
+            "base" : "/"
         },
         "ssr" : true,
         "async" : {
@@ -71,7 +71,11 @@
         },
         "sdkConfigs" : {
             "maps" : {}
-        }
+        },
+        "devServer" : {
+            "https" : false
+        },
+        "title" : "CampusHub"
     },
     "mp-alipay" : {
         "usingComponents" : true

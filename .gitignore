@@ -48,3 +48,47 @@ CLAUDE.md
 # 后端
 *.openapi.json
 *.go
+
+# --- Docker & Nginx ---
+
+# SSL 证书（包含私钥，绝对不能提交）
+ssl/
+*.pem
+*.crt
+*.key
+*.csr
+
+# 环境变量文件（包含敏感配置）
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Docker 卷数据和运行时文件
+docker-data/
+
+# --- UniApp 补充 ---
+
+# UniApp 插件模块（本地依赖，应通过 package.json 管理）
+uni_modules/
+
+# UniApp 云服务空间（本地缓存和云函数）
+uniCloud-*/
+uniCloud/
+
+# 开发测试服务器
+server.js
+*.local.js
+
+# 本地部署脚本（个人部署配置，不应提交）
+deploy-linux.sh
+
+# 覆盖率报告
+coverage/
+.nyc_output/
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+.turbo/
