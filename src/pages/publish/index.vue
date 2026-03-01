@@ -12,25 +12,18 @@
       </view>
     </view>
 
-    <view class="publish-container">
-      <!-- 上传组件 -->
-      <UploadVideo
-        :fileList="fileList"
-        @update:fileList="handleFileListUpdate"
-        upload-text="上传活动封面/视频"
-      />
-      <!-- 上传组件 -->
-
-      <!-- 活动标题 -->
-      <view class="form-item title-item">
-        <input
-          type="text"
-          v-model="activityTitle"
-          placeholder="活动标题"
-          class="title-input"
-          placeholder-style="color: #999;"
-        />
-      </view>
+		<view class="publish-container">
+			<!-- 上传组件 -->
+		<UploadVideo 
+			:fileList="fileList"
+			@update:fileList="handleFileListUpdate"
+			upload-text="上传活动封面/视频"
+		/>
+			<!-- 上传组件 -->
+			<!-- 活动标题 -->
+		<view class="form-item title-item">
+			<input type="text" v-model="activityTitle" placeholder="活动标题" class="title-input" placeholder-style="color: #999;">
+		</view>
 
       <!-- 联系电话 -->
       <view class="form-item title-item">
@@ -122,38 +115,7 @@
         </view>
       </view>
 
-      <!-- 标签选择器 -->
-      <view v-if="isShowTagPicker" class="tag-picker-container">
-        <view class="tag-picker-content">
-          <view class="tag-picker-header">
-            <text class="tag-picker-title">选择标签</text>
-            <view class="tag-picker-close" @click="toggleTagPicker">×</view>
-          </view>
-          <view class="tag-picker-body">
-            <view
-              v-for="tag in tags"
-              :key="tag.id"
-              class="tag-picker-item"
-              :class="{ active: selectedTags.includes(tag.id) }"
-              :style="
-                selectedTags.includes(tag.id)
-                  ? { backgroundColor: tag.color, color: '#fff' }
-                  : {}
-              "
-              @click="selectTag(tag.id)"
-            >
-              {{ tag.name }}
-            </view>
-          </view>
-          <view class="tag-picker-footer">
-            <button class="tag-picker-confirm" @click="toggleTagPicker">
-              确定
-            </button>
-          </view>
-        </view>
-      </view>
-
-      <!-- 日历选择器组件由TimeSelect组件内部处理 -->
+		<!-- 日历选择器组件由TimeSelect组件内部处理 -->
 
       <!-- 活动详情 -->
       <view class="detail-section">
@@ -183,29 +145,30 @@ interface Tag {
   color: string;
 }
 
-const publishStore = usePublishStore();
-const activityTitle = ref<string>("");
-const activityDetail = ref<string>("");
-const fileList = ref<any[]>([]);
-const peopleLimit = ref<number>(20);
-const locationName = ref<string>("选择线下地点");
-const locationAddress = ref<string>("");
-const locationLatitude = ref<number>(0);
-const locationLongitude = ref<number>(0);
-const contactPhone = ref<string>("");
-const selectedTags = ref<number[]>([1, 2, 3]); // 默认标签ID，可根据实际选择修改
-const tags = ref<Tag[]>([]); // 存储从接口获取的标签数据
-const isShowTagPicker = ref<boolean>(false); // 控制标签选择器显示/隐藏
+	const publishStore = usePublishStore()
+const activityTitle = ref<string>('')
+const activityDetail = ref<string>('')
+const fileList = ref<any[]>([])
+const peopleLimit = ref<number>(20)
+const locationName = ref<string>('选择线下地点')
+const locationAddress = ref<string>('')
+const locationLatitude = ref<number>(0)
+const locationLongitude = ref<number>(0)
+const contactPhone = ref<string>('')
+const selectedTags = ref<number[]>([1, 2, 3]) // 默认标签ID，可根据实际选择修改
+const tags = ref<Tag[]>([]) // 存储从接口获取的标签数据
+const isShowTagPicker = ref<boolean>(false) // 控制标签选择器显示/隐藏
 // 日历选择器相关的变量和逻辑
-const startValue = ref<number>(Date.now());
-const endValue = ref<number>(Date.now());
-const signupStartValue = ref<number>(Date.now());
-const signupEndValue = ref<number>(Date.now());
+const startValue = ref<number>(Date.now())
+const endValue = ref<number>(Date.now())
+const signupStartValue = ref<number>(Date.now())
+const signupEndValue = ref<number>(Date.now())
 
-const isShowPicker = ref<boolean>(false);
-const isShowSignupPicker = ref<boolean>(false);
-const timeError = ref<string>("");
-const signupTimeError = ref<string>("");
+const isShowPicker = ref<boolean>(false)
+const isShowSignupPicker = ref<boolean>(false)
+const timeError = ref<string>('')
+const signupTimeError = ref<string>('')
+
 
 // 切换标签选择器显示/隐藏
 const toggleTagPicker = async (): Promise<void> => {
@@ -677,16 +640,16 @@ const goBackHome = () => {
   background-color: #fff;
 }
 
-.detail-textarea {
-  width: 100%;
-  min-height: 200rpx;
-  padding: 20rpx;
-  font-size: 26rpx;
-  color: #333;
-  border: 1rpx solid #f0f0f0;
-  border-radius: 16rpx;
-  box-sizing: border-box;
-  resize: none;
+	.detail-textarea {
+	width: 100%;
+	min-height: 200rpx;
+	padding: 20rpx;
+	font-size: 26rpx;
+	color: #333;
+	border: 1rpx solid #000000;
+	border-radius: 16rpx;
+	box-sizing: border-box;
+	resize: none;
 }
 
 /* 自定义标题样式：调整宽度和位置，避免与提交按钮重叠 */
