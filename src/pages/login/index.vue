@@ -2,7 +2,7 @@
   <CommonLayout headerType="transparent" contentBg="#fff">
     <view
       class="login-container"
-      :style="{ paddingTop: `${2 * (systemStore.statusBarHeight + 30)}rpx` }"
+      :style="{ paddingTop: `${2 * (systemStore.statusBarHeight + 94)}rpx` }"
     >
       <view class="header-section">
         <view class="logo-box">

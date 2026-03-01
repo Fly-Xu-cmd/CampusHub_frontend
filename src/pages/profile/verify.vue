@@ -414,14 +414,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import {
   getAuthProgress,
   postStudentAuth,
   postStudentAuthConfirm,
   postStudentAuthCancel,
-  postStudentAuthWithFiles,
 } from "@/api/profile/router";
+import { postId } from "@/api/publish/router";
+import { getWebSocket } from "@/utils/websocket";
 import type {
   GetStudentAuthProgressData,
   PostStudentAuthRequest,
@@ -429,6 +430,7 @@ import type {
   ModifiedData,
 } from "@/types/modules/profile.d";
 import { NeedAction } from "@/types/modules/profile.d";
+import type { WSStudentAuthUpdateData, WSVerifyProgressData } from "@/types/modules/chat";
 
 // 状态管理
 const loading = ref(true);
@@ -489,6 +491,9 @@ const currentAction = computed(() => {
 const statusDesc = computed(() => authProgress.value?.status_desc || "");
 const rejectReason = computed(() => authProgress.value?.reject_reason || "");
 const verifyId = computed(() => authProgress.value?.verify_id || 0);
+const newAvatarId = ref<number | null>(null);
+const front_image_url = ref<string>(""); // 新头像的URL
+const backend_image_url = ref<string>(""); // 新头像的URL
 
 // 格式化认证时间
 const formatVerifyTime = () => {
@@ -502,11 +507,146 @@ const formatVerifyTime = () => {
 // 页面加载时获取认证进度
 onMounted(async () => {
   await fetchAuthProgress();
+
+  // 注册 WebSocket 监听器，实时接收认证状态更新
+  const ws = getWebSocket();
+  if (ws) {
+    ws.on("studentAuthUpdate", handleStudentAuthUpdate);
+    ws.on("verifyProgress", handleVerifyProgress);
+    console.log("[VerifyPage] 已注册学生认证状态更新监听器");
+  }
+});
+
+// 处理认证进度实时更新
+const handleVerifyProgress = async (data: WSVerifyProgressData) => {
+  console.log("[VerifyPage] 收到认证进度更新:", data);
+
+  // 如果 refresh 为 true，调用获取认证信息进度的接口
+  if (data.refresh) {
+    console.log("[VerifyPage] refresh 为 true，正在获取最新认证进度...");
+    await fetchAuthProgress();
+  } else {
+    // 否则直接更新本地状态
+    const mappedAction = mapNeedActionToEnum(data.need_action);
+
+    authProgress.value = {
+      ...authProgress.value,
+      verify_id: data.verify_id,
+      status: data.status,
+      status_desc: data.status_desc || authProgress.value.status_desc,
+      need_action: mappedAction,
+      reject_reason: data.reject_reason || "",
+    };
+
+    // 根据状态显示提示
+    switch (mappedAction) {
+      case NeedAction.Confirm:
+        uni.showToast({
+          title: "OCR 识别完成，请确认信息",
+          icon: "success",
+          duration: 2000,
+        });
+        break;
+      case NeedAction.WaitManual:
+        uni.showToast({
+          title: "已提交，等待人工审核",
+          icon: "success",
+          duration: 2000,
+        });
+        break;
+      case NeedAction.Done:
+        uni.showToast({
+          title: "恭喜！认证成功",
+          icon: "success",
+          duration: 2000,
+        });
+        break;
+      case NeedAction.Rejected:
+        uni.showToast({
+          title: data.reject_reason || "认证未通过",
+          icon: "none",
+          duration: 3000,
+        });
+        break;
+    }
+  }
+};
+
+// 处理学生认证状态更新
+const handleStudentAuthUpdate = (data: WSStudentAuthUpdateData) => {
+  console.log("[VerifyPage] 收到学生认证状态更新:", data);
+
+  // 更新本地状态
+  const mappedAction = mapNeedActionToEnum(data.need_action);
+
+  authProgress.value = {
+    ...authProgress.value,
+    verify_id: data.verify_id,
+    status: data.status,
+    status_desc: data.status_desc,
+    need_action: mappedAction,
+    reject_reason: data.reject_reason || "",
+  };
+
+  // 如果有认证数据，更新 verifyData
+  if (data.verify_data) {
+    verifyData.value = {
+      ...data.verify_data,
+      verified_at: data.verify_data.verified_at
+        ? new Date(data.verify_data.verified_at)
+        : undefined,
+    };
+
+    // 同时更新修改表单数据
+    modifiedData.value = { ...data.verify_data };
+  }
+
+  // 根据状态显示提示
+  switch (mappedAction) {
+    case NeedAction.Confirm:
+      uni.showToast({
+        title: "OCR 识别完成，请确认信息",
+        icon: "success",
+        duration: 2000,
+      });
+      break;
+    case NeedAction.WaitManual:
+      uni.showToast({
+        title: "已提交，等待人工审核",
+        icon: "success",
+        duration: 2000,
+      });
+      break;
+    case NeedAction.Done:
+      uni.showToast({
+        title: "恭喜！认证成功",
+        icon: "success",
+        duration: 2000,
+      });
+      break;
+    case NeedAction.Rejected:
+      uni.showToast({
+        title: data.reject_reason || "认证未通过",
+        icon: "none",
+        duration: 3000,
+      });
+      break;
+  }
+};
+
+// 组件卸载时清理 WebSocket 监听器
+onUnmounted(() => {
+  const ws = getWebSocket();
+  if (ws) {
+    ws.off("studentAuthUpdate", handleStudentAuthUpdate);
+    ws.off("verifyProgress", handleVerifyProgress);
+    console.log("[VerifyPage] 已移除学生认证状态更新监听器");
+  }
 });
 
 // 后端 need_action 中文描述到前端枚举值的映射
-const mapNeedActionToEnum = (action: number | undefined): NeedAction => {
-  if (!action) return NeedAction.Apply;
+const mapNeedActionToEnum = (action: number | string | undefined): NeedAction => {
+  if (!action && action !== 0) return NeedAction.Apply;
 
   // 根据后端返回的中文描述映射到前端枚举值
   const actionMap: Record<string, NeedAction> = {
@@ -590,11 +730,41 @@ const handleUpload = (type: "front" | "back") => {
               uni.showToast({ title: "图片大小不能超过5MB", icon: "none" });
               return;
             }
-            if (type === "front") {
-              formData.value.frontImage = res.tempFilePaths[0];
-            } else {
-              formData.value.backImage = res.tempFilePaths[0];
-            }
+            postId(res.tempFilePaths[0], "avatar")
+              .then((response) => {
+                uni.hideLoading();
+
+                // upload 函数返回格式：{ data: { code: 0, data: { id, ... } } }
+                if (
+                  response.data &&
+                  response.data.data &&
+                  response.data.data.id
+                ) {
+                  newAvatarId.value = response.data.data.id;
+                  if (type === "front") {
+                    formData.value.frontImage =
+                      response.data.data.url || res.tempFilePaths[0];
+                  } else {
+                    formData.value.backImage =
+                      response.data.data.url || res.tempFilePaths[0];
+                  }
+                  uni.showToast({
+                    title: "图片上传成功",
+                    icon: "success",
+                    duration: 1500,
+                  });
+                } else {
+                  uni.showToast({
+                    title: "上传图片失败，请重试",
+                    icon: "none",
+                  });
+                }
+              })
+              .catch((error) => {
+                uni.hideLoading();
+                console.error("上传图片失败:", error);
+                // 错误提示已在 upload 函数中处理，这里不需要再提示
+              });
           },
         });
       }
@@ -664,12 +834,12 @@ const handleSubmit = async () => {
       department: formData.value.department,
       admission_year: formData.value.admissionYear,
       student_id: formData.value.studentId,
-      front_image: formData.value.frontImage,
-      back_image: formData.value.backImage,
+      front_image_url: formData.value.frontImage,
+      back_image_url: formData.value.backImage,
     };
 
     // 使用支持文件上传的方法（multipart/form-data 格式）
-    await postStudentAuthWithFiles(authData);
+    await postStudentAuth(authData);
     uni.showToast({ title: "提交成功，正在识别", icon: "success" });
 
     // 重新获取进度

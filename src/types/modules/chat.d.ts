@@ -238,3 +238,46 @@ export interface UserStatusData {
 export interface OfflineMessagesData {
   messages: ChatMessage[];
 }
+
+// ==================== 学生认证状态更新 ====================
+
+/** 学生认证状态更新数据 */
+export interface WSStudentAuthUpdateData {
+  verify_id: number;
+  status: number;
+  status_desc: string;
+  need_action: string;
+  reject_reason?: string;
+  verify_data?: {
+    real_name?: string;
+    school_name?: string;
+    department?: string;
+    admission_year?: string;
+    student_id?: string;
+    verified_at?: string;
+  };
+}
+
+/** 学生认证状态更新消息 */
+export interface WSStudentAuthUpdateMessage extends WSMessage {
+  type: "student_auth_update";
+  data: WSStudentAuthUpdateData;
+}
+
+// ==================== 认证进度实时更新 ====================
+
+/** 认证进度实时更新数据 */
+export interface WSVerifyProgressData {
+  verify_id: number;
+  status: number;
+  refresh: boolean;
+  status_desc?: string;
+  need_action?: number;
+  reject_reason?: string;
+}
+
+/** 认证进度实时更新消息 */
+export interface WSVerifyProgressMessage extends WSMessage {
+  type: "verify_progress";
+  data: WSVerifyProgressData;
+}

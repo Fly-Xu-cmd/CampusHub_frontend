@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted } from "vue";
 
 const hasMounted = ref(false);
 
@@ -28,6 +28,20 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+@use "@/styles/variables.scss" as *;
+@use "@/styles/mixins.scss" as *;
+
+.client-only {
+  width: 100%;
+  height: 100%;
+  @include flex(column, center, center);
+  .client-only-content {
+    @include flex(column, center, center);
+    width: 100%;
+    height: 100%;
+    flex: 1;
+  }
+}
 .client-only-placeholder {
   min-height: 400rpx;
   padding: 40rpx;
