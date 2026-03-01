@@ -1,12 +1,16 @@
 <template>
-	<CommonLayout headerType="title" title="我的票券" :showTabBar="true">
+	<CommonLayout headerType="title" title="我的票券" :showTabBar="true" :enableScroll="false">
 		<view class="content">
 			<scroll-view 
 				class="container" 
-				style="padding: 30rpx; height: 100%;" 
+				:style="{ padding: '30rpx', height: '100%' }" 
+                :scroll-top="scrollTop"
+				scroll-y
 				@scrolltolower="loadMore"
 				@refresherpulling="onRefresh"
 				@refresherrefresh="handleRefresh"
+                @scroll="handleScroll"
+                :scroll-with-animation="true"
 				:refresher-enabled="true"
 				:refresher-threshold="90"
 				:refresher-triggered="triggered"
@@ -30,8 +34,13 @@
 					<view v-for="ticket in tickets" :key="ticket.id" class="time-item">
 						<view class="time-item-left">
 							<view class="i-running">
-					<image v-if="ticket.coverUrl && isImageUrl(ticket.coverUrl)" :src="ticket.coverUrl" class="ticket-image" mode="aspectFill" @error="handleImageError(ticket)" />
-					<wd-icon v-else class-prefix="iconfont" name="morentupian" size="68rpx" color="#f97316" />
+					<image v-if="ticket.coverUrl && isImageUrl(ticket.coverUrl)" 
+                     :src="ticket.coverUrl" 
+                     class="ticket-image" 
+                     mode="aspectFill"
+                     @error="handleImageError(ticket)" 
+                     @click="navigateToDetail(ticket.eventId)" />
+					<wd-icon v-else class-prefix="iconfont" name="morentupian" size="68rpx" color="#f97316" @click="navigateToDetail(ticket.eventId)" />
 				</view>
 							<view class="event-info">
 								<view class="event-title">{{ ticket.eventName }}</view>
@@ -48,7 +57,7 @@
 						</view>
 						<view class="time-item-right">
 							<view class="qr-code-btn" @click="showQRCode(ticket)">
-								<view class="iconfont iconfont-qrcode" style="font-size: 24rpx; color: #999;"></view>
+								<view class="iconfont iconfont-qrcode" style="font-size: 44rpx; color: #999;"></view>
 							</view>
 						</view>
 					</view>
@@ -71,6 +80,10 @@
 					<text class="empty-text">暂无票券</text>
 				</view>
 			</scroll-view>
+
+            <wd-backtop :scrollTop="scrollTop" @click="scrollToTop" style="transform: translateY(130rpx) translateX(-100rpx);">
+                <wd-icon name="backtop" size="48rpx" color="#fff" />
+            </wd-backtop>
 
 			<!-- 二维码详情弹窗 -->
 			<view v-if="showQR && selectedTicket" class="qr-modal">
@@ -153,7 +166,7 @@ const error = ref<string | null>(null)
 
 // 分页相关状态
 const currentPage = ref(1)
-const pageSize = ref(6) // 初始每页显示6个票券
+const pageSize = ref(8) // 初始每页显示8个票券
 const hasMore = ref(true) // 是否有更多数据
 const refreshing = ref(false) // 下拉刷新状态
 const triggered = ref(false) // 控制下拉刷新状态
@@ -164,6 +177,17 @@ const verifyLoading = ref(false)
 const verifyResult = ref<string | null>(null)
 const verifySuccess = ref(false)
 
+const scrollTop = ref<number>(0)
+
+// 处理滚动事件，更新scrollTop
+const handleScroll = (e: any) => {
+	scrollTop.value = e.detail.scrollTop
+}
+
+// 点击返回顶部按钮时，平滑滚动到顶部
+const scrollToTop = () => {
+    scrollTop.value = 0
+}
 // 格式化活动时间
 const formatEventTime = (eventTime: string) => {
 	// 假设eventTime格式为 '2024-10-24 19:00:00'
@@ -264,8 +288,9 @@ const fetchTicketDetails = async (isRefresh: boolean = false) => {
 		}
 		
 		// 检查是否有更多数据
-		// 当返回的数据量小于请求的pageSize时，说明没有更多数据了
-		hasMore.value = validTickets.length === pageSize.value
+		// 使用total字段判断是否还有更多数据
+		const total = result.data.total || 0
+		hasMore.value = tickets.value.length < total
 
 		// 如果是刷新且无数据，设置error为null
 		if (isRefresh && validTickets.length === 0) {
@@ -436,6 +461,10 @@ const loadMore = () => {
 	}
 }
 
+// const scrollTop = ref<number>(0)
+// onPageScroll((e) => {
+//   scrollTop.value = e.scrollTop
+// })
 // 下拉刷新开始
 const onRefresh = () => {
 	// 下拉刷新的视觉效果由框架处理
@@ -447,8 +476,6 @@ const handleRefresh = async () => {
 	triggered.value = true
 	
 	try {
-		// 每次刷新时，将 pageSize 增加 6
-		pageSize.value += 6
 		// 刷新时重新加载数据
 		await fetchTicketDetails(true)
 	} finally {
@@ -458,6 +485,13 @@ const handleRefresh = async () => {
 			triggered.value = false
 		}, 300)
 	}
+}
+
+// 跳转到活动详情页面
+const navigateToDetail = (eventId: string) => {
+	uni.navigateTo({
+		url: `/pages/home/detail?id=${eventId}`
+	})
 }
 
 // 组件挂载时获取票券数据
@@ -473,8 +507,15 @@ onMounted(() => {
 	color: #333;
 }
 
+.content {
+	height: 92%;
+	box-sizing: border-box;
+}
+
 .container {
 	box-sizing: border-box;
+	overflow: auto;
+	height: 100%;
 }
 
 .time-item {
@@ -621,7 +662,7 @@ onMounted(() => {
 }
 
 .event-title {
-	font-size: 25rpx;
+	font-size: 29rpx;
 	font-weight: bold;
 	color: #333;
 	font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
