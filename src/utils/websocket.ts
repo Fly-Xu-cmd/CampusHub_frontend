@@ -37,6 +37,7 @@ class ChatWebSocket {
   private reconnectTimer: number | null = null;
   private reconnectAttempts = 0;
   private messageQueue: WSMessage[] = []; // 消息队列（未认证时缓存消息）
+  private manualDisconnect = false; // 手动断开标志，阻止自动重连
 
   // 事件监听器
   private listeners: Map<string, Set<WebSocketEventCallback>> = new Map();
@@ -101,6 +102,8 @@ class ChatWebSocket {
       return;
     }
 
+    // 重置手动断开标志，允许自动重连
+    this.manualDisconnect = false;
     this.status = "connecting";
     this.emit("statusChange", this.status);
 
@@ -163,8 +166,10 @@ class ChatWebSocket {
       this.stopHeartbeat();
       this.emit("statusChange", this.status);
 
-      // 尝试重连
-      this.handleReconnect();
+      // 如果是手动断开，不重连
+      if (!this.manualDisconnect) {
+        this.handleReconnect();
+      }
     };
     // #endif
 
@@ -198,7 +203,11 @@ class ChatWebSocket {
       this.isAuthenticated = false;
       this.stopHeartbeat();
       this.emit("statusChange", this.status);
-      this.handleReconnect();
+
+      // 如果是手动断开，不重连
+      if (!this.manualDisconnect) {
+        this.handleReconnect();
+      }
     });
     // #endif
   }
@@ -241,11 +250,6 @@ class ChatWebSocket {
 
       case "pong":
         // 心跳响应，不做处理
-        break;
-
-      case "student_auth_update":
-        // 学生认证状态更新
-        this.emit("studentAuthUpdate", message.data);
         break;
 
       case "verify_progress":
@@ -332,6 +336,9 @@ class ChatWebSocket {
    * 断开连接
    */
   disconnect(): void {
+    // 设置手动断开标志，阻止自动重连
+    this.manualDisconnect = true;
+
     this.stopHeartbeat();
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
@@ -347,6 +354,8 @@ class ChatWebSocket {
     this.status = "disconnected";
     this.messageQueue = [];
     this.reconnectAttempts = 0;
+
+    console.log("[WebSocket] 已手动断开连接，停止重连");
   }
 
   /**

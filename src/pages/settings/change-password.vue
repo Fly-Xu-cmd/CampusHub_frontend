@@ -25,16 +25,16 @@
 
       <view class="form-section">
         <view class="input-wrap">
-          <text class="label">QQ邮箱</text>
+          <text class="label">旧密码</text>
           <view class="input-inner">
             <input
               class="real-input"
-              placeholder="请输入QQ邮箱"
+              placeholder="请输入旧密码"
               :password="!showCurrentPassword"
-              v-model="formData.qqEmail"
+              v-model="formData.oldPassword"
             />
             <wd-icon
-              :name="showCurrentPassword ? 'browse-off' : 'browse'"
+              :name="showNewPassword ? 'browse-off' : 'browse'"
               size="36rpx"
               color="#94a3b8"
               @click="toggleCurrentPassword"
@@ -75,27 +75,6 @@
             ></wd-icon>
           </view>
         </view>
-
-        <view class="input-wrap">
-          <text class="label">确认新密码</text>
-          <view class="input-inner">
-            <input
-              class="real-input"
-              placeholder="验证码"
-              placeholder-class="placeholder-style"
-              v-model="formData.qqCode"
-              type="number"
-              maxlength="6"
-            />
-            <view
-              class="verify-btn"
-              :class="{ disabled: timer > 0 }"
-              @click="getVerifyCode"
-            >
-              {{ timer > 0 ? `${timer}s后重试` : "获取验证码" }}
-            </view>
-          </view>
-        </view>
       </view>
 
       <view class="forget-tip" @click="toForgotPassword">忘记当前密码？</view>
@@ -121,10 +100,9 @@ import type { PostUserPasswordRequest } from "@/types/modules/profile";
 const userStore = useUserStore();
 const loading = ref(false);
 const formData = ref({
-  qqEmail: "",
+  oldPassword: "",
   newPassword: "",
   confirmPassword: "",
-  qqCode: "",
 });
 
 const timer = ref(0);
@@ -155,46 +133,17 @@ const toggleConfirmPassword = () => {
   showConfirmPassword.value = !showConfirmPassword.value;
 };
 
-const getVerifyCode = async () => {
-  if (timer.value > 0) {
-    return; // 防止重复点击
-  }
-
-  if (!qqEmailRegex.test(formData.value.qqEmail)) {
-    uni.showToast({ title: "请输入正确的QQ邮箱地址", icon: "none" });
-    return;
-  }
-
-  try {
-    await userStore.requestPasswordResetCode(formData.value.qqEmail);
-    uni.showToast({ title: "验证码已发送，请注意查收", icon: "success" });
-    timer.value = 60; // 设置60秒倒计时
-
-    const countdown = setInterval(() => {
-      if (timer.value > 0) {
-        timer.value -= 1;
-      } else {
-        clearInterval(countdown);
-      }
-    }, 1000);
-  } catch (error) {
-    console.error("获取验证码失败:", error);
-    uni.showToast({ title: "获取验证码失败，请重试", icon: "none" });
-  }
-};
-
 // 跳转到忘记密码页面
 const toForgotPassword = () => {
-  uni.navigateTo({ url: "/pages/login/index?action=resetPassword" });
+  uni.navigateTo({ url: "/pages/forgot-password/index" });
 };
 
 const handleSave = async () => {
   // 表单验证
   if (
-    !formData.value.qqEmail ||
+    !formData.value.oldPassword ||
     !formData.value.newPassword ||
-    !formData.value.confirmPassword ||
-    !formData.value.qqCode
+    !formData.value.confirmPassword
   ) {
     uni.showToast({ title: "请填写完整信息", icon: "none" });
     return;
@@ -210,17 +159,11 @@ const handleSave = async () => {
     return;
   }
 
-  if (!qqEmailRegex.test(formData.value.qqEmail)) {
-    uni.showToast({ title: "请输入正确的QQ邮箱地址", icon: "none" });
-    return;
-  }
-
   loading.value = true;
   try {
     const passwordData: PostUserPasswordRequest = {
-      qq_email: formData.value.qqEmail,
-      new_password: formData.value.newPassword,
-      qq_code: formData.value.qqCode,
+      originPassword: formData.value.oldPassword,
+      newPassword: formData.value.newPassword,
     };
 
     await updatePassword(passwordData);

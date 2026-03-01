@@ -50,10 +50,8 @@ export interface PostUserInterestsRequest {
 
 // 修改用户密码请求数据
 export interface PostUserPasswordRequest {
-  qq_code: string;
-  qq_email: string;
-  new_password: string;
-
+  newPassword: string;
+  originPassword: string;
   [property: string]: any;
 }
 

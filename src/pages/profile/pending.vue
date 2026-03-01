@@ -1,55 +1,73 @@
 <template>
   <CommonLayout headerType="standard" title="待参加活动" showBack bgWhite>
-    <!-- 加载中 -->
-    <view v-if="loading" class="loading-container">
-      <AsyncLoading text="加载中..." />
-    </view>
-
-    <!-- 空状态 -->
-    <view v-else-if="activities.length === 0" class="empty-container">
-      <wd-icon name="calendar" size="64px" color="#cbd5e1"></wd-icon>
-      <text class="empty-text">暂无待参加活动</text>
-    </view>
-
-    <!-- 活动列表 -->
-    <view v-else class="list-container">
-      <view
-        class="activity-card"
-        v-for="activity in activities"
-        :key="activity.id"
-        @click="handleToDetail(activity.id)"
-      >
-        <image
-          :src="activity.imageUrl || defaultImage"
-          class="cover-img"
-          mode="aspectFill"
-        />
-        <view class="info-col">
-          <text class="title">{{ activity.name }}</text>
-          <view class="meta-row">
-            <wd-icon
-              name="time"
-              size="12px"
-              color="#94a3b8"
-              custom-style="margin-right:8rpx"
-            ></wd-icon>
-            <text class="time">{{ formatTime(activity.time) }}</text>
-          </view>
-          <text class="status-tip">{{ getCountdownText(activity.time) }}</text>
+    <ClientOnly>
+      <template #default>
+        <!-- 加载中 -->
+        <view v-if="loading" class="loading-container">
+          <AsyncLoading text="加载中..." />
         </view>
-      </view>
 
-      <!-- 加载更多 -->
-      <view
-        v-if="hasMore"
-        class="load-more"
-        @click="loadMore"
-        hover-class="btn-hover"
-      >
-        <text v-if="loadingMore">加载中...</text>
-        <text v-else>加载更多</text>
-      </view>
-    </view>
+        <!-- 空状态 -->
+        <view v-else-if="activities.length === 0" class="empty-container">
+          <wd-icon name="calendar" size="64px" color="#cbd5e1"></wd-icon>
+          <text class="empty-text">暂无待参加活动</text>
+        </view>
+
+        <!-- 活动列表 -->
+        <view v-else class="list-container">
+          <view
+            class="activity-card"
+            v-for="activity in activities"
+            :key="activity.id"
+            @click="handleToDetail(activity.id)"
+          >
+            <image
+              :src="activity.imageUrl || defaultImage"
+              class="cover-img"
+              mode="aspectFill"
+            />
+            <view class="info-col">
+              <text class="title">{{ activity.name }}</text>
+              <view class="meta-row">
+                <wd-icon
+                  name="time"
+                  size="12px"
+                  color="#94a3b8"
+                  custom-style="margin-right:8rpx"
+                ></wd-icon>
+                <text class="time">{{ formatTime(activity.time) }}</text>
+              </view>
+              <text class="status-tip">{{ getCountdownText(activity.time) }}</text>
+            </view>
+          </view>
+
+          <!-- 加载更多 -->
+          <view
+            v-if="hasMore"
+            class="load-more"
+            @click="loadMore"
+            hover-class="btn-hover"
+          >
+            <text v-if="loadingMore">加载中...</text>
+            <text v-else>加载更多</text>
+          </view>
+        </view>
+      </template>
+
+      <template #placeholder>
+        <!-- SSR 骨架屏 -->
+        <view class="skeleton-container">
+          <view v-for="i in 3" :key="i" class="skeleton-card">
+            <view class="skeleton-img"></view>
+            <view class="skeleton-info">
+              <view class="skeleton-title"></view>
+              <view class="skeleton-meta"></view>
+              <view class="skeleton-status"></view>
+            </view>
+          </view>
+        </view>
+      </template>
+    </ClientOnly>
   </CommonLayout>
 </template>
 
@@ -226,6 +244,93 @@ onMounted(() => {
 
   &.btn-hover {
     opacity: 0.7;
+  }
+}
+
+// 骨架屏样式
+.skeleton-container {
+  padding: $spacing-md;
+}
+
+.skeleton-card {
+  @include card;
+  border: 1rpx solid $border-light;
+  padding: $spacing-sm;
+  margin-bottom: $spacing-md;
+  @include flex(row, flex-start, center);
+  gap: $spacing-md;
+
+  .skeleton-img {
+    width: 160rpx;
+    height: 160rpx;
+    border-radius: $border-radius-md;
+    background: linear-gradient(
+      90deg,
+      #f0f0f0 25%,
+      #e0e0e0 50%,
+      #f0f0f0 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    flex-shrink: 0;
+  }
+
+  .skeleton-info {
+    flex: 1;
+    height: 160rpx;
+    @include flex(column, space-between, flex-start);
+    padding: 4rpx 0;
+
+    .skeleton-title {
+      width: 80%;
+      height: 40rpx;
+      background: linear-gradient(
+        90deg,
+        #f0f0f0 25%,
+        #e0e0e0 50%,
+        #f0f0f0 75%
+      );
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+      border-radius: 4rpx;
+    }
+
+    .skeleton-meta {
+      width: 60%;
+      height: 28rpx;
+      background: linear-gradient(
+        90deg,
+        #f0f0f0 25%,
+        #e0e0e0 50%,
+        #f0f0f0 75%
+      );
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+      border-radius: 4rpx;
+    }
+
+    .skeleton-status {
+      width: 40%;
+      height: 28rpx;
+      background: linear-gradient(
+        90deg,
+        #f0f0f0 25%,
+        #e0e0e0 50%,
+        #f0f0f0 75%
+      );
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+      border-radius: 4rpx;
+    }
+  }
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
   }
 }
 </style>

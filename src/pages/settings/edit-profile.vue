@@ -314,7 +314,7 @@ const chooseAvatar = () => {
           if (response.data && response.data.data && response.data.data.id) {
             newAvatarId.value = response.data.data.id; // 获取新的头像ID
             hasNewAvatar.value = true;
-            newAvatarPath.value = filePath; // 显示新选择的头像
+            newAvatarPath.value = response.data.data.url; // 显示新选择的头像
             uni.showToast({
               title: "头像上传成功",
               icon: "success",
@@ -365,7 +365,12 @@ const handleSave = async () => {
       gender: formData.value.gender,
       age: formData.value.age,
       introduction: formData.value.introduction.trim(),
-      avatarId: hasNewAvatar.value ? newAvatarId.value : 0,
+      avatarId: hasNewAvatar.value
+        ? newAvatarId.value
+        : userStore.userInfo.avatarId,
+      avatarUrl: hasNewAvatar.value
+        ? newAvatarPath.value
+        : userStore.userInfo.avatarUrl,
       interestTagIds: formData.value.interestTagIds,
     };
 
@@ -374,7 +379,6 @@ const handleSave = async () => {
 
     uni.hideLoading();
     uni.showToast({ title: "保存成功", icon: "success" });
-
     // 更新本地存储的用户信息
     userStore.updateUserInfo({
       ...userStore.userInfo,
@@ -382,6 +386,9 @@ const handleSave = async () => {
       gender: formData.value.gender,
       age: String(formData.value.age),
       introduction: formData.value.introduction,
+      avatarId: hasNewAvatar.value
+        ? newAvatarId.value
+        : userStore.userInfo.avatarId,
       // 如果上传了新头像，从响应中获取新头像URL
       ...(response.data?.avatarUrl && { avatarUrl: response.data.avatarUrl }),
       // 更新兴趣标签
@@ -393,8 +400,7 @@ const handleSave = async () => {
     // 清除临时头像状态
     hasNewAvatar.value = false;
     newAvatarPath.value = "";
-
-    setTimeout(() => uni.navigateBack({ delta: 1 }), 1000);
+    uni.navigateBack({ delta: 1 });
   } catch (error) {
     uni.hideLoading();
     console.error("保存个人资料失败:", error);

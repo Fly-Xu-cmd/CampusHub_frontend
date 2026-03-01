@@ -126,6 +126,7 @@ export const useUserStore = defineStore("user", {
     logout() {
       // 断开 WebSocket 连接（仅在客户端）
       // #ifdef H5
+      console.log("SSR 模式：跳过断开 WebSocket 连接", import.meta.env.SSR);
       if (!import.meta.env.SSR) {
         destroyWebSocket();
         console.log("[UserStore] WebSocket 连接已断开");

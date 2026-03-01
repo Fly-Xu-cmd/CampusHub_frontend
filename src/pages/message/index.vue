@@ -34,7 +34,7 @@
         >
           <view class="message-avatar">
             <image
-              :src="group.coverUrl || defaultAvatar"
+              :src="group.cover_url || defaultAvatar"
               mode="aspectFill"
             ></image>
             <view

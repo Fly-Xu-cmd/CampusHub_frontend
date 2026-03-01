@@ -3,7 +3,7 @@
     headerType="none"
     :contentBg="isAuthenticated ? 'fff' : '#f6faff'"
     padding="0 0"
-    :showTabBar="true"
+    :showTabBar="isAuthenticated"
     :isSafeArea="false"
   >
     <ClientOnly
@@ -271,10 +271,11 @@
 
 <script setup lang="ts">
 import { onShow } from "@dcloudio/uni-app";
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useUserStore } from "@/store/user";
 import { getProfile, getAuthProgress } from "@/api/profile/router";
 import type { GetStudentAuthProgressData } from "@/types/modules/profile";
+import { getWebSocket } from "@/utils/websocket";
 
 const userStore = useUserStore();
 // 使用绝对路径确保静态资源正确加载
@@ -366,39 +367,24 @@ const mapNeedAction = (action: string | undefined): string => {
   return actionMap[action] || action;
 };
 
-onShow(async () => {
+onShow(() => {
   if (isAuthenticated.value) {
     loading.value = true;
     // 重置头像加载错误状态
     avatarLoadError.value = false;
     try {
-      // 并行获取个人资料和认证进度
-      const [profileRes, authRes] = await Promise.allSettled([
-        getProfile(),
-        getAuthProgress(),
-      ]);
-
-      // 更新个人资料
-      if (profileRes.status === "fulfilled" && profileRes.value.data) {
-        console.log("个人资料数据:", profileRes.value.data);
-        userStore.updateUserInfo(profileRes.value.data);
-      }
-
-      // 更新认证进度
-      if (authRes.status === "fulfilled" && authRes.value.data) {
-        const data = authRes.value.data;
-        // 映射 need_action 从中文描述到枚举值
-        authProgress.value = {
-          ...data,
-          need_action: mapNeedAction(data.need_action) as any,
-        };
-      }
-    } catch (error: any) {
-      console.error("获取个人资料失败:", error);
-      // 如果获取失败且是401错误，清除用户状态
-      if (error?.message?.includes("未授权")) {
-        userStore.logout();
-      }
+      getProfile()
+        .then((res) => {
+          const data = res.data;
+          userStore.updateUserInfo(data);
+        })
+        .catch((err) => {
+          console.error("获取个人资料失败:", err);
+          // 如果获取失败且是401错误，清除用户状态
+          if (err?.message?.includes("未授权")) {
+            userStore.logout();
+          }
+        });
     } finally {
       loading.value = false;
     }
@@ -408,6 +394,41 @@ onShow(async () => {
   }
 });
 
+const handleVerifyProgress = async (data: GetStudentAuthProgressData) => {
+  console.log("收到认证进度更新:", data);
+  if (data.refresh) {
+    getAuthProgress()
+      .then((res) => {
+        const data = res.data;
+        authProgress.value = {
+          ...data,
+          need_action: mapNeedAction(data.need_action) as any,
+        };
+      })
+      .catch((err) => {
+        console.error("获取认证进度失败:", err);
+      });
+  }
+};
+
+onMounted(async () => {
+  // 页面初次加载时的逻辑（如果需要）
+  // 注册 WebSocket 监听器，实时接收认证状态更新
+  const ws = getWebSocket();
+  if (ws) {
+    ws.on("verifyProgress", handleVerifyProgress);
+    console.log("[VerifyPage] 已注册学生认证状态更新监听器");
+  }
+});
+
+onUnmounted(async () => {
+  // 页面卸载时清理 WebSocket 监听器
+  const ws = getWebSocket();
+  if (ws) {
+    ws.off("verifyProgress", handleVerifyProgress);
+    console.log("[VerifyPage] 已移除学生认证状态更新监听器");
+  }
+});
 // --- 导航逻辑 ---
 const handleToLogin = () => {
   uni.navigateTo({ url: "/pages/login/index" });

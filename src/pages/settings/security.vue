@@ -249,7 +249,7 @@ const confirmLogoff = async () => {
     }, 1000);
   } catch (error: any) {
     console.log("error", error);
-    codeError.value = error.response?.data?.message || "注销失败，请重试";
+    codeError.value = error || "注销失败，请重试";
   } finally {
     submitting.value = false;
   }
