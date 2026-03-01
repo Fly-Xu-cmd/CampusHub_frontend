@@ -111,7 +111,7 @@
         </view>
 
         <view class="back-login" @click="goToLogin">
-          <text class="text-gray">返回登录</text>
+          <text class="text-gray">返回</text>
         </view>
       </view>
     </view>
@@ -297,6 +297,7 @@ const handleResetPassword = async () => {
   uni.showLoading({ title: "重置中..." });
   try {
     await authApi.forgotPassword({
+      qq_email: formData.qqEmail,
       qq_code: formData.qqCode,
       new_password: formData.newPassword,
     });

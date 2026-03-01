@@ -13,38 +13,8 @@ onLaunch(() => {
   systemStore.initSystemInfo();
   userStore.initUserStore();
 
-  // 2. 如果用户已登录，恢复 WebSocket 连接
-  // 仅在客户端环境执行，避免 SSR 时报错
-  // #ifdef H5
-  if (!import.meta.env.SSR) {
-    if (userStore.checkLoginStatus()) {
-      const accessToken = uni.getStorageSync("accessToken");
-      if (accessToken) {
-        const wsUrl = import.meta.env.VITE_WS_URL || "ws://192.168.10.9/ws";
-        initWebSocket({
-          url: wsUrl,
-          token: accessToken,
-        });
-        console.log("[App] WebSocket 连接已恢复");
-      }
-    }
-  }
-  // #endif
-
-  // #ifndef H5
-  // 非 H5 平台（小程序等）：直接执行 WebSocket 初始化
-  if (userStore.checkLoginStatus()) {
-    const accessToken = uni.getStorageSync("accessToken");
-    if (accessToken) {
-      const wsUrl = import.meta.env.VITE_WS_URL || "ws://192.168.10.9/ws";
-      initWebSocket({
-        url: wsUrl,
-        token: accessToken,
-      });
-      console.log("[App] WebSocket 连接已恢复");
-    }
-  }
-  // #endif
+  // 注意：WebSocket 初始化已由 userStore.restoreFromStorage() 处理
+  // 不需要在此处重复初始化，避免多重连接问题
 });
 
 onShow(() => {

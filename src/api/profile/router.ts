@@ -26,7 +26,7 @@ const apiUrls = {
   getProfile: "/api/v1/users/details",
   updateProfile: "/api/v1/users/details",
   updateInterests: "/api/v1/interests",
-  updatePassword: "/api/v1/users/info/password/qq_email",
+  updatePassword: "/api/v1/users/info/password",
   getAuthProgress: "/api/v1/verify/student/current",
   postStudentAuth: "/api/v1/verify/student/apply",
   postStudentAuthConfirm: "/api/v1/verify/student/confirm",
