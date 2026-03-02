@@ -198,9 +198,10 @@ const readAll = () => {
   });
 };
 
+import { safeNavigateBack } from "@/utils/navigation";
+
 const goBack = () => {
-  // 返回上一页的逻辑
-  uni.navigateBack();
+  safeNavigateBack("/pages/message/index");
 };
 
 onMounted(() => {

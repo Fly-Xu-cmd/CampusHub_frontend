@@ -19,8 +19,10 @@
 </template>
 
 <script setup lang="ts">
+import { safeNavigateBack } from "@/utils/navigation";
+
 const toBack = () => {
-  uni.navigateBack();
+  safeNavigateBack("/pages/settings/index");
 };
 </script>
 

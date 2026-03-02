@@ -1,123 +1,139 @@
 <template>
   <CommonLayout headerType="none" padding="0 0">
-    <!-- 聊天页面容器 -->
-    <view class="chat-container">
-      <!-- 顶部导航栏 -->
-      <view class="chat-header">
-        <view class="header-left" @click="goBack">
-          <wd-icon name="arrow-left1" size="48rpx" color="#1e293b"></wd-icon>
-        </view>
-        <view class="header-center">
-          <view class="group-name">
-            {{ groupTitle.name }}({{ groupTitle.member_count }})
+    <ClientOnly>
+      <template #default>
+        <!-- 聊天页面容器 -->
+        <view class="chat-container">
+          <!-- 顶部导航栏 -->
+          <view class="chat-header">
+            <view class="header-left" @click="goBack">
+              <wd-icon
+                name="arrow-left1"
+                size="48rpx"
+                color="#1e293b"
+              ></wd-icon>
+            </view>
+            <view class="header-center">
+              <view class="group-name" v-if="!loadingHistory">
+                {{ groupTitle.name }}({{ groupTitle.member_count }})
+              </view>
+              <view v-else>...</view>
+            </view>
+            <view class="header-right" @click="viewChatDetail">
+              <view class="more-icon">⋯</view>
+            </view>
           </view>
-        </view>
-        <view class="header-right" @click="viewChatDetail">
-          <view class="more-icon">⋯</view>
-        </view>
-      </view>
 
-      <!-- 聊天消息区域 -->
-      <scroll-view
-        class="chat-content"
-        scroll-y
-        :scroll-into-view="scrollIntoView"
-        :scroll-with-animation="true"
-        @scrolltoupper="handleScrollToUpper"
-        @scroll="handleScroll"
-        upper-threshold="50"
-        enable-flex
-      >
-        <!-- 加载更多提示 -->
-        <view class="load-more" v-if="hasMore">
-          <text v-if="loadingHistory">加载中...</text>
-          <text v-else>下拉加载更多消息</text>
-        </view>
-        <view class="load-more" v-if="!hasMore && messages.length > 0">
-          <text>没有更多消息了</text>
-        </view>
-
-        <!-- 消息列表 -->
-        <view class="message-list">
-          <!-- 消息项 -->
-          <view
-            class="message-item"
-            :class="msg.sender_id === currentUserId ? 'mine' : 'others'"
-            v-for="msg in messages"
-            :key="msg.message_id"
-            :id="'msg-' + msg.message_id"
+          <!-- 聊天消息区域 -->
+          <scroll-view
+            class="chat-content"
+            scroll-y
+            :scroll-into-view="scrollIntoView"
+            :scroll-with-animation="true"
+            @scrolltoupper="handleScrollToUpper"
+            @scroll="handleScroll"
+            upper-threshold="50"
+            enable-flex
           >
-            <!-- 他人消息 -->
-            <template v-if="msg.sender_id !== currentUserId">
-              <view class="message-avatar">
-                <image :src="defaultAvatar" mode="aspectFill"></image>
-              </view>
-              <view class="message-info">
-                <view class="message-sender">{{ msg.sender_name }}</view>
-                <view class="message-bubble">
-                  <!-- 文字消息 -->
-                  <text class="message-text" v-if="msg.msg_type === 1">{{
-                    msg.content
-                  }}</text>
-                  <!-- 图片消息 -->
-                  <image
-                    class="message-image"
-                    v-else-if="msg.msg_type === 2"
-                    :src="msg.image_url"
-                    mode="widthFix"
-                  ></image>
-                </view>
-              </view>
-            </template>
+            <!-- 加载更多提示 -->
+            <view class="load-more" v-if="hasMore">
+              <text v-if="loadingHistory">加载中...</text>
+              <text v-else>下拉加载更多消息</text>
+            </view>
+            <view class="load-more" v-if="!hasMore && messages.length > 0">
+              <text>没有更多消息了</text>
+            </view>
 
-            <!-- 自己消息 -->
-            <template v-else>
-              <view class="message-bubble">
-                <!-- 文字消息 -->
-                <text class="message-text" v-if="msg.msg_type === 1">{{
-                  msg.content
-                }}</text>
-                <!-- 图片消息 -->
-                <image
-                  class="message-image"
-                  v-else-if="msg.msg_type === 2"
-                  :src="msg.image_url"
-                  mode="widthFix"
-                ></image>
+            <!-- 消息列表 -->
+            <view class="message-list">
+              <!-- 消息项 -->
+              <view
+                class="message-item"
+                :class="msg.sender_id === currentUserId ? 'mine' : 'others'"
+                v-for="msg in messages"
+                :key="msg.message_id"
+                :id="'msg-' + msg.message_id"
+              >
+                <!-- 他人消息 -->
+                <template v-if="msg.sender_id !== currentUserId">
+                  <view class="message-avatar">
+                    <image
+                      :src="msg.sender_avatar || defaultAvatar"
+                      mode="aspectFill"
+                    ></image>
+                  </view>
+                  <view class="message-info">
+                    <view class="message-sender">{{ msg.sender_name }}</view>
+                    <view class="message-bubble">
+                      <!-- 文字消息 -->
+                      <text class="message-text" v-if="msg.msg_type === 1">{{
+                        msg.content
+                      }}</text>
+                      <!-- 图片消息 -->
+                      <image
+                        class="message-image"
+                        v-else-if="msg.msg_type === 2"
+                        :src="msg.image_url"
+                        mode="widthFix"
+                      ></image>
+                    </view>
+                  </view>
+                </template>
+
+                <!-- 自己消息 -->
+                <template v-else>
+                  <view class="message-bubble">
+                    <!-- 文字消息 -->
+                    <text class="message-text" v-if="msg.msg_type === 1">{{
+                      msg.content
+                    }}</text>
+                    <!-- 图片消息 -->
+                    <image
+                      class="message-image"
+                      v-else-if="msg.msg_type === 2"
+                      :src="msg.image_url"
+                      mode="widthFix"
+                    ></image>
+                  </view>
+                  <view class="message-avatar">
+                    <image
+                      :src="userStore.userInfo.avatarUrl || defaultAvatar"
+                      mode="aspectFill"
+                    ></image>
+                  </view>
+                </template>
               </view>
-              <view class="message-avatar">
-                <image
-                  :src="userStore.userInfo.avatarUrl || defaultAvatar"
-                  mode="aspectFill"
-                ></image>
-              </view>
-            </template>
+            </view>
+          </scroll-view>
+
+          <!-- 底部输入区域 -->
+          <view class="chat-input">
+            <view class="input-container">
+              <input
+                type="text"
+                placeholder="发送消息..."
+                v-model="inputText"
+                class="message-input"
+              />
+            </view>
+            <view class="send-button" @click="sendMessage">
+              <view class="send-text">发送</view>
+            </view>
           </view>
         </view>
-      </scroll-view>
-
-      <!-- 底部输入区域 -->
-      <view class="chat-input">
-        <view class="input-container">
-          <input
-            type="text"
-            placeholder="发送消息..."
-            v-model="inputText"
-            class="message-input"
-          />
-        </view>
-        <view class="send-button" @click="sendMessage">
-          <view class="send-text">发送</view>
-        </view>
-      </view>
-    </view>
+      </template>
+    </ClientOnly>
   </CommonLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import { getGroupInfo, getGroupHistory, getOfflineMessages } from "@/api/message/router";
+import {
+  getGroupInfo,
+  getGroupHistory,
+  getOfflineMessages,
+} from "@/api/message/router";
 import { getWebSocket } from "@/utils/websocket";
 import type { ChatMessage } from "@/types/modules/chat";
 import { useUserStore } from "@/store/user";
@@ -149,14 +165,12 @@ const initWS = () => {
   // 等待认证成功
   if (ws.isAuth()) {
     // 已认证，直接加入群聊
-    ws.joinGroup(groupId);
     loadHistoryMessages();
     fetchOfflineMessages();
   } else {
     // 未认证，等待认证成功
     ws.on("authenticated", () => {
       console.log("WebSocket 认证成功");
-      ws.joinGroup(groupId);
       loadHistoryMessages();
       fetchOfflineMessages();
     });
@@ -221,14 +235,14 @@ const fetchOfflineMessages = async () => {
 
       // 过滤出当前群聊的消息
       const offlineMessages = res.data.messages.filter(
-        (msg: any) => msg.group_id === groupId
+        (msg: any) => msg.group_id === groupId,
       );
 
       if (offlineMessages.length > 0) {
         // 将离线消息添加到消息列表（去重）
         const existingIds = new Set(messages.value.map((m) => m.message_id));
         const newMessages = offlineMessages.filter(
-          (msg: any) => !existingIds.has(msg.message_id)
+          (msg: any) => !existingIds.has(msg.message_id),
         );
 
         if (newMessages.length > 0) {
@@ -274,7 +288,12 @@ const handleScroll = (e: any) => {
     console.log("[滚动] 当前滚动位置:", scrollTop);
 
     // 当滚动到顶部（scrollTop < 50）且有更多消息时，加载历史消息
-    if (scrollTop < 50 && hasMore.value && !loadingHistory.value && messages.value.length > 0) {
+    if (
+      scrollTop < 50 &&
+      hasMore.value &&
+      !loadingHistory.value &&
+      messages.value.length > 0
+    ) {
       console.log("[滚动] 触发加载历史消息");
       const oldestMessage = messages.value[0];
       loadHistoryMessages(oldestMessage.message_id);
@@ -349,9 +368,11 @@ const viewChatDetail = () => {
   });
 };
 
+import { safeNavigateBack } from "@/utils/navigation";
+
 // 返回上一页
 const goBack = () => {
-  uni.navigateBack();
+  safeNavigateBack("/pages/message/index", 1);
 };
 
 // 页面加载
@@ -365,11 +386,6 @@ onLoad((options: any) => {
 
 // 页面卸载
 onUnmounted(() => {
-  const ws = getWebSocket();
-  if (ws) {
-    ws.leaveGroup(groupId);
-  }
-
   // 保存当前时间作为离线时间
   const currentTime = Math.floor(Date.now() / 1000);
   uni.setStorageSync("last_offline_time", currentTime);

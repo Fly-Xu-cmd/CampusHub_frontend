@@ -404,6 +404,7 @@ const handleVerifyProgress = async (data: GetStudentAuthProgressData) => {
           ...data,
           need_action: mapNeedAction(data.need_action) as any,
         };
+        console.log("更新认证进度:", authProgress.value);
       })
       .catch((err) => {
         console.error("获取认证进度失败:", err);
@@ -413,6 +414,17 @@ const handleVerifyProgress = async (data: GetStudentAuthProgressData) => {
 
 onMounted(async () => {
   // 页面初次加载时的逻辑（如果需要）
+  getAuthProgress()
+    .then((res) => {
+      const data = res.data;
+      authProgress.value = {
+        ...data,
+        need_action: mapNeedAction(data.need_action) as any,
+      };
+    })
+    .catch((err) => {
+      console.error("获取认证进度失败:", err);
+    });
   // 注册 WebSocket 监听器，实时接收认证状态更新
   const ws = getWebSocket();
   if (ws) {

@@ -107,8 +107,10 @@ const isImageUrl = (str: string) => {
   return str.startsWith("http") || str.startsWith("/static");
 };
 
+import { safeNavigateBack } from "@/utils/navigation";
+
 const handleBack = () => {
-  uni.navigateBack();
+  safeNavigateBack("/pages/settings/index");
 };
 
 const toggleTag = (tag: InterestTag) => {
