@@ -36,7 +36,6 @@ export interface CreditLogsResponse {
 
 /** 信用分记录查询参数 */
 export interface CreditLogsParams {
-  changeType?: CreditChangeType;
   startTime?: number;
   endTime?: number;
   page?: number;

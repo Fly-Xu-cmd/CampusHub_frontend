@@ -31,35 +31,6 @@
         </view>
       </view>
 
-      <!-- 筛选器骨架屏 -->
-      <view v-if="initialLoading" class="filter-section skeleton">
-        <view class="filter-scroll">
-          <view class="skeleton-filter-item" v-for="i in 4" :key="i"></view>
-        </view>
-      </view>
-
-      <!-- 筛选器 -->
-      <view v-else class="filter-section">
-        <scroll-view class="filter-scroll" scroll-x :show-scrollbar="false">
-          <view
-            class="filter-item"
-            :class="{ active: !selectedType }"
-            @click="handleFilterChange(0)"
-          >
-            <text class="filter-text">全部</text>
-          </view>
-          <view
-            v-for="type in filterTypes"
-            :key="type.value"
-            class="filter-item"
-            :class="{ active: selectedType === type.value }"
-            @click="handleFilterChange(type.value)"
-          >
-            <text class="filter-text">{{ type.label }}</text>
-          </view>
-        </scroll-view>
-      </view>
-
       <!-- 记录列表 -->
       <view class="logs-section">
         <!-- 骨架屏 -->
@@ -149,16 +120,6 @@ import { useUserStore } from "@/store/user";
 const userStore = useUserStore();
 const currentCredit = computed(() => userStore.userInfo.credit || 0);
 
-// 筛选类型
-const filterTypes = [
-  { label: "正常履约", value: CreditChangeType.NORMAL_PERFORMANCE },
-  { label: "爽约", value: CreditChangeType.NO_SHOW },
-  { label: "圆满举办", value: CreditChangeType.SUCCESSFUL_EVENT },
-  { label: "提前取消", value: CreditChangeType.EARLY_CANCEL },
-  { label: "临期取消", value: CreditChangeType.EXPIRED_CANCEL },
-  { label: "删除活动", value: CreditChangeType.DELETE_ACTIVITY },
-];
-
 // 数据状态
 const creditLogs = ref<CreditLog[]>([]);
 const selectedType = ref<number | undefined>(undefined);
@@ -183,7 +144,6 @@ const fetchCreditLogs = async (isLoadMore = false) => {
     const currentPage = isLoadMore ? page.value + 1 : 1;
 
     const res = await getCreditLogs({
-      changeType: selectedType.value,
       page: currentPage,
       pageSize: pageSize.value,
     });
