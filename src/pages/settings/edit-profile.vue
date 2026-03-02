@@ -401,7 +401,7 @@ const handleSave = async () => {
     // 清除临时头像状态
     hasNewAvatar.value = false;
     newAvatarPath.value = "";
-    safeNavigateBack("/pages/profile/index", 1);
+    safeNavigateBack("/pages/profile/index");
   } catch (error) {
     uni.hideLoading();
     console.error("保存个人资料失败:", error);
@@ -412,7 +412,7 @@ const handleSave = async () => {
 };
 
 const toBack = () => {
-  safeNavigateBack("/pages/profile/index", 1);
+  safeNavigateBack("/pages/profile/index");
 };
 </script>
 
