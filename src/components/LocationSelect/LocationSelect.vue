@@ -30,11 +30,15 @@
 					<view class="search-input-wrapper">
 						<text class="search-icon">ὐd</text>
 						<input 
-							id="search"
-							class="search-input" 
-							placeholder="搜索地点"
-							@input="(e: Event) => debouncedHandleSearch((e.target as HTMLInputElement).value)"
-						/>
+						id="search"
+						class="search-input" 
+						placeholder="搜索地点"
+						v-model="searchKeyword"
+						@input="(e: Event) => debouncedHandleSearch((e.target as HTMLInputElement).value)"
+					/>
+						<view class="search-confirm-btn" @click="confirmSearch">
+							<text style="font-size: 24rpx; color: #3b82f6;">确认</text>
+						</view>
 					</view>
 				</view>
 				<!-- 地图容器 -->
@@ -262,7 +266,12 @@ const initMapInstance = () => {
 					panel: false,
 					autoFitView: true
 				})
-				placeSearchInstance.value.search('河南科技学院')
+				// 如果有搜索关键词，搜索该地点
+				if (searchKeyword.value) {
+					placeSearchInstance.value.search(searchKeyword.value)
+				} else {
+					placeSearchInstance.value.search('河南科技学院')
+				}
 			} catch (err) {
 				// 搜索功能失败不影响地图基本显示
 			}
@@ -336,10 +345,23 @@ const handleSearch = (value: string) => {
 	placeSearchInstance.value.search(value, (status: string, result: any) => {
 		if (status === 'complete' && result.poiList) {
 			poiList.value = result.poiList.pois
+			// 自动选择第一个搜索结果
+			if (poiList.value.length > 0) {
+				selectedPoi.value = poiList.value[0]
+				// 在地图上标记选中位置
+				markSelectedLocation(poiList.value[0].location.lng, poiList.value[0].location.lat)
+			}
 		} else {
 			poiList.value = []
 		}
 	})
+}
+
+// 确认搜索
+const confirmSearch = () => {
+	if (searchKeyword.value) {
+		handleSearch(searchKeyword.value)
+	}
 }
 
 // 选择地点
@@ -355,25 +377,38 @@ const selectPoi = (poi: any) => {
 // 确认H5环境下的位置选择
 const confirmH5Location = () => {
 	if (!selectedPoi.value) {
-		uni.showToast({
-			title: '请选择地点',
-			icon: 'none'
-		})
-		return
+		// 如果没有选择地点但有搜索关键词，尝试搜索
+		if (searchKeyword.value) {
+			// 直接使用搜索关键词作为地点名称
+			localLocationName.value = searchKeyword.value
+			localLocationAddress.value = searchKeyword.value
+			// 触发事件，更新父组件的数据
+			emit('update:locationName', searchKeyword.value)
+			emit('update:locationAddress', searchKeyword.value)
+			emit('update:locationLatitude', localLocationLatitude.value)
+			emit('update:locationLongitude', localLocationLongitude.value)
+			showH5LocationMap.value = false
+		} else {
+			uni.showToast({
+				title: '请选择地点',
+				icon: 'none'
+			})
+			return
+		}
+	} else {
+		localLocationName.value = selectedPoi.value.name
+		localLocationAddress.value = selectedPoi.value.address
+		localLocationLatitude.value = selectedPoi.value.location.lat
+		localLocationLongitude.value = selectedPoi.value.location.lng
+
+		// 触发事件，更新父组件的数据
+		emit('update:locationName', selectedPoi.value.name)
+		emit('update:locationAddress', selectedPoi.value.address)
+		emit('update:locationLatitude', selectedPoi.value.location.lat)
+		emit('update:locationLongitude', selectedPoi.value.location.lng)
+
+		showH5LocationMap.value = false
 	}
-
-	localLocationName.value = selectedPoi.value.name
-	localLocationAddress.value = selectedPoi.value.address
-	localLocationLatitude.value = selectedPoi.value.location.lat
-	localLocationLongitude.value = selectedPoi.value.location.lng
-
-	// 触发事件，更新父组件的数据
-	emit('update:locationName', selectedPoi.value.name)
-	emit('update:locationAddress', selectedPoi.value.address)
-	emit('update:locationLatitude', selectedPoi.value.location.lat)
-	emit('update:locationLongitude', selectedPoi.value.location.lng)
-
-	showH5LocationMap.value = false
 }
 
 // 打开位置选择器
@@ -615,28 +650,43 @@ onUnmounted(() => {
 }
 
 .search-input-wrapper {
-	display: flex;
-	align-items: center;
-	background-color: #fff;
-	border-radius: 8rpx;
-	padding: 0 20rpx;
-	box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
-}
+			display: flex;
+			align-items: center;
+			background-color: #fff;
+			border-radius: 8rpx;
+			padding: 0 20rpx;
+			box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+		}
 
-.search-icon {
-	font-size: 24rpx;
-	color: #999;
-	margin-right: 10rpx;
-}
+		.search-icon {
+			font-size: 24rpx;
+			color: #999;
+			margin-right: 10rpx;
+		}
 
-.search-input {
-	flex: 1;
-	padding: 20rpx 0;
-	height: 88rpx;
-	font-size: 26rpx;
-	border: none;
-	outline: none;
-}
+		.search-input {
+			flex: 1;
+			padding: 20rpx 0;
+			height: 88rpx;
+			font-size: 26rpx;
+			border: none;
+			outline: none;
+		}
+
+		.search-confirm-btn {
+			padding: 0 20rpx;
+			height: 60rpx;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-left: 1rpx solid #f0f0f0;
+			margin-left: 10rpx;
+			cursor: pointer;
+			
+			&:active {
+				opacity: 0.8;
+			}
+		}
 
 /* 地图容器样式 */
 .map-container {
