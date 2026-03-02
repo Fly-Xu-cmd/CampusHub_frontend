@@ -185,6 +185,7 @@ import { useUserStore } from "@/store/user";
 import { updateProfile } from "@/api/profile/router";
 import { postId } from "@/api/publish/router";
 import { getTags } from "@/api/tags/router";
+import { safeNavigateBack } from "@/utils/navigation";
 import type { PostUserDetailsRequest } from "@/types/modules/profile";
 import type { InterestTag } from "@/types/modules/profile";
 
@@ -400,7 +401,7 @@ const handleSave = async () => {
     // 清除临时头像状态
     hasNewAvatar.value = false;
     newAvatarPath.value = "";
-    uni.navigateBack({ delta: 1 });
+    safeNavigateBack("/pages/profile/index", 1);
   } catch (error) {
     uni.hideLoading();
     console.error("保存个人资料失败:", error);
@@ -411,9 +412,7 @@ const handleSave = async () => {
 };
 
 const toBack = () => {
-  uni.navigateBack({
-    delta: 1,
-  });
+  safeNavigateBack("/pages/profile/index", 1);
 };
 </script>
 

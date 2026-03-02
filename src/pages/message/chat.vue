@@ -14,9 +14,10 @@
               ></wd-icon>
             </view>
             <view class="header-center">
-              <view class="group-name">
+              <view class="group-name" v-if="!loadingHistory">
                 {{ groupTitle.name }}({{ groupTitle.member_count }})
               </view>
+              <view v-else>...</view>
             </view>
             <view class="header-right" @click="viewChatDetail">
               <view class="more-icon">⋯</view>
@@ -367,9 +368,11 @@ const viewChatDetail = () => {
   });
 };
 
+import { safeNavigateBack } from "@/utils/navigation";
+
 // 返回上一页
 const goBack = () => {
-  uni.navigateBack();
+  safeNavigateBack("/pages/message/index", 1);
 };
 
 // 页面加载

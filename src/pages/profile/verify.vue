@@ -926,9 +926,11 @@ const handleRetry = () => {
   authProgress.value = { need_action: NeedAction.Apply };
 };
 
+import { safeNavigateBack } from "@/utils/navigation";
+
 // 返回
 const handleBack = () => {
-  uni.navigateBack();
+  safeNavigateBack("/pages/profile/index");
 };
 </script>
 

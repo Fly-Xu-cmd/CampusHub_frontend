@@ -116,8 +116,10 @@ const showConfirmPassword = ref(false);
 const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 const qqEmailRegex = /^[1-9][0-9]{4,10}@qq\.com$/;
 
+import { safeNavigateBack } from "@/utils/navigation";
+
 const toBack = () => {
-  uni.navigateBack();
+  safeNavigateBack("/pages/settings/index");
 };
 
 // 切换密码可见性

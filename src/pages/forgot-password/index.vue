@@ -314,8 +314,10 @@ const handleResetPassword = async () => {
   }
 };
 
+import { safeNavigateBack } from "@/utils/navigation";
+
 const goToLogin = () => {
-  uni.navigateBack();
+  safeNavigateBack("/pages/login/index");
 };
 
 const toggleShowPassword = () => {
