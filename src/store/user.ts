@@ -202,6 +202,7 @@ export const useUserStore = defineStore("user", {
         userData.isStudentVerified || this.isStudentVerified;
       //触发getter更新
       this.userInfo;
+      console.log("用户信息已更新:", this.userInfo);
 
       // 更新本地存储（仅在客户端）
       // #ifdef H5

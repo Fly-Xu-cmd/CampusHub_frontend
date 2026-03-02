@@ -149,7 +149,7 @@
                 <text class="num">{{ userInfoRef.activitiesNum || 0 }}</text>
                 <text class="label">参与</text>
               </view>
-              <view class="stat-item">
+              <view class="stat-item" @click="handleToCredit">
                 <text class="num green">{{ userInfoRef.credit || 0 }}</text>
                 <text class="label">信用分</text>
               </view>
@@ -464,6 +464,10 @@ const handleToPending = () => {
 
 const handleToJoined = () => {
   uni.navigateTo({ url: "/pages/profile/history" });
+};
+
+const handleToCredit = () => {
+  uni.navigateTo({ url: "/pages/profile/credit" });
 };
 
 const handleToVerify = () => {

@@ -162,7 +162,7 @@ const loadMore = () => {
 // 跳转到活动详情
 const handleToDetail = (id: number) => {
   uni.navigateTo({
-    url: `/pages/activity/detail?id=${id}`,
+    url: `/pages/home/detail?id=${id}`,
   });
 };
 

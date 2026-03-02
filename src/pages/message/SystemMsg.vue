@@ -74,6 +74,7 @@ import {
   getNotifications,
   markNotificationsRead,
   markNotificationsReadAll,
+  getNotificationsUnreadCount,
 } from "@/api/message/router";
 import { onMounted, ref } from "vue";
 import { useUserStore } from "@/store/user";
@@ -206,6 +207,9 @@ const goBack = () => {
 
 onMounted(() => {
   loadNotifications(true);
+  getNotificationsUnreadCount(userStore.userId).then((res) => {
+    userStore.$state.unReadSystemMessage = res.data.count;
+  });
 });
 </script>
 
