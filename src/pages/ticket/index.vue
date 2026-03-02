@@ -106,35 +106,10 @@
 						<view class="qr-number">{{ selectedTicket.ticketNumber }}</view>
 						<view class="qr-hint">请出示二维码核销入场</view>
 
-						<!-- 核销功能 -->
-						<view class="verify-section">
-							<view class="verify-input-container">
-								<text class="verify-label">TOTP验证码：</text>
-								<input 
-									v-model="totpCode" 
-									type="text" 
-									class="verify-input" 
-									placeholder="请输入6位验证码" 
-									placeholder-style="color: #999; font-size: 24rpx;"
-									maxlength="6"
-								/>
-							</view>
-							<view 
-								class="verify-btn" 
-								@click="verifyTicket"
-								:class="{ 'loading': verifyLoading }"
-								:disabled="verifyLoading"
-							>
-								<text v-if="!verifyLoading">确认核销</text>
-								<text v-else>核销中...</text>
-							</view>
-							<view 
-								v-if="verifyResult" 
-								class="verify-result" 
-								:class="{ 'success': verifySuccess, 'error': !verifySuccess }"
-							>
-								{{ verifyResult }}
-							</view>
+						<!-- TOTP码展示 -->
+						<view v-if="totpCode" class="totp-section">
+							<view class="totp-label">TOTP验证码</view>
+							<view class="totp-code">{{ totpCode }}</view>
 						</view>
 					</view>
 				</view>
@@ -147,7 +122,7 @@
 import { ref, onMounted } from 'vue'
 import Qrcode from '@chenfengyuan/vue-qrcode'
 import type { Ticket } from '@/types/modules/ticket/ticket'
-import { getTicketList, getTicketDetail, postVerifyTicket } from '@/api/ticket/router'
+import { getTicketList, getTicketDetail } from '@/api/ticket/router'
 
 const showQR = ref(false)
 const selectedTicket = ref<Ticket | null>(null)
@@ -171,11 +146,8 @@ const hasMore = ref(true) // 是否有更多数据
 const refreshing = ref(false) // 下拉刷新状态
 const triggered = ref(false) // 控制下拉刷新状态
 
-// 核销功能相关状态
+// TOTP码展示相关状态
 const totpCode = ref('')
-const verifyLoading = ref(false)
-const verifyResult = ref<string | null>(null)
-const verifySuccess = ref(false)
 
 const scrollTop = ref<number>(0)
 
@@ -233,6 +205,12 @@ const validateImageUrl = (url: any): string => {
 const handleImageError = (ticket: any) => {
 	// 当图片加载失败时，将coverUrl设置为空字符串，这样在下一次渲染时就会显示默认图标
 	ticket.coverUrl = ''
+}
+
+// 从 qrCodeUrl 中提取 TOTP 码
+const extractTotpFromQrCode = (qrCodeUrl: string): string => {
+	const match = qrCodeUrl.match(/totp=([0-9]+)/)
+	return match ? match[1] : ''
 }
 
 // 从API获取票券列表
@@ -311,11 +289,7 @@ const fetchTicketDetails = async (isRefresh: boolean = false) => {
 
 
 
-// 从 qrCodeUrl 中提取 TOTP 码
-const extractTotpFromQrCode = (qrCodeUrl: string): string => {
-	const match = qrCodeUrl.match(/totp=([0-9]+)/)
-	return match ? match[1] : ''
-}
+
 
 // 显示二维码
 const showQRCode = async (ticket: Ticket) => {
@@ -360,10 +334,8 @@ const showQRCode = async (ticket: Ticket) => {
 const hideQRCode = () => {
 	showQR.value = false
 	selectedTicket.value = null
-	// 重置核销状态
+	// 重置TOTP码状态
 	totpCode.value = ''
-	verifyResult.value = null
-	verifySuccess.value = false
 }
 
 // 简化的随机文本检测正则表达式
@@ -374,85 +346,7 @@ const isRandomText = (text: string): boolean => {
 	return RANDOM_TEXT_REGEX.test(text)
 }
 
-// 核销票券
-const verifyTicket = async () => {
-	if (!selectedTicket.value || !totpCode.value) {
-		verifyResult.value = '请输入TOTP验证码'
-		verifySuccess.value = false
-		return
-	}
 
-	// 验证必要字段
-	const activityId = Number(selectedTicket.value.eventId)
-	const ticketCode = selectedTicket.value.ticketNumber
-	const eventTime = selectedTicket.value.eventTime
-	
-	if (isNaN(activityId)) {
-		verifyResult.value = '活动ID无效'
-		verifySuccess.value = false
-		return
-	}
-
-	if (!ticketCode) {
-		verifyResult.value = '票券码无效'
-		verifySuccess.value = false
-		return
-	}
-
-	// 验证时间限制：活动开始前1小时内到活动开始后0.5小时内才能核销
-	if (eventTime) {
-		const now = new Date()
-		const activityStart = new Date(eventTime)
-		const oneHourBefore = new Date(activityStart.getTime() - 60 * 60 * 1000) // 1小时前
-		const halfHourAfter = new Date(activityStart.getTime() + 30 * 60 * 1000) // 0.5小时后
-		
-		if (now < oneHourBefore || now > halfHourAfter) {
-			verifyResult.value = '不在核销时间范围内（活动开始前1小时内到活动开始后0.5小时内）'
-			verifySuccess.value = false
-			return
-		}
-	}
-
-	verifyLoading.value = true
-	verifyResult.value = null
-
-	try {
-		// 调用postVerifyTicket API方法实现核销功能
-		const result = await postVerifyTicket({
-			activityId: activityId,
-			ticketCode: ticketCode,
-			totpCode: totpCode.value
-		})
-
-		if (result && result.code === 0) {
-			// 核销成功
-			const resultText = result.data?.result || '核销成功'
-			// 检查返回的结果是否为合理的文本，避免显示异常数据
-			verifyResult.value = (typeof resultText === 'string' && resultText.length < 50 && !isRandomText(resultText)) ? resultText : '核销成功'
-			verifySuccess.value = true
-			// 更新票券状态为已使用
-			const index = tickets.value.findIndex(t => t.id === selectedTicket.value?.id)
-			if (index !== -1) {
-				tickets.value[index].status = 'used'
-			}
-			// 延迟关闭票券详情页面，让用户看到成功信息
-			setTimeout(() => {
-				hideQRCode()
-			}, 1500)
-		} else {
-			// 核销失败
-			const errorText = result?.message || '核销失败'
-			// 检查返回的错误信息是否为合理的文本
-			verifyResult.value = (typeof errorText === 'string' && errorText.length < 50 && !isRandomText(errorText)) ? errorText : '核销失败'
-			verifySuccess.value = false
-		}
-	} catch (err) {
-		verifyResult.value = '核销失败，请重试'
-		verifySuccess.value = false
-	} finally {
-		verifyLoading.value = false
-	}
-}
 
 // 加载更多数据
 const loadMore = () => {
@@ -811,90 +705,35 @@ onMounted(() => {
 	color: #999;
 }
 
-/* 核销功能样式 */
-.verify-section {
+/* TOTP码展示样式 */
+.totp-section {
 	width: 100%;
-	margin-top: 40rpx;
+	margin-top: 30rpx;
 	padding: 0 20rpx;
 	box-sizing: border-box;
-}
-
-.verify-input-container {
 	display: flex;
+	flex-direction: column;
 	align-items: center;
-	margin-bottom: 24rpx;
 	gap: 16rpx;
 }
 
-.verify-label {
-	font-size: 24rpx;
-	color: #333;
-	font-weight: 500;
-	min-width: 160rpx;
+.totp-label {
+	font-size: 44rpx;
+	color: #f97316;
+	font-weight: 700;
 }
 
-.verify-input {
-	flex: 1;
-	height: 60rpx;
-	padding: 0 16rpx;
+.totp-code {
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #333;
+	letter-spacing: 8rpx;
+	padding: 16rpx 32rpx;
+	background-color: #f9fafb;
 	border: 2rpx solid #e5e7eb;
 	border-radius: 12rpx;
-	font-size: 26rpx;
-	color: #333;
-	background-color: #f9fafb;
-	box-sizing: border-box;
-}
-
-.verify-input:focus {
-	outline: none;
-	border-color: #f97316;
-	box-shadow: 0 0 0 3rpx rgba(249, 115, 22, 0.1);
-}
-
-.verify-btn {
-	width: 100%;
-	height: 72rpx;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	background-color: #f97316;
-	color: #fff;
-	font-size: 28rpx;
-	font-weight: 500;
-	border-radius: 16rpx;
-	cursor: pointer;
-	transition: all 0.3s ease;
-	margin-bottom: 20rpx;
-}
-
-.verify-btn:hover {
-	background-color: #ea580c;
-}
-
-.verify-btn:active {
-	transform: scale(0.98);
-}
-
-.verify-btn.loading {
-	background-color: #fb923c;
-	cursor: not-allowed;
-}
-
-.verify-result {
-	padding: 16rpx;
-	border-radius: 12rpx;
-	font-size: 24rpx;
+	min-width: 200rpx;
 	text-align: center;
-	margin-top: 16rpx;
 }
 
-.verify-result.success {
-	background-color: #dcfce7;
-	color: #15803d;
-}
-
-.verify-result.error {
-	background-color: #fee2e2;
-	color: #dc2626;
-}
 </style>

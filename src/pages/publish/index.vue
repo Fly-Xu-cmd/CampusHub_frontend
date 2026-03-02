@@ -22,7 +22,7 @@
 			<!-- 上传组件 -->
 			<!-- 活动标题 -->
 		<view class="form-item title-item">
-			<input type="text" v-model="activityTitle" placeholder="活动标题" class="title-input" placeholder-style="color: #999;">
+			<input type="text" v-model="activityTitle" placeholder="活动标题" class="title-input" placeholder-style="color: #999;" maxlength="20">
 		</view>
 
       <!-- 联系电话 -->
@@ -156,7 +156,7 @@ const locationLatitude = ref<number>(0)
 const locationLongitude = ref<number>(0)
 const contactPhone = ref<string>('')
 const selectedTags = ref<number[]>([1, 2, 3]) // 默认标签ID，可根据实际选择修改
-const tags = ref<Tag[]>([]) // 存储从接口获取的标签数据
+const tags = ref<Tag[]>([]) // 标签选择器相关的变量和逻辑
 const isShowTagPicker = ref<boolean>(false) // 控制标签选择器显示/隐藏
 // 日历选择器相关的变量和逻辑
 const startValue = ref<number>(Date.now())
@@ -169,6 +169,12 @@ const isShowSignupPicker = ref<boolean>(false)
 const timeError = ref<string>('')
 const signupTimeError = ref<string>('')
 
+// 监听活动标题长度，超过20字时提示
+watch(activityTitle, (newValue) => {
+  if (newValue.length >= 20) {
+    uni.showLoading({ title: "标题已达到最大长度限制", duration: 1000 });
+  }
+});
 
 // 切换标签选择器显示/隐藏
 const toggleTagPicker = async (): Promise<void> => {
@@ -293,7 +299,7 @@ const submitForm = async () => {
     }
 
     // 上传图片获取ID
-    uni.showLoading({ title: "上传图片中..." });
+    uni.showLoading({ title: "活动发布中" });
     const imageFile = fileList.value[0];
     // 传递实际的File对象而不是本地URL
     const uploadResponse = await postId(imageFile.file, "activity_cover");
