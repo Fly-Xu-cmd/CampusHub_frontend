@@ -372,7 +372,7 @@ import { safeNavigateBack } from "@/utils/navigation";
 
 // 返回上一页
 const goBack = () => {
-  safeNavigateBack("/pages/message/index", 1);
+  safeNavigateBack("/pages/message/index");
 };
 
 // 页面加载
