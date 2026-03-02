@@ -324,7 +324,7 @@ class ChatWebSocket {
 
     this.reconnectAttempts++;
     console.log(
-      `[WebSocket] ${this.config.reconnectInterval}ms 后进行第 ${this.reconnectAttempts} 次重连`
+      `[WebSocket] ${this.config.reconnectInterval}ms 后进行第 ${this.reconnectAttempts} 次重连`,
     );
 
     this.reconnectTimer = setTimeout(() => {
@@ -392,20 +392,6 @@ class ChatWebSocket {
         }
       });
     }
-  }
-
-  /**
-   * 加入群聊
-   */
-  joinGroup(groupId: string): void {
-    this.send("join_group", { group_id: groupId });
-  }
-
-  /**
-   * 离开群聊
-   */
-  leaveGroup(groupId: string): void {
-    this.send("leave_group", { group_id: groupId });
   }
 
   /**
