@@ -49,6 +49,7 @@
             v-for="activity in publishedActivities"
             :key="activity.id"
             class="activity-item"
+            @click="viewDetail(activity.id)"
           >
             <wd-img
               :src="activity.imageUrl || '默认图'"
@@ -156,6 +157,12 @@ const publishedActivities = ref();
 
 // 已参加的活动
 const joinedActivities = ref();
+
+const viewDetail = (activityId: number) => {
+  uni.navigateTo({
+    url: `/pages/home/detail?id=${activityId}`,
+  });
+};
 </script>
 
 <style lang="scss" scoped>
