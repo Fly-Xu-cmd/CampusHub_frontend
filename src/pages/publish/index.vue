@@ -33,8 +33,6 @@
           placeholder="联系电话"
           class="title-input"
           placeholder-style="color: #999;"
-          @input="validatePhone($event)"
-          maxlength="11"
         />
       </view>
 
@@ -127,10 +125,7 @@
           placeholder="输入详细的活动流程、注意事项等..."
           class="detail-textarea"
           placeholder-style="color: #999;"
-          maxlength="30"
-          @input="validateDetail"
         ></textarea>
-        <text class="char-count">{{ activityDetail.length }}/30</text>
       </view>
     </view>
   </CommonLayout>
@@ -174,74 +169,12 @@ const isShowSignupPicker = ref<boolean>(false)
 const timeError = ref<string>('')
 const signupTimeError = ref<string>('')
 
-// 控制标题长度提示是否已显示
-const titleWarningShown = ref(false);
-
-// 监听活动标题长度，超过20字时提示并限制输入
+// 监听活动标题长度，超过20字时提示
 watch(activityTitle, (newValue) => {
-  // 强制限制长度不超过20
-  if (newValue.length > 20) {
-    activityTitle.value = newValue.substring(0, 20);
-  }
-  
-  // 当用户删除到小于20字时，重置提示状态
-  if (newValue.length < 20) {
-    titleWarningShown.value = false;
-  }
-  
-  // 当达到20字且提示尚未显示过时，显示文本提示
-  if (newValue.length >= 20 && !titleWarningShown.value) {
-    uni.showToast({ title: "标题已达到最大长度限制", icon: "none", duration: 1000 });
-    titleWarningShown.value = true;
+  if (newValue.length >= 20) {
+    uni.showLoading({ title: "标题已达到最大长度限制", duration: 1000 });
   }
 });
-
-// 验证联系电话格式
-const validatePhone = (event: any) => {
-  // 检查event和event.target是否存在
-  if (!event || !event.target) return;
-  
-  // 获取输入值，确保value是字符串
-  let value = event.target.value || '';
-  
-  // 只允许输入数字
-  value = value.replace(/[^0-9]/g, '');
-  
-  // 限制长度不超过11个数字
-  if (value.length > 11) {
-    value = value.substring(0, 11);
-    // 直接设置input元素的value，确保用户看不到超出的数字
-    event.target.value = value;
-  }
-  
-  // 更新输入值
-  contactPhone.value = value;
-};
-
-// 验证电话号码格式是否正确
-const isValidPhone = (phone: string): boolean => {
-  // 中国电话号码正则：11位数字，以1开头
-  const phoneRegex = /^1[3-9]\d{9}$/;
-  return phoneRegex.test(phone);
-};
-
-// 验证活动详情长度
-const validateDetail = (event: any) => {
-  // 检查event和event.target是否存在
-  if (!event || !event.target) return;
-  
-  // 获取输入值
-  let value = event.target.value || '';
-  
-  // 限制长度不超过30个字符
-  if (value.length > 30) {
-    value = value.substring(0, 30);
-    // 直接设置textarea元素的value，确保用户看不到超出的内容
-    event.target.value = value;
-    // 更新活动详情值
-    activityDetail.value = value;
-  }
-};
 
 // 切换标签选择器显示/隐藏
 const toggleTagPicker = async (): Promise<void> => {
@@ -305,11 +238,6 @@ const submitForm = async () => {
 
     if (!contactPhone.value) {
       uni.showToast({ title: "请输入联系电话", icon: "none" });
-      return;
-    }
-    
-    if (!isValidPhone(contactPhone.value)) {
-      uni.showToast({ title: "请输入正确的电话号码", icon: "none" });
       return;
     }
 
@@ -719,16 +647,15 @@ const goBackHome = () => {
 }
 
 	.detail-textarea {
-width: 100%;
-min-height: 200rpx;
-padding: 20rpx;
-font-size: 26rpx;
-color: #333;
-background-color: #fff;
-border: 1rpx dashed #ffbb8a;
-border-radius: 16rpx;
-box-sizing: border-box;
-resize: none;
+	width: 100%;
+	min-height: 200rpx;
+	padding: 20rpx;
+	font-size: 26rpx;
+	color: #333;
+	border: 1rpx solid #000000;
+	border-radius: 16rpx;
+	box-sizing: border-box;
+	resize: none;
 }
 
 /* 自定义标题样式：调整宽度和位置，避免与提交按钮重叠 */
