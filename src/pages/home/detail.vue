@@ -80,7 +80,7 @@
         <view class="info-cards">
           <view class="info-card time-card">
             <view class="info-label">
-              <wd-icon name="time" size="28rpx" color="#999" /> TIME
+              <wd-icon name="time" size="28rpx" color="#999" /> ACTIVITY-TIME
             </view>
             <view class="info-time">
               <text class="info-value">
