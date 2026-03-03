@@ -51,7 +51,7 @@
               }}</view>
             </view>
             <view class="message-text">
-              <view class="message-sender">{{ group.sender_name }}:</view>
+              <view class="message-sender">{{ group.last_sender_name }}:</view>
               <view class="message-artical">{{
                 group.last_message || "暂无消息"
               }}</view>
@@ -142,7 +142,7 @@ const handleNewMessage = (data: any) => {
       const group = groups.value[groupIndex];
       group.last_message = data.msg_type === 1 ? data.content : "[图片]";
       group.last_message_at = data.created_at;
-      group.sender_name = data.sender_name;
+      group.last_sender_name = data.sender_name;
     }
     return;
   }
@@ -157,7 +157,7 @@ const handleNewMessage = (data: any) => {
     const group = groups.value[groupIndex];
     group.last_message = data.msg_type === 1 ? data.content : "[图片]";
     group.last_message_at = data.created_at;
-    group.sender_name = data.sender_name;
+    group.last_sender_name = data.sender_name;
 
     // 增加未读消息数量
     const currentUnread = groupUnreadMap.value.get(data.group_id) || 0;

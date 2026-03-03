@@ -140,6 +140,9 @@ const loadNotifications = async (isRefresh = false) => {
 
   try {
     const res = await getNotifications(userStore.userId, page.value, pageSize);
+    getNotificationsUnreadCount(userStore.userId).then((res) => {
+      userStore.$state.unReadSystemMessage = res.data.count;
+    });
 
     if (isRefresh) {
       notifications.value = res.data.notifications || [];
@@ -207,9 +210,6 @@ const goBack = () => {
 
 onMounted(() => {
   loadNotifications(true);
-  getNotificationsUnreadCount(userStore.userId).then((res) => {
-    userStore.$state.unReadSystemMessage = res.data.count;
-  });
 });
 </script>
 

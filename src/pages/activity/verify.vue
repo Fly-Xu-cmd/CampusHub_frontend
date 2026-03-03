@@ -70,11 +70,6 @@
           <wd-icon name="search" size="80rpx" color="#cbd5e1"></wd-icon>
           <text class="empty-text">未找到相关活动</text>
         </view>
-
-        <!-- 提示 -->
-        <view class="tip-text" v-if="!hasSearched">
-          <text>请输入活动名称搜索要核销的活动</text>
-        </view>
       </view>
 
       <!-- 步骤2：输入核销码 -->
@@ -133,17 +128,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import { searchActivities } from "@/api/activity/router";
 import { postVerifyTicket } from "@/api/ticket/router";
 import type { List } from "@/types/modules/activity";
 import type { Request as VerifyRequest } from "@/types/modules/ticket/post-ticket";
+import { getMyCreated } from "@/api/activity/router";
 
 // 当前步骤：1-搜索活动，2-输入核销码
 const currentStep = ref(1);
 const searchKeyword = ref("");
 const searchResults = ref<List[]>([]);
+const allActivities = ref<List[]>([]); // 存储所有已加载的活动数据
 const selectedActivity = ref<List | null>(null);
 const hasSearched = ref(false);
 const loading = ref(false);
@@ -165,7 +161,29 @@ onLoad((options: any) => {
     verifyForm.value.ticketCode = decodeURIComponent(options.code);
   }
 });
-
+// 获取活动列表
+const fetchActivities = async (page: number) => {
+  try {
+    loading.value = true;
+    const response = await getMyCreated(page);
+    if (response.data) {
+      const newList = response.data.list || [];
+      if (page === 1) {
+        allActivities.value = newList;
+        searchResults.value = newList;
+        hasSearched.value = true; // 标记已搜索，显示活动列表
+      } else {
+        allActivities.value.push(...newList);
+        searchResults.value.push(...newList);
+      }
+      hasMore.value = newList.length >= 12;
+    }
+  } catch (error) {
+    console.error("获取我发起的活动失败:", error);
+  } finally {
+    loading.value = false;
+  }
+};
 // 格式化时间
 const formatTime = (timestamp?: number) => {
   if (!timestamp) return "";
@@ -173,7 +191,7 @@ const formatTime = (timestamp?: number) => {
   return `${date.getMonth() + 1}月${date.getDate()}日 ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 };
 
-// 搜索活动
+// 搜索活动（在已加载的活动数据中进行客户端过滤）
 const handleSearch = async () => {
   const keyword = searchKeyword.value.trim();
   if (!keyword) {
@@ -182,19 +200,22 @@ const handleSearch = async () => {
   }
 
   loading.value = true;
-  currentPage.value = 1;
-  hasMore.value = true;
 
   try {
-    const res = await searchActivities(keyword, 1, 10);
-    if (res.data?.list) {
-      searchResults.value = res.data.list;
-      hasMore.value = res.data.list.length >= 10;
-    } else {
-      searchResults.value = [];
-      hasMore.value = false;
-    }
+    // 在客户端进行过滤
+    const filtered = allActivities.value.filter((activity) =>
+      activity.title.toLowerCase().includes(keyword.toLowerCase()),
+    );
+    searchResults.value = filtered;
     hasSearched.value = true;
+
+    if (filtered.length === 0) {
+      uni.showToast({
+        title: "未找到匹配的活动",
+        icon: "none",
+        duration: 2000,
+      });
+    }
   } catch (error) {
     console.error("搜索活动失败:", error);
     uni.showToast({ title: "搜索失败", icon: "none" });
@@ -212,11 +233,25 @@ const loadMore = async () => {
   const nextPage = currentPage.value + 1;
 
   try {
-    const res = await searchActivities(searchKeyword.value, nextPage, 10);
-    if (res.data?.list) {
-      searchResults.value.push(...res.data.list);
+    const response = await getMyCreated(nextPage);
+    if (response.data?.list) {
+      const newList = response.data.list;
+      allActivities.value.push(...newList);
+
+      // 如果当前有搜索关键词，需要对新增数据进行过滤
+      if (searchKeyword.value.trim()) {
+        const filtered = newList.filter((activity) =>
+          activity.title
+            .toLowerCase()
+            .includes(searchKeyword.value.trim().toLowerCase()),
+        );
+        searchResults.value.push(...filtered);
+      } else {
+        searchResults.value.push(...newList);
+      }
+
       currentPage.value = nextPage;
-      hasMore.value = res.data.list.length >= 10;
+      hasMore.value = newList.length >= 12;
     } else {
       hasMore.value = false;
     }
@@ -288,6 +323,18 @@ const handleVerify = async () => {
     verifying.value = false;
   }
 };
+
+onMounted(() => {
+  fetchActivities(1);
+});
+
+// 监听搜索关键词变化，当清空时显示所有活动
+watch(searchKeyword, (newKeyword) => {
+  if (!newKeyword.trim() && hasSearched.value) {
+    // 用户清空了搜索框，显示所有已加载的活动
+    searchResults.value = [...allActivities.value];
+  }
+});
 </script>
 
 <style scoped lang="scss">
@@ -296,7 +343,7 @@ const handleVerify = async () => {
 
 .verify-container {
   padding: $spacing-lg;
-  min-height: 100vh;
+  min-height: 90vh;
 }
 
 /* 搜索区域 */
@@ -363,7 +410,7 @@ const handleVerify = async () => {
     }
 
     .activity-info {
-      flex: 1;
+      width: 70%;
       @include flex(column, flex-start, flex-start);
 
       .activity-title {
@@ -371,10 +418,9 @@ const handleVerify = async () => {
         font-weight: $font-weight-bold;
         color: $text-primary;
         margin-bottom: 8rpx;
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        overflow: hidden;
+        max-width: 90%;
+        @include truncate(1);
+        white-space: nowrap;
       }
 
       .activity-meta {
@@ -444,6 +490,9 @@ const handleVerify = async () => {
     .activity-name {
       font-size: $font-size-lg;
       font-weight: $font-weight-bold;
+      max-width: 70%;
+      @include truncate(1);
+      white-space: nowrap;
     }
 
     .change-btn {

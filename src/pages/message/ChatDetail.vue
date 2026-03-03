@@ -34,7 +34,9 @@
                 >群主</view
               >
             </view>
-            <view class="member-more">⋯</view>
+            <view class="member-more" @click="goToProfile(member.user_id)"
+              >⋯</view
+            >
           </view>
         </view>
       </view>
@@ -59,6 +61,11 @@ onMounted(() => {
 // 群成员数据
 const members = ref();
 
+const goToProfile = (id: number) => {
+  uni.navigateTo({
+    url: `/pages/home/publicProfile?id=${id}`,
+  });
+};
 </script>
 
 <style scoped lang="scss">

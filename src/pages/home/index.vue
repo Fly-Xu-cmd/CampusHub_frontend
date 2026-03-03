@@ -6,36 +6,43 @@
     padding="0 8rpx"
     :enableScroll="false"
   >
-    <scroll-view class="content" :scroll-top="scrollTop" @scrolltolower="handleScrollToLower" scroll-y
+    <scroll-view
+      class="content"
+      :scroll-top="scrollTop"
+      @scrolltolower="handleScrollToLower"
+      scroll-y
       :scroll-with-animation="true"
       refresher-enabled="true"
       :refresher-threshold="50"
       refresher-default-style="none"
-      refresher-background="#f8f8f8" 
+      refresher-background="#f8f8f8"
       :refresher-triggered="Refresher === 'isRefreshing'"
       @refresherpulling="Refresher = 'isPulling'"
       @refresherrefresh="onRefresh"
-      @scroll="handleScroll">
+      @scroll="handleScroll"
+    >
       <!-- 自定义下拉刷新插槽 -->
       <template #refresher>
         <view class="custom-refresher">
-          <view v-if="Refresher === 'isPulling'" class="refresher-content" >
+          <view v-if="Refresher === 'isPulling'" class="refresher-content">
             <view class="refresher-icon">
               <wd-icon name="refresh" size="40rpx" color="#666666" />
             </view>
             <text class="refresher-text">
-              {{ '下拉刷新' }}
+              {{ "下拉刷新" }}
             </text>
           </view>
-          <view v-else class="refresher-content" >
+          <view v-else class="refresher-content">
             <view class="refresher-icon">
-              <wd-icon 
-              :name="Refresher === 'isRefreshing' ? 'refresh' : 'check-bold'" size="40rpx" 
-              :color="Refresher === 'isRefreshing' ? '#f97316' : '#4ade80'" 
-              :class="{ 'spin': Refresher === 'isRefreshing' }" />
+              <wd-icon
+                :name="Refresher === 'isRefreshing' ? 'refresh' : 'check-bold'"
+                size="40rpx"
+                :color="Refresher === 'isRefreshing' ? '#f97316' : '#4ade80'"
+                :class="{ spin: Refresher === 'isRefreshing' }"
+              />
             </view>
             <text class="refresher-text">
-              {{ Refresher === 'isRefreshing' ? '刷新中...' : '刷新完成' }}
+              {{ Refresher === "isRefreshing" ? "刷新中..." : "刷新完成" }}
             </text>
           </view>
         </view>
@@ -77,11 +84,7 @@
             :class="{ active: activeTag === 0 }"
             @click="selectTag(0)"
           >
-            <wd-icon
-              class-prefix="iconfont"
-              name="quanbu"
-              size="30rpx"
-            />
+            <wd-icon class-prefix="iconfont" name="quanbu" size="30rpx" />
             <text>全部类型</text>
           </view>
           <view
@@ -118,15 +121,15 @@
           >
             <!-- 活动图片 -->
             <view class="card-image-container">
-              <wd-img 
+              <wd-img
                 :src="activity.coverUrl || '默认图'"
-                class="card-image" 
-                mode="aspectFill" 
+                class="card-image"
+                mode="aspectFill"
               >
                 <template #error>
-                  <wd-icon 
-                    class-prefix="iconfont" 
-                    name="morentupian" 
+                  <wd-icon
+                    class-prefix="iconfont"
+                    name="morentupian"
                     size="460rpx"
                     color="#e9e9e9"
                   >
@@ -135,20 +138,28 @@
                 <template #loading>
                   <AsyncLoading text="加载中..." />
                 </template>
-
               </wd-img>
               <!-- 报名状态 未开始报名，报名中，报名已截止-->
-              <view class="registration-status"
+              <view
+                class="registration-status"
                 :style="{
-                  color: activity.registrationStatus === 1 ? '#4ade80' : 
-                         activity.registrationStatus === 2 ? '$primary-color' : 
-                         activity.registrationStatus === 3 ? '#666666' : 
-                         '#000000'
+                  color:
+                    activity.registrationStatus === 1
+                      ? '#4ade80'
+                      : activity.registrationStatus === 2
+                        ? '$primary-color'
+                        : activity.registrationStatus === 3
+                          ? '#666666'
+                          : '#000000',
                 }"
               >
-                <view 
-                  class="iconfont" style="font-size: 25rpx;" 
-                  :class="{'iconfont-people': activity.registrationStatus === 1, 'iconfont-remen': activity.registrationStatus === 2}"
+                <view
+                  class="iconfont"
+                  style="font-size: 25rpx"
+                  :class="{
+                    'iconfont-people': activity.registrationStatus === 1,
+                    'iconfont-remen': activity.registrationStatus === 2,
+                  }"
                   v-if="!(activity.registrationStatus === 3)"
                 />
                 <text>{{ activity.registrationStatusText }}</text>
@@ -173,9 +184,8 @@
                 :key="tag.id"
                 class="activity-tag"
                 :style="{
-                  backgroundColor: tag.color  
+                  backgroundColor: tag.color,
                 }"
-
               >
                 <wd-icon
                   class-prefix="iconfont"
@@ -202,23 +212,22 @@
             <!-- 底部信息 -->
             <view class="card-footer">
               <view class="organizer">
-                <wd-img 
+                <wd-img
                   :src="activity.organizerAvatar || '默认图'"
-                  class="organizer-avatar" 
-                  mode="aspectFill" 
+                  class="organizer-avatar"
+                  mode="aspectFill"
                 >
                   <template #error>
-                    <wd-icon 
-                    class-prefix="iconfont" 
-                    name="morentouxiang" 
-                    size="48rpx"
-                    color="#999999"
+                    <wd-icon
+                      class-prefix="iconfont"
+                      name="morentouxiang"
+                      size="48rpx"
+                      color="#999999"
                     >
                     </wd-icon>
                   </template>
-
                 </wd-img>
-                <text>{{ activity.organizerName || '默认昵称' }}</text>
+                <text>{{ activity.organizerName || "默认昵称" }}</text>
               </view>
               <view class="action-button">
                 <text>查看详情</text>
@@ -230,12 +239,15 @@
               </view>
             </view>
           </view>
-          <wd-loadmore :state="state" @reload="loadMore" 
-          finished-text="暂无更多活动" />
+          <wd-loadmore
+            :state="state"
+            @reload="loadMore"
+            finished-text="暂无更多活动"
+          />
         </view>
       </view>
     </scroll-view>
-    
+
     <!-- 回到顶部按钮 -->
     <view v-if="showBackTop" class="back-to-top" @click="scrollToTop">
       <wd-icon name="arrow-up" size="40rpx" color="#fff" />
@@ -244,8 +256,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { getActivityCategoryList, getActivityList, searchActivity } from '@/api/home/router';
+import { ref, onMounted } from "vue";
+import {
+  getActivityCategoryList,
+  getActivityList,
+  searchActivity,
+} from "@/api/home/router";
 
 // 回到顶部相关
 const scrollTop = ref(0);
@@ -301,18 +317,18 @@ const getActivities = async () => {
   loading.value = false;
   activities.value = data.list;
   pagination.value = data.pagination;
-  state.value = 'loading';
+  state.value = "loading";
   isSearch.value = false;
 };
 const isSearch = ref(false); // 是否搜索
-const searchQuery = ref(''); // 搜索框的值
+const searchQuery = ref(""); // 搜索框的值
 const isSearchFocused = ref(false); // 搜索框是否聚焦
 // 搜索活动
 const search = async () => {
-  const keyword = searchQuery.value.trim()
+  const keyword = searchQuery.value.trim();
   if (!keyword) {
     // 非空判断
-    return
+    return;
   }
   loading.value = true;
   const { data } = await searchActivity({
@@ -325,27 +341,27 @@ const search = async () => {
   isSearch.value = true;
 };
 
-const Refresher = ref<string>("isEnd")
+const Refresher = ref<string>("isEnd");
 // 下拉刷新
 const onRefresh = async () => {
   Refresher.value = "isRefreshing";
   await getActivities();
   Refresher.value = "isEnd";
-}
+};
 
 // 上拉加载更多
 const handleScrollToLower = () => {
   if (isSearch.value) {
-    state.value = 'finished';
+    state.value = "finished";
     return;
   }
-  if (state.value === 'finished') {
+  if (state.value === "finished") {
     return;
   }
   loadMore();
-}
+};
 
-const state = ref('loading'); // 加载状态
+const state = ref("loading"); // 加载状态
 // 加载更多数据
 const loadMore = async () => {
   try {
@@ -357,16 +373,16 @@ const loadMore = async () => {
     });
     const list = data.list;
     pagination.value = data.pagination;
-    const total = pagination.value.total
+    const total = pagination.value.total;
     if (activities.value.length < total) {
       activities.value = [...activities.value, ...list];
     } else {
-      state.value = 'finished';
+      state.value = "finished";
     }
   } catch (error) {
-    state.value = 'error';
+    state.value = "error";
   }
-}
+};
 
 const viewDetail = (activityId: number) => {
   uni.navigateTo({
@@ -404,7 +420,6 @@ $tag-inactive-color: #111;
   display: flex;
   flex-direction: column;
   height: 82vh;
-
 }
 
 .search-section {
@@ -599,6 +614,7 @@ $tag-inactive-color: #111;
   margin: 20rpx;
   margin-top: 35rpx;
   line-height: 1.4;
+  max-width: 70%;
   @include truncate(1);
 }
 
@@ -616,7 +632,6 @@ $tag-inactive-color: #111;
     font-size: 20rpx;
     font-weight: $font-weight-medium;
     color: #fff;
-    
   }
 }
 
@@ -700,9 +715,7 @@ $tag-inactive-color: #111;
   background-color: rgba(255, 255, 255, 1);
   box-shadow: $shadow-md;
   transition: all 0.3s ease;
-
 }
-
 
 .refresher-icon {
   width: 40rpx;
@@ -739,7 +752,7 @@ $tag-inactive-color: #111;
   right: 30rpx;
   width: 90rpx;
   height: 90rpx;
-  background-color: rgba(249, 115, 22,0.9);
+  background-color: rgba(249, 115, 22, 0.9);
   border-radius: 50%;
   display: flex;
   justify-content: center;
@@ -747,7 +760,7 @@ $tag-inactive-color: #111;
   box-shadow: $shadow-md;
   z-index: 999;
   transition: all 0.3s ease;
-  
+
   &:active {
     transform: scale(0.9);
     box-shadow: $shadow-sm;

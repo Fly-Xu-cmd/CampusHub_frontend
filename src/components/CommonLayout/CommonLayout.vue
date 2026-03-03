@@ -24,7 +24,7 @@
           <view class="brand-info">
             <text class="sub-text">Welcome Back</text>
             <view class="main-title">
-              <text class="title-text">Activity Pro</text>
+              <text class="title-text">CampusHub</text>
               <view class="bell-btn" @click="goSystemMessage">
                 <wd-badge
                   :is-dot="

@@ -268,7 +268,7 @@ const joinedActivities = ref();
       }
 
       .activity-info {
-        flex: 1;
+        width: 60%;
         @include flex(column, flex-start, flex-start);
         gap: $spacing-xs;
 
@@ -276,7 +276,9 @@ const joinedActivities = ref();
           font-size: $font-size-base;
           font-weight: $font-weight-semibold;
           color: $text-primary;
+          width: 100%;
           @include truncate(1);
+          white-space: nowrap;
         }
 
         .activity-time {
