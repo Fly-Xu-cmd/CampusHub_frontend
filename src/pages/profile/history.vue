@@ -162,7 +162,7 @@ const loadMore = () => {
 // 跳转到活动详情
 const handleToDetail = (id: number) => {
   uni.navigateTo({
-    url: `/pages/activity/detail?id=${id}`,
+    url: `/pages/home/detail?id=${id}`,
   });
 };
 
@@ -218,7 +218,7 @@ onMounted(() => {
   }
 
   .info-col {
-    flex: 1;
+    width: 70%;
     height: 160rpx;
     @include flex(column, space-between, flex-start);
     padding: 4rpx 0;
@@ -227,11 +227,9 @@ onMounted(() => {
       font-size: $font-size-base;
       font-weight: $font-weight-bold;
       color: $text-primary;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
+      max-width: 90%;
+      @include truncate(1);
+      white-space: nowrap;
     }
 
     .meta-row {

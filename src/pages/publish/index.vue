@@ -22,7 +22,7 @@
 			<!-- 上传组件 -->
 			<!-- 活动标题 -->
 		<view class="form-item title-item">
-			<input type="text" v-model="activityTitle" placeholder="活动标题" class="title-input" placeholder-style="color: #999;">
+			<input type="text" v-model="activityTitle" placeholder="活动标题" class="title-input" placeholder-style="color: #999;" @input="validateTitle($event)" maxlength="20">
 		</view>
 
       <!-- 联系电话 -->
@@ -33,6 +33,8 @@
           placeholder="联系电话"
           class="title-input"
           placeholder-style="color: #999;"
+          @input="validatePhone($event)"
+          maxlength="11"
         />
       </view>
 
@@ -125,7 +127,12 @@
           placeholder="输入详细的活动流程、注意事项等..."
           class="detail-textarea"
           placeholder-style="color: #999;"
+          @input="validateDetail($event)"
+          maxlength="30"
         ></textarea>
+        <view class="word-count">
+          {{ activityDetail.length }}/30
+        </view>
       </view>
     </view>
   </CommonLayout>
@@ -156,7 +163,7 @@ const locationLatitude = ref<number>(0)
 const locationLongitude = ref<number>(0)
 const contactPhone = ref<string>('')
 const selectedTags = ref<number[]>([1, 2, 3]) // 默认标签ID，可根据实际选择修改
-const tags = ref<Tag[]>([]) // 存储从接口获取的标签数据
+const tags = ref<Tag[]>([]) // 标签选择器相关的变量和逻辑
 const isShowTagPicker = ref<boolean>(false) // 控制标签选择器显示/隐藏
 // 日历选择器相关的变量和逻辑
 const startValue = ref<number>(Date.now())
@@ -169,6 +176,12 @@ const isShowSignupPicker = ref<boolean>(false)
 const timeError = ref<string>('')
 const signupTimeError = ref<string>('')
 
+// 监听活动标题长度，超过20字时提示
+watch(activityTitle, (newValue) => {
+  if (newValue.length >= 20) {
+    uni.showToast({ title: "标题已达到最大长度限制", icon: "none" });
+  }
+});
 
 // 切换标签选择器显示/隐藏
 const toggleTagPicker = async (): Promise<void> => {
@@ -293,7 +306,7 @@ const submitForm = async () => {
     }
 
     // 上传图片获取ID
-    uni.showLoading({ title: "上传图片中..." });
+    uni.showLoading({ title: "活动发布中" });
     const imageFile = fileList.value[0];
     // 传递实际的File对象而不是本地URL
     const uploadResponse = await postId(imageFile.file, "activity_cover");
@@ -369,6 +382,77 @@ const goBackHome = () => {
   uni.redirectTo({
     url: "/pages/home/index",
   });
+};
+
+// 验证联系电话格式
+const validatePhone = (event: any) => {
+  // 检查event和event.target是否存在
+  if (!event || !event.target) return;
+  
+  // 获取输入值，确保value是字符串
+  let value = event.target.value || '';
+  
+  // 只允许输入数字
+  value = value.replace(/[^0-9]/g, '');
+  
+  // 限制长度不超过11个数字
+  if (value.length > 11) {
+    value = value.substring(0, 11);
+    // 直接设置input元素的value，确保用户看不到超出的数字
+    event.target.value = value;
+    // 显示文本提示
+    uni.showToast({ title: "联系电话长度不能超过11个数字", icon: "none" });
+  }
+  
+  // 更新输入值
+  contactPhone.value = value;
+};
+
+// 验证电话号码格式是否正确
+const isValidPhone = (phone: string): boolean => {
+  // 中国电话号码正则：11位数字，以1开头
+  const phoneRegex = /^1[3-9]\d{9}$/;
+  return phoneRegex.test(phone);
+};
+
+// 验证活动详情长度
+const validateDetail = (event: any) => {
+  // 检查event和event.target是否存在
+  if (!event || !event.target) return;
+  
+  // 获取输入值
+  let value = event.target.value || '';
+  
+  // 限制长度不超过30个字符
+  if (value.length > 30) {
+    value = value.substring(0, 30);
+    // 直接设置textarea元素的value，确保用户看不到超出的内容
+    event.target.value = value;
+    // 更新活动详情值
+    activityDetail.value = value;
+    // 显示文本提示
+    uni.showToast({ title: "活动详情长度不能超过30个字符", icon: "none" });
+  }
+};
+
+// 验证活动标题长度
+const validateTitle = (event: any) => {
+  // 检查event和event.target是否存在
+  if (!event || !event.target) return;
+  
+  // 获取输入值
+  let value = event.target.value || '';
+  
+  // 限制长度不超过20个字符
+  if (value.length > 20) {
+    value = value.substring(0, 20);
+    // 直接设置input元素的value，确保用户看不到超出的内容
+    event.target.value = value;
+    // 更新活动标题值
+    activityTitle.value = value;
+    // 显示文本提示
+    uni.showToast({ title: "标题长度不能超过20个字符", icon: "none" });
+  }
 };
 </script>
 
@@ -646,10 +730,17 @@ const goBackHome = () => {
 	padding: 20rpx;
 	font-size: 26rpx;
 	color: #333;
-	border: 1rpx solid #000000;
+	border: 1rpx dashed #ffbb8a;
 	border-radius: 16rpx;
 	box-sizing: border-box;
 	resize: none;
+}
+
+.word-count {
+	text-align: right;
+	font-size: 22rpx;
+	color: #999;
+	margin-top: 10rpx;
 }
 
 /* 自定义标题样式：调整宽度和位置，避免与提交按钮重叠 */

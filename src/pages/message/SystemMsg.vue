@@ -74,6 +74,7 @@ import {
   getNotifications,
   markNotificationsRead,
   markNotificationsReadAll,
+  getNotificationsUnreadCount,
 } from "@/api/message/router";
 import { onMounted, ref } from "vue";
 import { useUserStore } from "@/store/user";
@@ -139,6 +140,9 @@ const loadNotifications = async (isRefresh = false) => {
 
   try {
     const res = await getNotifications(userStore.userId, page.value, pageSize);
+    getNotificationsUnreadCount(userStore.userId).then((res) => {
+      userStore.$state.unReadSystemMessage = res.data.count;
+    });
 
     if (isRefresh) {
       notifications.value = res.data.notifications || [];
@@ -198,9 +202,10 @@ const readAll = () => {
   });
 };
 
+import { safeNavigateBack } from "@/utils/navigation";
+
 const goBack = () => {
-  // 返回上一页的逻辑
-  uni.navigateBack();
+  safeNavigateBack("/pages/message/index");
 };
 
 onMounted(() => {
@@ -261,6 +266,9 @@ onMounted(() => {
         font-size: $font-size-base;
         font-weight: $font-weight-semibold;
         color: $text-primary;
+        max-width: 70%;
+        @include truncate(1);
+        white-space: nowrap;
       }
       .message-time {
         font-size: $font-size-xs;

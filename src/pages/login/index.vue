@@ -14,7 +14,7 @@
           ></wd-icon>
         </view>
         <view class="title">欢迎回来</view>
-        <view class="subtitle">登录 Activity Pro，发现精彩校园生活</view>
+        <view class="subtitle">登录 CampusHub，发现精彩校园生活</view>
       </view>
 
       <view class="form-section">

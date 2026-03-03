@@ -1,21 +1,21 @@
 <template>
   <CommonLayout headerType="transparent" padding="0 0">
-    
     <!-- 骨架屏 -->
     <ActivityDetailSkeleton v-if="loading" />
-    
+
     <!-- 实际内容 -->
     <template v-else>
       <!-- 活动图片 - 固定背景 -->
       <view class="activity-image-container">
-        <wd-img 
-          class="activity-image" 
-          :src="activityDetail?.coverUrl || '默认图'" 
-          mode="aspectFill" >
+        <wd-img
+          class="activity-image"
+          :src="activityDetail?.coverUrl || '默认图'"
+          mode="aspectFill"
+        >
           <template #error>
-            <wd-icon 
-              class-prefix="iconfont" 
-              name="morentupian" 
+            <wd-icon
+              class-prefix="iconfont"
+              name="morentupian"
               size="600rpx"
               color="#e9e9e9"
               custom-style="margin-top: 20rpx"
@@ -27,55 +27,62 @@
           </template>
         </wd-img>
       </view>
-      
+
       <!-- 活动内容 -->
       <view class="activity-content">
         <!-- 报名状态标签 - 相对于活动内容定位 -->
-        <view class="status-tag"
+        <view
+          class="status-tag"
           :style="{
-            backgroundColor: activityDetail.registrationStatus === 1 ? '#4ade80' :
-                             activityDetail.registrationStatus === 2 ? '#f97316' :
-                             activityDetail.registrationStatus === 3 ? '#666666' :
-                              '#000000'
+            backgroundColor:
+              activityDetail.registrationStatus === 1
+                ? '#4ade80'
+                : activityDetail.registrationStatus === 2
+                  ? '#f97316'
+                  : activityDetail.registrationStatus === 3
+                    ? '#666666'
+                    : '#000000',
           }"
         >
           <text class="status-text">
-            {{ activityDetail?.registrationStatusText || '报名中' }}
+            {{ activityDetail?.registrationStatusText || "报名中" }}
           </text>
         </view>
         <!-- 活动标题 - 相对于活动内容定位 -->
         <view class="activity-title">
-          <text>
-            {{ activityDetail?.title || '默认标题' }}
-              <!-- 这是一段测试标题，用于展示活动标题的样式。 -->
-          </text>
+          {{ activityDetail?.title || "默认标题" }}
+          <!-- 这是一段测试标题，用于展示活动标题的样式。 -->
         </view>
-        
+
         <!-- 发起人信息 -->
-        <view class="organizer-info" 
-          @click="viewPubilcProfil(activityDetail.organizerId)">
-          <wd-img class="organizer-avatar" 
-            :src="activityDetail?.organizerAvatar || '默认图'" 
-            mode="aspectFill" >
+        <view
+          class="organizer-info"
+          @click="viewPubilcProfil(activityDetail.organizerId)"
+        >
+          <wd-img
+            class="organizer-avatar"
+            :src="activityDetail?.organizerAvatar || '默认图'"
+            mode="aspectFill"
+          >
             <template #error>
-              <wd-icon 
-                class-prefix="iconfont" 
-                name="morentouxiang" 
-                size="70rpx" 
-                color="#999999">
+              <wd-icon
+                class-prefix="iconfont"
+                name="morentouxiang"
+                size="70rpx"
+                color="#999999"
+              >
               </wd-icon>
             </template>
-
           </wd-img>
           <view class="organizer-text">
             <text class="organizer-name">
-              {{ activityDetail?.organizerName || '默认昵称' }}
+              {{ activityDetail?.organizerName || "默认昵称" }}
             </text>
             <text class="organizer-detail">点击查看发起人详情</text>
           </view>
           <wd-icon name="arrow-right" size="35rpx" color="#999" />
         </view>
-        
+
         <!-- 活动开始、截止时间和地点信息 -->
         <view class="info-cards">
           <view class="info-card time-card">
@@ -99,7 +106,7 @@
             <text class="info-value">{{ activityDetail?.addressDetail }}</text>
           </view>
         </view>
-        
+
         <!-- 活动详情 -->
         <view class="activity-details">
           <view class="details-header">
@@ -110,13 +117,17 @@
               {{ activityDetail?.content }}
             </text>
             <view v-else class="empty-content">
-              <wd-img class="empty-img" src="/static/empty-content.png" mode="aspectFill" />
+              <wd-img
+                class="empty-img"
+                src="/static/empty-content.png"
+                mode="aspectFill"
+              />
               <text class="empty-text">暂无内容</text>
             </view>
           </view>
         </view>
       </view>
-      
+
       <!-- 底部报名按钮 -->
       <view class="bottom-button">
         <!-- 1 报名按钮 -->
@@ -124,12 +135,12 @@
           <button v-if="isUser" class="register-button" @click="sign">
             <text class="register-text">活动发起者无法报名</text>
           </button>
-          <button v-else-if="activityDetail?.registrationStatus === 2"
-          class="register-button primary" 
-          @click="sign">
-            <text class="register-text">
-              立即报名
-            </text>
+          <button
+            v-else-if="activityDetail?.registrationStatus === 2"
+            class="register-button primary"
+            @click="sign"
+          >
+            <text class="register-text"> 立即报名 </text>
           </button>
           <button v-else class="register-button" @click="sign">
             <text class="register-text">
@@ -140,7 +151,7 @@
         <!-- 2 取消按钮 -->
         <view v-else class="button-row">
           <!-- 取消按钮 -->
-          <button  class="register-button cancel" @click="unSign">
+          <button class="register-button cancel" @click="unSign">
             <text class="register-text">取消报名</text>
           </button>
           <!-- 群聊按钮 -->
@@ -151,12 +162,16 @@
         </view>
       </view>
     </template>
-
   </CommonLayout>
 </template>
 
 <script setup lang="ts">
-import { getActivityDetail, signActivity, cancelSign, getWaitList } from "@/api/home/router";
+import {
+  getActivityDetail,
+  signActivity,
+  cancelSign,
+  getWaitList,
+} from "@/api/home/router";
 import { ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useUserStore } from "@/store/user";
@@ -198,13 +213,15 @@ onLoad((options: any) => {
 
 // 获取活动详情
 const fetchActivityDetail = () => {
-  getActivityDetail(String(activityId)).then((res) => {
-    activityDetail.value = res.data.activity;
-    isUser.value = userStore.userId == activityDetail.value.organizerId;
-    loading.value = false;
-  }).catch(() => {
-    loading.value = false;
-  });
+  getActivityDetail(String(activityId))
+    .then((res) => {
+      activityDetail.value = res.data.activity;
+      isUser.value = userStore.userId == activityDetail.value.organizerId;
+      loading.value = false;
+    })
+    .catch(() => {
+      loading.value = false;
+    });
 };
 
 // 检查报名状态
@@ -218,7 +235,7 @@ const checkSignStatus = async () => {
     // 检查是否报名
     isSigned.value = items?.some((item: any) => item.id == Number(activityId));
   } catch (error) {
-    console.error('检查报名状态失败:', error);
+    console.error("检查报名状态失败:", error);
   } finally {
     // 确保即使报名状态检查失败也关闭加载
     if (!loading.value) {
@@ -246,7 +263,6 @@ const sign = () => {
           }
         },
       });
-
     } else {
       uni.showToast({
         title: res.data.reason,
@@ -292,7 +308,6 @@ const viewPubilcProfil = (id: number) => {
 <style lang="scss" scoped>
 @use "@/styles/variables.scss" as *;
 @use "@/styles/mixins.scss" as *;
-
 
 /* 活动图片 - 固定背景 */
 .activity-image-container {
@@ -347,14 +362,15 @@ const viewPubilcProfil = (id: number) => {
     left: $spacing-md;
     right: $spacing-md;
     z-index: 3;
-    text {
-      font-size: 48rpx;
-      font-weight: $font-weight-bold;
-      color: $text-light;
-      line-height: 1.4;
-      text-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.5);
-      @include truncate(1);
-    }
+    
+    font-size: 48rpx;
+    font-weight: $font-weight-bold;
+    color: $text-light;
+    line-height: 1.4;
+    text-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.5);
+    max-width: 70%;
+    @include truncate(1);
+    white-space: nowrap;
   }
 }
 
@@ -373,7 +389,7 @@ const viewPubilcProfil = (id: number) => {
     border-radius: 50%;
     margin-right: $spacing-sm;
   }
-  .organizer-text{
+  .organizer-text {
     flex: 1;
     @include flex(column, center, flex-start);
     margin-left: 10rpx;
@@ -382,7 +398,7 @@ const viewPubilcProfil = (id: number) => {
       font-weight: $font-weight-semibold;
       color: $text-primary;
     }
-    
+
     .organizer-detail {
       font-size: 22rpx;
       color: $text-tertiary;
@@ -418,7 +434,6 @@ const viewPubilcProfil = (id: number) => {
       font-weight: $font-weight-semibold;
       color: $text-primary;
     }
-    
   }
   .time-card {
     background-color: #fffbf6;
@@ -459,7 +474,7 @@ const viewPubilcProfil = (id: number) => {
       .empty-img {
         width: 100%;
         flex: 1;
-        margin: $spacing-md 0 ;
+        margin: $spacing-md 0;
       }
       .empty-text {
         font-size: 26rpx;
@@ -499,9 +514,15 @@ const viewPubilcProfil = (id: number) => {
       }
 
       &.primary {
-        background: linear-gradient(135deg, $primary-color 0%, lighten($primary-color, 10%) 100%);
+        background: linear-gradient(
+          135deg,
+          $primary-color 0%,
+          lighten($primary-color, 10%) 100%
+        );
         box-shadow: 0 4rpx 16rpx rgba($primary-color, 0.4);
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
 
         &:active {
           box-shadow: 0 2rpx 8rpx rgba($primary-color, 0.3);

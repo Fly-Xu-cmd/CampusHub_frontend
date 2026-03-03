@@ -51,7 +51,7 @@
               }}</view>
             </view>
             <view class="message-text">
-              <view class="message-sender">{{ group.owner_name }}:</view>
+              <view class="message-sender">{{ group.last_sender_name }}:</view>
               <view class="message-artical">{{
                 group.last_message || "暂无消息"
               }}</view>
@@ -131,6 +131,22 @@ const saveUnreadToStorage = () => {
 const handleNewMessage = (data: any) => {
   console.log("[消息列表] 收到新消息:", data);
 
+  // 如果是自己发送的消息，不增加未读计数
+  if (data.sender_id === userStore.userId) {
+    console.log("[消息列表] 自己发送的消息，不计入未读");
+    // 更新最后一条消息信息（不增加未读）
+    const groupIndex = groups.value.findIndex(
+      (g) => g.group_id === data.group_id,
+    );
+    if (groupIndex !== -1) {
+      const group = groups.value[groupIndex];
+      group.last_message = data.msg_type === 1 ? data.content : "[图片]";
+      group.last_message_at = data.created_at;
+      group.last_sender_name = data.sender_name;
+    }
+    return;
+  }
+
   // 查找对应的群聊
   const groupIndex = groups.value.findIndex(
     (g) => g.group_id === data.group_id,
@@ -141,6 +157,7 @@ const handleNewMessage = (data: any) => {
     const group = groups.value[groupIndex];
     group.last_message = data.msg_type === 1 ? data.content : "[图片]";
     group.last_message_at = data.created_at;
+    group.last_sender_name = data.sender_name;
 
     // 增加未读消息数量
     const currentUnread = groupUnreadMap.value.get(data.group_id) || 0;
@@ -250,11 +267,14 @@ const fetchOfflineMessages = async () => {
     if (res.data?.messages && res.data.messages.length > 0) {
       console.log(`[消息列表] 获取到 ${res.data.messages.length} 条离线消息`);
 
-      // 统计每个群组的离线消息数量
+      // 统计每个群组的离线消息数量（排除自己发送的消息）
       const offlineUnreadMap = new Map<string, number>();
       res.data.messages.forEach((msg: any) => {
-        const count = offlineUnreadMap.get(msg.group_id) || 0;
-        offlineUnreadMap.set(msg.group_id, count + 1);
+        // 排除自己发送的消息
+        if (msg.sender_id !== userStore.userId) {
+          const count = offlineUnreadMap.get(msg.group_id) || 0;
+          offlineUnreadMap.set(msg.group_id, count + 1);
+        }
       });
 
       // 更新群组未读数量（累加到现有数量上）
@@ -476,7 +496,7 @@ onUnmounted(() => {
       }
 
       .message-content {
-        flex: 1;
+        width: 80%;
         padding: $spacing-xs;
 
         .message-header {
@@ -487,6 +507,9 @@ onUnmounted(() => {
             font-size: $font-size-base;
             font-weight: $font-weight-semibold;
             color: $text-primary;
+            max-width: 50%;
+            @include truncate(1);
+            white-space: nowrap;
           }
 
           .message-time {

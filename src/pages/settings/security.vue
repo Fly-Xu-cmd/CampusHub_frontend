@@ -248,8 +248,16 @@ const confirmLogoff = async () => {
       });
     }, 1000);
   } catch (error: any) {
-    console.log("error", error);
-    codeError.value = error || "注销失败，请重试";
+    console.log("error::", error.message);
+    // 提取错误消息：支持 "业务错误(1003): xxx" 和 "错误：xxx" 两种格式
+    const match = error.message.match(/\)\s*:\s*(.+)$/);
+    if (match) {
+      codeError.value = match[1];
+    } else {
+      // 尝试按中文冒号分割
+      const parts = error.message.split("：");
+      codeError.value = parts[1] || error.message.split(":")[1] || "注销失败，请重试";
+    }
   } finally {
     submitting.value = false;
   }

@@ -492,8 +492,6 @@ const statusDesc = computed(() => authProgress.value?.status_desc || "");
 const rejectReason = computed(() => authProgress.value?.reject_reason || "");
 const verifyId = computed(() => authProgress.value?.verify_id || 0);
 const newAvatarId = ref<number | null>(null);
-const front_image_url = ref<string>(""); // 新头像的URL
-const backend_image_url = ref<string>(""); // 新头像的URL
 
 // 格式化认证时间
 const formatVerifyTime = () => {
@@ -928,9 +926,11 @@ const handleRetry = () => {
   authProgress.value = { need_action: NeedAction.Apply };
 };
 
+import { safeNavigateBack } from "@/utils/navigation";
+
 // 返回
 const handleBack = () => {
-  uni.navigateBack();
+  safeNavigateBack("/pages/profile/index");
 };
 </script>
 

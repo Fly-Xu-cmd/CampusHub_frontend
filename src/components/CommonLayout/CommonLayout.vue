@@ -24,7 +24,7 @@
           <view class="brand-info">
             <text class="sub-text">Welcome Back</text>
             <view class="main-title">
-              <text class="title-text">Activity Pro</text>
+              <text class="title-text">CampusHub</text>
               <view class="bell-btn" @click="goSystemMessage">
                 <wd-badge
                   :is-dot="
@@ -120,6 +120,7 @@
 import { computed } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useSystemStore } from "@/store/system";
+import { safeNavigateBack } from "@/utils/navigation";
 
 // Props 定义保持不变...
 interface Props {
@@ -266,12 +267,11 @@ const noneHeaderStyle = computed(() => {
 });
 
 const handleBack = () => {
-  const pages = getCurrentPages();
-  if (pages.length > 1) {
-    uni.navigateBack();
-  } else {
-    uni.reLaunch({ url: "/pages/home/index" });
-  }
+  // 使用 reLaunch 清空页面栈，避免返回到已刷新的页面
+  safeNavigateBack({
+    fallbackUrl: "/pages/home/index",
+    useReLaunch: true,
+  });
 };
 
 const goSystemMessage = () => {

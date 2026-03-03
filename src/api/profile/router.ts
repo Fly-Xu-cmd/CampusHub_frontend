@@ -21,6 +21,10 @@ import type {
   PostQqCodeConfirmData,
   PostQqCodeConfirmRequest,
 } from "@/types/modules/profile";
+import type {
+  CreditLogsResponse,
+  CreditLogsParams,
+} from "@/types/modules/credit";
 
 const apiUrls = {
   getProfile: "/api/v1/users/details",
@@ -38,6 +42,7 @@ const apiUrls = {
   getQqCodeForgotPassword: "/api/v1/qq_code/forgot_password",
   getQqCodeDeleteUser: "/api/v1/qq_code/delete_user",
   getActivityList: "/api/v1/activity/list",
+  getCreditLogs: "/api/v1/credit/logs",
 };
 
 // 获取用户详情
@@ -133,6 +138,13 @@ export const getQqCodeForgotPassword = (params: PostQqCodeRequest) => {
 // 获取QQ删除用户验证码
 export const getQqCodeDeleteUser = (params: PostQqCodeRequest) => {
   return post<Response<PostQqCodeConfirmData>>(apiUrls.getQqCodeDeleteUser, {
+    data: params,
+  });
+};
+
+// 获取信用分变更记录
+export const getCreditLogs = (params?: CreditLogsParams) => {
+  return get<Response<CreditLogsResponse>>(apiUrls.getCreditLogs, {
     data: params,
   });
 };

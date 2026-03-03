@@ -142,8 +142,9 @@ export interface ChatMessage {
   content?: string;
   image_url?: string;
   created_at: string;
-}
 
+  sender_avatar?: string; // 可选，发送者头像URL
+}
 /** 消息历史响应 */
 export interface MessagesHistoryData {
   messages: ChatMessage[];

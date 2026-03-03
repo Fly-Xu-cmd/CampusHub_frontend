@@ -92,6 +92,11 @@
       "style": { "navigationStyle": "custom" }
     },
     {
+      "path": "pages/profile/credit",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
+    },
+    {
       "path": "pages/activity/verify",
       "style": { "navigationStyle": "custom" },
       "needLogin": true
