@@ -496,7 +496,7 @@ onUnmounted(() => {
       }
 
       .message-content {
-        flex: 1;
+        width: 80%;
         padding: $spacing-xs;
 
         .message-header {
@@ -507,6 +507,9 @@ onUnmounted(() => {
             font-size: $font-size-base;
             font-weight: $font-weight-semibold;
             color: $text-primary;
+            max-width: 50%;
+            @include truncate(1);
+            white-space: nowrap;
           }
 
           .message-time {

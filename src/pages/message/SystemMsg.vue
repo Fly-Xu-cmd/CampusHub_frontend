@@ -266,6 +266,9 @@ onMounted(() => {
         font-size: $font-size-base;
         font-weight: $font-weight-semibold;
         color: $text-primary;
+        max-width: 70%;
+        @include truncate(1);
+        white-space: nowrap;
       }
       .message-time {
         font-size: $font-size-xs;

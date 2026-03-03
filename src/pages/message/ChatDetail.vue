@@ -97,6 +97,9 @@ const goToProfile = (id: number) => {
       font-weight: $font-weight-semibold;
       color: $text-primary;
       margin-bottom: $spacing-xs;
+      max-width: 70%;
+      @include truncate(1);
+      white-space: nowrap;
     }
 
     .group-member-count {

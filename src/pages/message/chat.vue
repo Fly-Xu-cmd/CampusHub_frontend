@@ -672,13 +672,16 @@ onUnmounted(() => {
 }
 
 .header-center {
-  flex: 1;
+  width: 50%;
   text-align: center;
 
   .group-name {
     font-size: $font-size-base;
     font-weight: $font-weight-semibold;
     color: $text-primary;
+    max-width: 100%;
+    @include truncate(1);
+    white-space: nowrap;
   }
 
   .skeleton-title {
