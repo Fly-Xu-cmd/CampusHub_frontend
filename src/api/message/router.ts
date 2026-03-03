@@ -90,7 +90,7 @@ export const getGroups = (user_id: number, page = 1, page_size = 20) => {
  * @param group_id 群组ID
  */
 export const getGroupInfo = (group_id: string) => {
-  return get<Response<title>>(apiUrls.getTitle + `/${group_id}`);
+  return get<title>(apiUrls.getTitle + `/${group_id}`);
 };
 
 /**

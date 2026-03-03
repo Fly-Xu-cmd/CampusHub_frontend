@@ -84,9 +84,11 @@ import {
   getOfflineMessages,
 } from "@/api/message/router";
 import { useUserStore } from "@/store/user";
+import { useChatStore } from "@/store/chat";
 import { getWebSocket } from "@/utils/websocket";
 
 const userStore = useUserStore();
+const chatStore = useChatStore();
 const defaultAvatar = "https://picsum.photos/200?random=chat";
 
 // 数据状态
@@ -135,6 +137,22 @@ const handleNewMessage = (data: any) => {
   if (data.sender_id === userStore.userId) {
     console.log("[消息列表] 自己发送的消息，不计入未读");
     // 更新最后一条消息信息（不增加未读）
+    const groupIndex = groups.value.findIndex(
+      (g) => g.group_id === data.group_id,
+    );
+    if (groupIndex !== -1) {
+      const group = groups.value[groupIndex];
+      group.last_message = data.msg_type === 1 ? data.content : "[图片]";
+      group.last_message_at = data.created_at;
+      group.last_sender_name = data.sender_name;
+    }
+    return;
+  }
+
+  // 检查用户是否正在查看该群聊，如果是则不增加未读计数
+  if (chatStore.isViewingGroup(data.group_id)) {
+    console.log("[消息列表] 用户正在查看该群聊，不计入未读");
+    // 仍需更新最后一条消息信息
     const groupIndex = groups.value.findIndex(
       (g) => g.group_id === data.group_id,
     );
@@ -345,7 +363,9 @@ const viewSystemMsg = () => {
 };
 
 onShow(() => {
-  // 每次页面显示时刷新未读数量
+  // 每次页面显示时重新加载未读消息数量（从群聊页面返回时可能已被清除）
+  loadUnreadFromStorage();
+  // 刷新系统通知未读数量
   fetchUnreadCount();
 });
 

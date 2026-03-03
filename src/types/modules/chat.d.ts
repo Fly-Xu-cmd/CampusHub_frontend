@@ -144,6 +144,10 @@ export interface ChatMessage {
   created_at: string;
 
   sender_avatar?: string; // 可选，发送者头像URL
+
+  // 消息发送状态（仅对自己发送的消息有效）
+  sendStatus?: "pending" | "success" | "failed"; // 发送中 | 发送成功 | 发送失败
+  tempId?: string; // 临时ID，用于匹配发送确认
 }
 /** 消息历史响应 */
 export interface MessagesHistoryData {

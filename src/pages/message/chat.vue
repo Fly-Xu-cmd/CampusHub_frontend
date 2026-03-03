@@ -84,9 +84,6 @@
               <text v-if="loadingHistory">加载中...</text>
               <text v-else>下拉加载更多消息</text>
             </view>
-            <view class="load-more" v-if="!hasMore && messages.length > 0">
-              <text>没有更多消息了</text>
-            </view>
 
             <!-- 消息列表 -->
             <view class="message-list">
@@ -134,6 +131,27 @@
 
                 <!-- 自己消息 -->
                 <template v-else>
+                  <!-- 发送状态指示器 -->
+                  <view class="message-status" v-if="msg.sendStatus">
+                    <!-- 发送中：转圈 -->
+                    <wd-loading
+                      v-if="msg.sendStatus === 'pending'"
+                      size="32rpx"
+                      color="#94a3b8"
+                    ></wd-loading>
+                    <!-- 发送失败：红色感叹号（可点击重发） -->
+                    <view
+                      v-else-if="msg.sendStatus === 'failed'"
+                      class="retry-icon"
+                      @click="resendMessage(msg)"
+                    >
+                      <wd-icon
+                        name="error-circle-filled"
+                        size="32rpx"
+                        color="#ef4444"
+                      ></wd-icon>
+                    </view>
+                  </view>
                   <view class="message-bubble">
                     <!-- 文字消息 -->
                     <text class="message-text" v-if="msg.msg_type === 1">{{
@@ -192,16 +210,20 @@ import {
 } from "@/api/message/router";
 import { getWebSocket } from "@/utils/websocket";
 import type { ChatMessage } from "@/types/modules/chat";
+import type { title } from "@/types/modules/message/title";
 import { useUserStore } from "@/store/user";
+import { useChatStore } from "@/store/chat";
+import { safeNavigateBack } from "@/utils/navigation";
 
 const userStore = useUserStore();
+const chatStore = useChatStore();
 const defaultAvatar = "https://picsum.photos/200?random=avatar";
 
 // URL 参数
 let groupId = "";
 
 // 数据状态
-const groupTitle = ref<any>({});
+const groupTitle = ref<title["data"]>({} as title["data"]);
 const messages = ref<ChatMessage[]>([]);
 const inputText = ref("");
 const scrollIntoView = ref("");
@@ -212,11 +234,28 @@ const initialLoading = ref(true); // 初始加载状态
 const currentUserId = computed(() => userStore.userId);
 const isLoadingOffline = ref(false);
 
+// 消息发送状态跟踪
+const pendingMessages = ref<Map<string, ReturnType<typeof setTimeout>>>(
+  new Map(),
+); // tempId -> timeoutId
+const MESSAGE_TIMEOUT = 15000; // 15秒未收到确认视为发送失败
+
+// WebSocket 事件监听器引用（用于组件卸载时移除）
+const wsListeners = {
+  authenticated: null as (() => void) | null,
+  newMessage: null as ((data: any) => void) | null,
+  error: null as ((data: any) => void) | null,
+};
+
+// 网络状态监听器引用
+let networkListener: ((res: any) => void) | null = null;
+
 // 网络状态
 const showNetworkTip = ref(false);
 const networkTipText = ref("");
 const isConnected = ref(true);
 const wasDisconnected = ref(false); // 记录之前是否处于断网状态
+const networkType = ref(""); // 网络类型：wifi, 4g, 5g, 2g, 3g, none
 
 // 初始化 WebSocket 事件监听
 const initWS = () => {
@@ -226,6 +265,74 @@ const initWS = () => {
     return;
   }
 
+  // 定义事件处理函数
+  const handleAuthenticated = () => {
+    console.log("WebSocket 认证成功");
+    loadHistoryMessages();
+    fetchOfflineMessages();
+  };
+
+  const handleNewMessage = (data: any) => {
+    console.log("收到新消息:", data);
+    if (data.group_id === groupId) {
+      // 检查是否是自己发送的消息（通过 tempId 匹配）
+      const existingMsgIndex = messages.value.findIndex(
+        (msg) =>
+          msg.tempId &&
+          msg.tempId.startsWith("temp-") &&
+          msg.sendStatus === "pending",
+      );
+
+      if (
+        existingMsgIndex !== -1 &&
+        messages.value[existingMsgIndex].sender_id === data.sender_id
+      ) {
+        // 更新自己发送的消息状态为成功
+        const msg = messages.value[existingMsgIndex];
+        msg.sendStatus = "success";
+        msg.message_id = data.message_id; // 更新为真实ID
+        // 清除超时定时器
+        if (msg.tempId && pendingMessages.value.has(msg.tempId)) {
+          clearTimeout(pendingMessages.value.get(msg.tempId)!);
+          pendingMessages.value.delete(msg.tempId);
+        }
+      } else {
+        // 检查消息是否已存在（避免重复添加）
+        const exists = messages.value.some(
+          (m) => m.message_id === data.message_id,
+        );
+        if (!exists) {
+          // 新消息，添加到列表
+          messages.value.push({
+            message_id: data.message_id,
+            group_id: data.group_id,
+            sender_id: data.sender_id,
+            sender_name: data.sender_name,
+            sender_avatar: data.sender_avatar,
+            msg_type: data.msg_type,
+            content: data.content,
+            image_url: data.image_url,
+            created_at: new Date(data.created_at * 1000).toISOString(),
+          });
+        }
+      }
+      scrollToBottom();
+    }
+  };
+
+  const handleError = (data: any) => {
+    console.error("WebSocket 错误:", data);
+    uni.showToast({
+      title: data.message || "连接错误",
+      icon: "none",
+    });
+  };
+
+  // 保存监听器引用
+  wsListeners.authenticated = handleAuthenticated;
+  wsListeners.newMessage = handleNewMessage;
+  wsListeners.error = handleError;
+
   // 等待认证成功
   if (ws.isAuth()) {
     // 已认证，直接加入群聊
@@ -233,39 +340,14 @@ const initWS = () => {
     fetchOfflineMessages();
   } else {
     // 未认证，等待认证成功
-    ws.on("authenticated", () => {
-      console.log("WebSocket 认证成功");
-      loadHistoryMessages();
-      fetchOfflineMessages();
-    });
+    ws.on("authenticated", handleAuthenticated);
   }
 
   // 监听新消息
-  ws.on("newMessage", (data: any) => {
-    console.log("收到新消息:", data);
-    if (data.group_id === groupId) {
-      messages.value.push({
-        message_id: data.message_id,
-        group_id: data.group_id,
-        sender_id: data.sender_id,
-        sender_name: data.sender_name,
-        msg_type: data.msg_type,
-        content: data.content,
-        image_url: data.image_url,
-        created_at: new Date(data.created_at * 1000).toISOString(),
-      });
-      scrollToBottom();
-    }
-  });
+  ws.on("newMessage", handleNewMessage);
 
   // 监听错误
-  ws.on("error", (data: any) => {
-    console.error("WebSocket 错误:", data);
-    uni.showToast({
-      title: data.message || "连接错误",
-      icon: "none",
-    });
-  });
+  ws.on("error", handleError);
 };
 
 // 获取群聊信息
@@ -338,6 +420,11 @@ const handleScrollToUpper = () => {
   if (hasMore.value && !loadingHistory.value && messages.value.length > 0) {
     const oldestMessage = messages.value[0];
     loadHistoryMessages(oldestMessage.message_id);
+  } else {
+    uni.showToast({
+      title: "没有更多消息了",
+      icon: "none",
+    });
   }
 };
 
@@ -379,23 +466,30 @@ const loadHistoryMessages = async (beforeId?: string) => {
     initialLoading.value = true;
   }
 
+  // 记录加载前的消息数量和第一条消息ID（用于保持滚动位置）
+  const oldMessageCount = messages.value.length;
+  const oldFirstMessageId = messages.value[0]?.message_id;
+
   try {
     const res = await getGroupHistory(groupId, beforeId);
     if (res.data?.messages) {
       const newMessages = res.data.messages.reverse();
       if (beforeId) {
         messages.value = [...newMessages, ...messages.value];
+        // 加载更多后，保持滚动位置（滚动到原来的第一条消息）
+        nextTick(() => {
+          if (oldFirstMessageId) {
+            scrollIntoView.value = "msg-" + oldFirstMessageId;
+          }
+        });
       } else {
         messages.value = newMessages;
-      }
-      hasMore.value = res.data.has_more;
-
-      // 首次加载滚动到底部
-      if (!beforeId) {
+        // 首次加载滚动到底部
         nextTick(() => {
           scrollToBottom();
         });
       }
+      hasMore.value = res.data.has_more;
     }
   } catch (error) {
     console.error("获取历史消息失败:", error);
@@ -482,9 +576,53 @@ const sendMessage = () => {
   }
 
   try {
-    // 5. 发送消息
+    // 生成临时ID
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+
+    // 5. 先添加临时消息到列表
+    const tempMessage: ChatMessage = {
+      message_id: tempId,
+      tempId: tempId,
+      group_id: groupId,
+      sender_id: currentUserId.value,
+      sender_name: userStore.nickname || "我",
+      msg_type: 1,
+      content: text,
+      created_at: new Date().toISOString(),
+      sendStatus: "pending",
+    };
+    messages.value.push(tempMessage);
+
+    // 6. 滚动到底部
+    nextTick(() => {
+      scrollToBottom();
+    });
+
+    // 7. 清空输入框
+    inputText.value = "";
+
+    // 8. 设置超时检查
+    const timeoutId = setTimeout(() => {
+      const msgIndex = messages.value.findIndex((m) => m.tempId === tempId);
+      if (
+        msgIndex !== -1 &&
+        messages.value[msgIndex].sendStatus === "pending"
+      ) {
+        messages.value[msgIndex].sendStatus = "failed";
+        console.log(`[发送消息] 消息 ${tempId} 发送超时`);
+        uni.showToast({
+          title: "消息发送失败，点击红色感叹号可重发",
+          icon: "none",
+          duration: 2000,
+        });
+      }
+      pendingMessages.value.delete(tempId);
+    }, MESSAGE_TIMEOUT);
+
+    pendingMessages.value.set(tempId, timeoutId);
+
+    // 9. 发送消息
     ws.sendTextMessage(groupId, text);
-    inputText.value = ""; // 只在发送成功后清空输入框
   } catch (error) {
     console.error("[发送消息] 失败:", error);
     uni.showToast({
@@ -502,15 +640,23 @@ const viewChatDetail = () => {
   });
 };
 
-import { safeNavigateBack } from "@/utils/navigation";
-
 // 初始化网络监听
 const initNetworkListener = () => {
   // 检查初始网络状态
   uni.getNetworkType({
     success: (res) => {
+      networkType.value = res.networkType;
       const initiallyConnected = res.networkType !== "none";
       isConnected.value = initiallyConnected;
+
+      // 检查是否为弱网环境
+      if (initiallyConnected && isWeakNetwork(res.networkType)) {
+        uni.showToast({
+          title: "当前网络环境较弱，消息可能延迟",
+          icon: "none",
+          duration: 2000,
+        });
+      }
 
       // 如果初始就是断开状态，标记为已断开
       if (!initiallyConnected) {
@@ -524,7 +670,8 @@ const initNetworkListener = () => {
   });
 
   // 监听网络状态变化
-  const handleNetworkChange = (res: any) => {
+  networkListener = (res: any) => {
+    networkType.value = res.networkType;
     const nowConnected = res.isConnected;
 
     // 只有当状态真正改变时才处理
@@ -556,6 +703,17 @@ const initNetworkListener = () => {
             icon: "success",
             duration: 1500,
           });
+
+          // 检查是否为弱网
+          if (isWeakNetwork(res.networkType)) {
+            setTimeout(() => {
+              uni.showToast({
+                title: "当前网络环境较弱，消息可能延迟",
+                icon: "none",
+                duration: 2000,
+              });
+            }, 1600);
+          }
         } else {
           // 如果之前没有被标记为断开，就不显示恢复提示
           // 但仍需隐藏断开提示（如果有）
@@ -566,18 +724,32 @@ const initNetworkListener = () => {
           if (ws && !ws.isAuth()) {
             initWS();
           }
+
+          // 检查是否为弱网
+          if (isWeakNetwork(res.networkType)) {
+            uni.showToast({
+              title: "当前网络环境较弱，消息可能延迟",
+              icon: "none",
+              duration: 2000,
+            });
+          }
         }
       }
     }
   };
 
-  uni.onNetworkStatusChange(handleNetworkChange);
+  uni.onNetworkStatusChange(networkListener);
+};
+
+// 判断是否为弱网环境
+const isWeakNetwork = (type: string): boolean => {
+  return type === "2g" || type === "3g";
 };
 
 // 显示网络断开提示
 const showNetworkTipToast = () => {
   showNetworkTip.value = true;
-  networkTipText.value = "网络已断开，请检查网络连接";
+  networkTipText.value = "网络已断开，消息无法发送";
 };
 
 // 隐藏网络断开提示
@@ -588,13 +760,39 @@ const hideNetworkTipToast = () => {
 
 // 返回上一页
 const goBack = () => {
+  // 清除当前查看的群聊ID
+  chatStore.clearCurrentGroup();
+  // 清除所有待确认消息的定时器
+  pendingMessages.value.forEach((timeoutId) => clearTimeout(timeoutId));
+  pendingMessages.value.clear();
   safeNavigateBack("/pages/message/index");
+};
+
+// 重发消息
+const resendMessage = (message: ChatMessage) => {
+  if (!message.content) return;
+
+  // 移除失败的消息
+  const index = messages.value.findIndex((m) => m.tempId === message.tempId);
+  if (index !== -1) {
+    messages.value.splice(index, 1);
+  }
+
+  // 清空输入框并重新发送
+  inputText.value = message.content;
+  nextTick(() => {
+    sendMessage();
+  });
 };
 
 // 页面加载
 onLoad((options: any) => {
   groupId = options.group_id;
   if (groupId) {
+    // 设置当前正在查看的群聊ID
+    chatStore.setCurrentGroup(groupId);
+    // 清除该群的未读消息计数
+    chatStore.clearGroupUnread(groupId);
     fetchGroupInfo();
     initWS();
     initNetworkListener();
@@ -603,6 +801,39 @@ onLoad((options: any) => {
 
 // 页面卸载
 onUnmounted(() => {
+  // 清除当前正在查看的群聊ID
+  chatStore.clearCurrentGroup();
+
+  // 移除 WebSocket 事件监听器
+  const ws = getWebSocket();
+  if (ws) {
+    if (wsListeners.authenticated) {
+      ws.off("authenticated", wsListeners.authenticated);
+    }
+    if (wsListeners.newMessage) {
+      ws.off("newMessage", wsListeners.newMessage);
+    }
+    if (wsListeners.error) {
+      ws.off("error", wsListeners.error);
+    }
+  }
+
+  // 移除网络状态监听器
+  if (networkListener) {
+    uni.offNetworkStatusChange(networkListener);
+    networkListener = null;
+  }
+
+  // 清除所有待确认消息的定时器
+  pendingMessages.value.forEach((timeoutId) => clearTimeout(timeoutId));
+  pendingMessages.value.clear();
+
+  // 清除滚动防抖定时器
+  if (scrollTimer) {
+    clearTimeout(scrollTimer);
+    scrollTimer = null;
+  }
+
   // 保存当前时间作为离线时间
   const currentTime = Math.floor(Date.now() / 1000);
   uni.setStorageSync("last_offline_time", currentTime);
@@ -633,10 +864,11 @@ onUnmounted(() => {
   top: 0;
   left: 0;
   right: 0;
-  background-color: #ef4444;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.3);
   z-index: $z-index-tooltip;
   transform: translateY(-100%);
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &.show {
     transform: translateY(0);
@@ -644,13 +876,14 @@ onUnmounted(() => {
 
   .network-content {
     @include flex(row, center, center);
-    padding: $spacing-sm;
+    padding: $spacing-sm $spacing-md;
     gap: $spacing-xs;
 
     .network-text {
-      font-size: $font-size-xs;
+      font-size: $font-size-sm;
       color: #fff;
-      font-weight: $font-weight-medium;
+      font-weight: $font-weight-semibold;
+      letter-spacing: 0.5rpx;
     }
   }
 }
@@ -891,7 +1124,7 @@ onUnmounted(() => {
 
     /* 自己消息 */
     &.mine {
-      @include flex(row, flex-end, flex-start);
+      @include flex(row, flex-end, center);
 
       .message-avatar {
         margin-left: $spacing-sm;
@@ -900,6 +1133,24 @@ onUnmounted(() => {
           width: 64rpx;
           height: 64rpx;
           border-radius: $border-radius-full;
+        }
+      }
+
+      .message-status {
+        display: flex;
+        align-items: center;
+        margin-right: $spacing-xs;
+        flex-shrink: 0;
+
+        .retry-icon {
+          cursor: pointer;
+          padding: 4rpx;
+          border-radius: $border-radius-full;
+          transition: background-color 0.2s ease;
+
+          &:active {
+            background-color: rgba(239, 68, 68, 0.1);
+          }
         }
       }
 

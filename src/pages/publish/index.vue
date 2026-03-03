@@ -12,18 +12,26 @@
       </view>
     </view>
 
-		<view class="publish-container">
-			<!-- 上传组件 -->
-		<UploadVideo 
-			:fileList="fileList"
-			@update:fileList="handleFileListUpdate"
-			upload-text="上传活动封面/视频"
-		/>
-			<!-- 上传组件 -->
-			<!-- 活动标题 -->
-		<view class="form-item title-item">
-			<input type="text" v-model="activityTitle" placeholder="活动标题" class="title-input" placeholder-style="color: #999;" @input="validateTitle($event)" maxlength="20">
-		</view>
+    <view class="publish-container">
+      <!-- 上传组件 -->
+      <UploadVideo
+        :fileList="fileList"
+        @update:fileList="handleFileListUpdate"
+        upload-text="上传活动封面/视频"
+      />
+      <!-- 上传组件 -->
+      <!-- 活动标题 -->
+      <view class="form-item title-item">
+        <input
+          type="text"
+          v-model="activityTitle"
+          placeholder="活动标题"
+          class="title-input"
+          placeholder-style="color: #999;"
+          @input="validateTitle($event)"
+          maxlength="20"
+        />
+      </view>
 
       <!-- 联系电话 -->
       <view class="form-item title-item">
@@ -117,7 +125,7 @@
         </view>
       </view>
 
-		<!-- 日历选择器组件由TimeSelect组件内部处理 -->
+      <!-- 日历选择器组件由TimeSelect组件内部处理 -->
 
       <!-- 活动详情 -->
       <view class="detail-section">
@@ -130,9 +138,7 @@
           @input="validateDetail($event)"
           maxlength="30"
         ></textarea>
-        <view class="word-count">
-          {{ activityDetail.length }}/30
-        </view>
+        <view class="word-count"> {{ activityDetail.length }}/30 </view>
       </view>
     </view>
   </CommonLayout>
@@ -152,29 +158,29 @@ interface Tag {
   color: string;
 }
 
-	const publishStore = usePublishStore()
-const activityTitle = ref<string>('')
-const activityDetail = ref<string>('')
-const fileList = ref<any[]>([])
-const peopleLimit = ref<number>(20)
-const locationName = ref<string>('选择线下地点')
-const locationAddress = ref<string>('')
-const locationLatitude = ref<number>(0)
-const locationLongitude = ref<number>(0)
-const contactPhone = ref<string>('')
-const selectedTags = ref<number[]>([1, 2, 3]) // 默认标签ID，可根据实际选择修改
-const tags = ref<Tag[]>([]) // 标签选择器相关的变量和逻辑
-const isShowTagPicker = ref<boolean>(false) // 控制标签选择器显示/隐藏
+const publishStore = usePublishStore();
+const activityTitle = ref<string>("");
+const activityDetail = ref<string>("");
+const fileList = ref<any[]>([]);
+const peopleLimit = ref<number>(20);
+const locationName = ref<string>("选择线下地点");
+const locationAddress = ref<string>("");
+const locationLatitude = ref<number>(0);
+const locationLongitude = ref<number>(0);
+const contactPhone = ref<string>("");
+const selectedTags = ref<number[]>([1, 2, 3]); // 默认标签ID，可根据实际选择修改
+const tags = ref<Tag[]>([]); // 标签选择器相关的变量和逻辑
+const isShowTagPicker = ref<boolean>(false); // 控制标签选择器显示/隐藏
 // 日历选择器相关的变量和逻辑
-const startValue = ref<number>(Date.now())
-const endValue = ref<number>(Date.now())
-const signupStartValue = ref<number>(Date.now())
-const signupEndValue = ref<number>(Date.now())
+const startValue = ref<number>(Date.now());
+const endValue = ref<number>(Date.now());
+const signupStartValue = ref<number>(Date.now());
+const signupEndValue = ref<number>(Date.now());
 
-const isShowPicker = ref<boolean>(false)
-const isShowSignupPicker = ref<boolean>(false)
-const timeError = ref<string>('')
-const signupTimeError = ref<string>('')
+const isShowPicker = ref<boolean>(false);
+const isShowSignupPicker = ref<boolean>(false);
+const timeError = ref<string>("");
+const signupTimeError = ref<string>("");
 
 // 监听活动标题长度，超过20字时提示
 watch(activityTitle, (newValue) => {
@@ -388,13 +394,13 @@ const goBackHome = () => {
 const validatePhone = (event: any) => {
   // 检查event和event.target是否存在
   if (!event || !event.target) return;
-  
+
   // 获取输入值，确保value是字符串
-  let value = event.target.value || '';
-  
+  let value = event.target.value || "";
+
   // 只允许输入数字
-  value = value.replace(/[^0-9]/g, '');
-  
+  value = value.replace(/[^0-9]/g, "");
+
   // 限制长度不超过11个数字
   if (value.length > 11) {
     value = value.substring(0, 11);
@@ -403,7 +409,7 @@ const validatePhone = (event: any) => {
     // 显示文本提示
     uni.showToast({ title: "联系电话长度不能超过11个数字", icon: "none" });
   }
-  
+
   // 更新输入值
   contactPhone.value = value;
 };
@@ -419,10 +425,10 @@ const isValidPhone = (phone: string): boolean => {
 const validateDetail = (event: any) => {
   // 检查event和event.target是否存在
   if (!event || !event.target) return;
-  
+
   // 获取输入值
-  let value = event.target.value || '';
-  
+  let value = event.target.value || "";
+
   // 限制长度不超过30个字符
   if (value.length > 30) {
     value = value.substring(0, 30);
@@ -439,10 +445,10 @@ const validateDetail = (event: any) => {
 const validateTitle = (event: any) => {
   // 检查event和event.target是否存在
   if (!event || !event.target) return;
-  
+
   // 获取输入值
-  let value = event.target.value || '';
-  
+  let value = event.target.value || "";
+
   // 限制长度不超过20个字符
   if (value.length > 20) {
     value = value.substring(0, 20);
@@ -724,23 +730,23 @@ const validateTitle = (event: any) => {
   background-color: #fff;
 }
 
-	.detail-textarea {
-	width: 100%;
-	min-height: 200rpx;
-	padding: 20rpx;
-	font-size: 26rpx;
-	color: #333;
-	border: 1rpx dashed #ffbb8a;
-	border-radius: 16rpx;
-	box-sizing: border-box;
-	resize: none;
+.detail-textarea {
+  width: 100%;
+  min-height: 200rpx;
+  padding: 20rpx;
+  font-size: 26rpx;
+  color: #333;
+  border: 1rpx dashed #ffbb8a;
+  border-radius: 16rpx;
+  box-sizing: border-box;
+  resize: none;
 }
 
 .word-count {
-	text-align: right;
-	font-size: 22rpx;
-	color: #999;
-	margin-top: 10rpx;
+  text-align: right;
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 10rpx;
 }
 
 /* 自定义标题样式：调整宽度和位置，避免与提交按钮重叠 */
