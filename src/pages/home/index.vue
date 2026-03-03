@@ -599,7 +599,7 @@ $tag-inactive-color: #111;
   margin: 20rpx;
   margin-top: 35rpx;
   line-height: 1.4;
-  @include truncate(2);
+  @include truncate(1);
 }
 
 /* 活动标签 */

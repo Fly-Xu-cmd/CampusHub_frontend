@@ -6,7 +6,7 @@
     
     <!-- 实际内容 -->
     <template v-else>
-      <!-- 活动图片 -->
+      <!-- 活动图片 - 固定背景 -->
       <view class="activity-image-container">
         <wd-img 
           class="activity-image" 
@@ -26,7 +26,11 @@
             <AsyncLoading text="加载中..." />
           </template>
         </wd-img>
-        <!-- 报名状态标签 -->
+      </view>
+      
+      <!-- 活动内容 -->
+      <view class="activity-content">
+        <!-- 报名状态标签 - 相对于活动内容定位 -->
         <view class="status-tag"
           :style="{
             backgroundColor: activityDetail.registrationStatus === 1 ? '#4ade80' :
@@ -39,16 +43,13 @@
             {{ activityDetail?.registrationStatusText || '报名中' }}
           </text>
         </view>
-        <!-- 活动标题 -->
+        <!-- 活动标题 - 相对于活动内容定位 -->
         <view class="activity-title">
           <text>
             {{ activityDetail?.title || '默认标题' }}
+              <!-- 这是一段测试标题，用于展示活动标题的样式。 -->
           </text>
         </view>
-      </view>
-      
-      <!-- 活动内容 -->
-      <view class="activity-content">
         
         <!-- 发起人信息 -->
         <view class="organizer-info" 
@@ -75,15 +76,21 @@
           <wd-icon name="arrow-right" size="35rpx" color="#999" />
         </view>
         
-        <!-- 报名和地点信息 -->
+        <!-- 活动开始、截止时间和地点信息 -->
         <view class="info-cards">
           <view class="info-card time-card">
             <view class="info-label">
               <wd-icon name="time" size="28rpx" color="#999" /> TIME
             </view>
-            <text class="info-value">
-              {{ formatDate(activityDetail?.activityStartTime) }}
-            </text>
+            <view class="info-time">
+              <text class="info-value">
+                {{ formatDate(activityDetail?.activityStartTime) }}
+              </text>
+              至
+              <text class="info-value">
+                {{ formatDate(activityDetail?.activityEndTime) }}
+              </text>
+            </view>
           </view>
           <view class="info-card location-card">
             <view class="info-label">
@@ -114,7 +121,10 @@
       <view class="bottom-button">
         <!-- 1 报名按钮 -->
         <view v-if="!isSigned" class="button-row">
-          <button v-if="activityDetail?.registrationStatus === 2"
+          <button v-if="isUser" class="register-button" @click="sign">
+            <text class="register-text">活动发起者无法报名</text>
+          </button>
+          <button v-else-if="activityDetail?.registrationStatus === 2"
           class="register-button primary" 
           @click="sign">
             <text class="register-text">
@@ -149,15 +159,17 @@
 import { getActivityDetail, signActivity, cancelSign, getWaitList } from "@/api/home/router";
 import { ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
+import { useUserStore } from "@/store/user";
 
-// 时间格式化函数：将10位时间戳转换为"10.24 19:00"格式
+// 时间格式化函数：将10位时间戳转换为"2026.02.23 19:00"格式
 const formatDate = (timestamp: number) => {
   const date = new Date(timestamp * 1000); // 转换为毫秒
+  const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const day = date.getDate().toString().padStart(2, "0");
   const hours = date.getHours().toString().padStart(2, "0");
   const minutes = date.getMinutes().toString().padStart(2, "0");
-  return `${month}.${day} ${hours}:${minutes}`;
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
 
 // 获取传入的活动ID参数
@@ -165,6 +177,10 @@ let activityId = "";
 
 // 活动详情数据
 const activityDetail = ref<any>({});
+
+// 校验是否为活动发起人
+const userStore = useUserStore();
+const isUser = ref<boolean>(false);
 
 // 记录是否报名
 const isSigned = ref(false);
@@ -184,6 +200,7 @@ onLoad((options: any) => {
 const fetchActivityDetail = () => {
   getActivityDetail(String(activityId)).then((res) => {
     activityDetail.value = res.data.activity;
+    isUser.value = userStore.userId == activityDetail.value.organizerId;
     loading.value = false;
   }).catch(() => {
     loading.value = false;
@@ -277,26 +294,44 @@ const viewPubilcProfil = (id: number) => {
 @use "@/styles/mixins.scss" as *;
 
 
-/* 活动图片 */
+/* 活动图片 - 固定背景 */
 .activity-image-container {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 600rpx;
-  margin-top: -65rpx;
+  z-index: 1;
   .activity-image {
     width: 100%;
     height: 100%;
     text-align: center;
     object-fit: cover;
   }
+}
+
+/* 活动内容 */
+.activity-content {
+  position: relative;
+  top: 550rpx;
+  z-index: 2;
+  padding: $spacing-md;
+  background-color: $surface-color;
+  border-top-left-radius: 50rpx;
+  border-top-right-radius: 50rpx;
+  box-shadow: 0 -6rpx 18rpx rgba(0, 0, 0, 0.1);
+  min-height: calc(100vh - 550rpx);
+
+  /* 报名状态标签 - 相对于活动内容定位 */
   .status-tag {
     position: absolute;
-    bottom: 160rpx;
+    top: -160rpx;
     left: $spacing-md;
     background-color: $primary-color;
     padding: 2rpx 20rpx;
     border-radius: $border-radius-md;
     box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.3);
+    z-index: 3;
     .status-text {
       color: $text-light;
       line-height: 40rpx;
@@ -304,33 +339,23 @@ const viewPubilcProfil = (id: number) => {
       font-weight: $font-weight-semibold;
     }
   }
-  /* 活动标题 */
+
+  /* 活动标题 - 相对于活动内容定位 */
   .activity-title {
     position: absolute;
+    top: -100rpx;
     left: $spacing-md;
-    bottom: 80rpx;
+    right: $spacing-md;
+    z-index: 3;
     text {
       font-size: 48rpx;
       font-weight: $font-weight-bold;
       color: $text-light;
       line-height: 1.4;
       text-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.5);
+      @include truncate(1);
     }
-  }  
-}
-
-/* 活动内容 */
-.activity-content {
-  height: calc(100% - 380rpx);
-  position: relative;
-  top: -55rpx;
-  z-index: 666;
-  padding: $spacing-md;
-  padding-bottom: 150rpx;
-  background-color: $surface-color;
-  border-top-left-radius: 50rpx;
-  border-top-right-radius: 50rpx;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
+  }
 }
 
 /* 发起人信息 */
@@ -384,11 +409,16 @@ const viewPubilcProfil = (id: number) => {
       color: $text-tertiary;
       margin-bottom: 10rpx;
     }
+    .info-time {
+      display: flex;
+      flex-direction: column;
+    }
     .info-value {
       font-size: 28rpx;
       font-weight: $font-weight-semibold;
       color: $text-primary;
     }
+    
   }
   .time-card {
     background-color: #fffbf6;
