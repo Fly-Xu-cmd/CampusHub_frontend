@@ -1,14 +1,17 @@
 <template>
   <view class="activity-detail-skeleton">
-    <!-- 活动图片区域 -->
+    <!-- 活动图片 - 固定背景 -->
     <view class="activity-image-container">
       <view class="skeleton-image"></view>
-      <view class="skeleton-status-tag"></view>
-      <view class="skeleton-title"></view>
     </view>
     
     <!-- 活动内容 -->
     <view class="activity-content">
+      <!-- 报名状态标签 - 相对于活动内容定位 -->
+      <view class="skeleton-status-tag"></view>
+      <!-- 活动标题 - 相对于活动内容定位 -->
+      <view class="skeleton-title"></view>
+      
       <!-- 发起人信息 -->
       <view class="organizer-info">
         <view class="skeleton-avatar"></view>
@@ -19,11 +22,15 @@
         <view class="skeleton-arrow"></view>
       </view>
       
-      <!-- 时间和地点信息 -->
+      <!-- 活动开始、截止时间和地点信息 -->
       <view class="info-cards">
         <view class="info-card time-card">
           <view class="skeleton-info-label"></view>
-          <view class="skeleton-info-value"></view>
+          <view class="skeleton-info-time">
+            <view class="skeleton-info-value"></view>
+            <view class="skeleton-info-to"></view>
+            <view class="skeleton-info-value"></view>
+          </view>
         </view>
         <view class="info-card location-card">
           <view class="skeleton-info-label"></view>
@@ -44,8 +51,9 @@
       </view>
     </view>
     
-    <!-- 底部按钮 -->
+    <!-- 底部报名按钮 -->
     <view class="bottom-button">
+      <!-- 1 报名按钮 -->
       <view class="button-row">
         <view class="skeleton-register-button"></view>
       </view>
@@ -66,12 +74,14 @@
   min-height: 100vh;
 }
 
-/* 活动图片区域 */
+/* 活动图片 - 固定背景 */
 .activity-image-container {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 600rpx;
-  margin-top: -65rpx;
+  z-index: 1;
   
   .skeleton-image {
     width: 100%;
@@ -79,42 +89,46 @@
     background: #e5e7eb;
     animation: pulse 1.5s infinite;
   }
+}
+
+/* 活动内容 */
+.activity-content {
+  position: relative;
+  top: 550rpx;
+  z-index: 2;
+  padding: $spacing-md;
+  background-color: $surface-color;
+  border-top-left-radius: 50rpx;
+  border-top-right-radius: 50rpx;
+  box-shadow: 0 -6rpx 18rpx rgba(0, 0, 0, 0.1);
+  min-height: calc(100vh - 550rpx);
   
+  /* 报名状态标签 - 相对于活动内容定位 */
   .skeleton-status-tag {
     position: absolute;
-    bottom: 170rpx;
+    top: -160rpx;
     left: $spacing-md;
     width: 120rpx;
     height: 44rpx;
     background: #e5e7eb;
     border-radius: $border-radius-md;
     animation: pulse 1.5s infinite;
+    z-index: 3;
   }
   
+  /* 活动标题 - 相对于活动内容定位 */
   .skeleton-title {
     position: absolute;
+    top: -100rpx;
     left: $spacing-md;
-    bottom: 90rpx;
+    right: $spacing-md;
     width: 80%;
     height: 56rpx;
     background: #e5e7eb;
     border-radius: 8rpx;
     animation: pulse 1.5s infinite;
+    z-index: 3;
   }
-}
-
-/* 活动内容 */
-.activity-content {
-  height: calc(100% - 380rpx);
-  position: relative;
-  top: -55rpx;
-  z-index: 666;
-  padding: $spacing-md;
-  padding-bottom: 150rpx;
-  background-color: $surface-color;
-  border-top-left-radius: 50rpx;
-  border-top-right-radius: 50rpx;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
 }
 
 /* 发起人信息 */
@@ -187,6 +201,28 @@
       animation: pulse 1.5s infinite;
     }
     
+    .skeleton-info-time {
+      display: flex;
+      flex-direction: column;
+      gap: 8rpx;
+      
+      .skeleton-info-value {
+        width: 100%;
+        height: 32rpx;
+        background: #e5e7eb;
+        border-radius: 8rpx;
+        animation: pulse 1.5s infinite;
+      }
+      
+      .skeleton-info-to {
+        width: 30rpx;
+        height: 24rpx;
+        background: #e5e7eb;
+        border-radius: 8rpx;
+        animation: pulse 1.5s infinite;
+      }
+    }
+    
     .skeleton-info-value {
       width: 100%;
       height: 32rpx;
@@ -247,7 +283,7 @@
   }
 }
 
-/* 底部按钮 */
+/* 底部报名按钮 */
 .bottom-button {
   position: fixed;
   bottom: 0;
@@ -256,12 +292,11 @@
   z-index: $z-index-fixed;
   padding: 0 $spacing-md $spacing-xl;
   box-shadow: $shadow-md;
-  background-color: $surface-color;
-  
+
   .button-row {
     @include flex(row, flex-start, center);
     gap: $spacing-md;
-    
+
     .skeleton-register-button {
       flex: 1;
       height: 100rpx;
@@ -269,7 +304,7 @@
       border-radius: 45rpx;
       animation: pulse 1.5s infinite;
     }
-    
+
   }
 }
 

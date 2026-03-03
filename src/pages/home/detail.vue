@@ -18,7 +18,6 @@
               name="morentupian"
               size="600rpx"
               color="#e9e9e9"
-              custom-style="margin-top: 20rpx"
             >
             </wd-icon>
           </template>
@@ -103,7 +102,7 @@
             <view class="info-label">
               <wd-icon name="location" size="28rpx" color="#999" /> LOCATION
             </view>
-            <text class="info-value">{{ activityDetail?.addressDetail }}</text>
+            <text class="info-value">{{ activityDetail?.addressDetail || "加载失败" }}</text>
           </view>
         </view>
 
@@ -144,7 +143,7 @@
           </button>
           <button v-else class="register-button" @click="sign">
             <text class="register-text">
-              {{ activityDetail?.registrationStatusText }}
+              {{ activityDetail?.registrationStatusText || "加载失败"}}
             </text>
           </button>
         </view>
