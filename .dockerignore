@@ -43,3 +43,8 @@ docs
 # 日志
 logs
 *.log
+
+# 但保留必要的运行时文件
+!server.js
+!package.json
+!package-lock.json
