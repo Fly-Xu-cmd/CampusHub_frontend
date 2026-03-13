@@ -6,7 +6,7 @@ WORKDIR /app
 # 复制依赖和代码
 COPY package.json package-lock.json* ./
 COPY server.js ./
-COPY dist ./dist
+COPY dist/build/h5 ./dist
 
 # 安装生产依赖
 RUN npm ci --legacy-peer-deps --omit=dev && npm cache clean --force
