@@ -22,9 +22,11 @@ WORKDIR /app
 
 # 从构建阶段复制产物
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/server.js ./
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/package-lock.json ./
+
+# 复制SSR服务器文件
+COPY server.js ./
 
 # 安装生产依赖 (不包括 devDependencies)
 RUN npm ci --legacy-peer-deps --omit=dev && npm cache clean --force
