@@ -41,7 +41,6 @@
             @scrolltoupper="handleScrollToUpper"
             @scroll="handleScroll"
             upper-threshold="50"
-            enable-flex
           >
             <!-- 初始加载骨架屏 -->
             <view v-if="initialLoading" class="message-skeleton">
@@ -124,6 +123,8 @@
                         v-else-if="msg.msg_type === 2"
                         :src="msg.image_url"
                         mode="widthFix"
+                        :show-menu-by-longpress="true"
+                        @click="handleImageClick(msg.image_url || '')"
                       ></image>
                     </view>
                   </view>
@@ -163,6 +164,8 @@
                       v-else-if="msg.msg_type === 2"
                       :src="msg.image_url"
                       mode="widthFix"
+                      :show-menu-by-longpress="true"
+                      @click="handleImageClick(msg.image_url || '')"
                     ></image>
                   </view>
                   <view class="message-avatar">
@@ -179,15 +182,15 @@
           <!-- 底部输入区域 -->
           <view class="chat-input">
             <view class="input-container">
-              <wd-textarea
+              <textarea
+                class="message-input"
                 placeholder="说点什么..."
                 v-model="inputText"
-                class="message-input"
                 :maxlength="500"
-                :auto-height="false"
+                :auto-height="true"
                 :show-count="false"
-                :rows="1"
-                placeholder-style="color: $text-tertiary; font-size: 28rpx;"
+                :cursor-spacing="20"
+                placeholder-style="color: #999999; font-size: 28rpx;"
               />
             </view>
             <view class="send-button" @click="sendMessage">
@@ -214,6 +217,7 @@ import type { title } from "@/types/modules/message/title";
 import { useUserStore } from "@/store/user";
 import { useChatStore } from "@/store/chat";
 import { safeNavigateBack } from "@/utils/navigation";
+import { platform } from "@/utils/platform";
 
 const userStore = useUserStore();
 const chatStore = useChatStore();
@@ -256,6 +260,7 @@ const networkTipText = ref("");
 const isConnected = ref(true);
 const wasDisconnected = ref(false); // 记录之前是否处于断网状态
 const networkType = ref(""); // 网络类型：wifi, 4g, 5g, 2g, 3g, none
+const noMoreMessageShown = ref(false); // 防重复提示标志
 
 // 初始化 WebSocket 事件监听
 const initWS = () => {
@@ -341,6 +346,15 @@ const initWS = () => {
   } else {
     // 未认证，等待认证成功
     ws.on("authenticated", handleAuthenticated);
+
+    //  添加超时兜底：5秒后无论是否认证成功都尝试加载消息
+    setTimeout(() => {
+      if (initialLoading.value) {
+        console.log("[WS] 认证超时，尝试直接加载消息");
+        loadHistoryMessages();
+        fetchOfflineMessages();
+      }
+    }, 5000);
   }
 
   // 监听新消息
@@ -417,10 +431,15 @@ const fetchOfflineMessages = async () => {
 // 处理滚动到顶部事件（上滑加载更多历史消息）
 const handleScrollToUpper = () => {
   console.log("[滚动] 触发 scrolltoupper 事件");
+  // 重置防重复提示标志，当有新消息时允许再次提示
+  noMoreMessageShown.value = false;
+
   if (hasMore.value && !loadingHistory.value && messages.value.length > 0) {
     const oldestMessage = messages.value[0];
     loadHistoryMessages(oldestMessage.message_id);
-  } else {
+  } else if (!noMoreMessageShown.value) {
+    // 只有在未显示过提示时才显示
+    noMoreMessageShown.value = true;
     uni.showToast({
       title: "没有更多消息了",
       icon: "none",
@@ -449,8 +468,17 @@ const handleScroll = (e: any) => {
       messages.value.length > 0
     ) {
       console.log("[滚动] 触发加载历史消息");
+      // 重置防重复提示标志
+      noMoreMessageShown.value = false;
       const oldestMessage = messages.value[0];
       loadHistoryMessages(oldestMessage.message_id);
+    } else if (scrollTop < 50 && !hasMore.value && !noMoreMessageShown.value) {
+      // 没有更多消息且未显示过提示
+      noMoreMessageShown.value = true;
+      uni.showToast({
+        title: "没有更多消息了",
+        icon: "none",
+      });
     }
     // #endif
   }, 100) as unknown as number;
@@ -758,6 +786,97 @@ const hideNetworkTipToast = () => {
   networkTipText.value = "";
 };
 
+// 图片点击处理（统一处理小程序和 H5）
+const handleImageClick = (url: string) => {
+  // #ifdef MP-WEIXIN
+  uni.previewImage({
+    urls: [url],
+    current: url,
+  });
+  // #endif
+
+  // #ifdef H5
+  // H5 使用浏览器原生预览
+  window.open(url, "_blank");
+  // #endif
+};
+
+// H5 长按图片菜单处理（通过动态绑定调用）
+// #ifdef H5
+const handleImageContextMenu = (event: MouseEvent, url: string) => {
+  event.preventDefault();
+
+  // 创建自定义右键菜单
+  const menu = document.createElement("div");
+  menu.className = "image-context-menu";
+  menu.innerHTML = `
+    <div class="menu-item" data-action="preview">预览图片</div>
+    <div class="menu-item" data-action="save">保存图片</div>
+    <div class="menu-item" data-action="copy">复制链接</div>
+  `;
+
+  // 菜单样式
+  menu.style.position = "fixed";
+  menu.style.left = `${event.clientX}px`;
+  menu.style.top = `${event.clientY}px`;
+  menu.style.zIndex = "10000";
+  menu.style.background = "#fff";
+  menu.style.border = "1rpx solid #e5e5e5";
+  menu.style.borderRadius = "8rpx";
+  menu.style.boxShadow = "0 4rpx 12rpx rgba(0,0,0,0.15)";
+  menu.style.padding = "8rpx 0";
+
+  // 菜单项样式
+  const style = document.createElement("style");
+  style.textContent = `
+    .image-context-menu .menu-item {
+      padding: 16rpx 32rpx;
+      cursor: pointer;
+      font-size: 28rpx;
+      color: #333;
+    }
+    .image-context-menu .menu-item:hover {
+      background: #f5f5f5;
+    }
+  `;
+  document.head.appendChild(style);
+  document.body.appendChild(menu);
+
+  // 点击菜单项处理
+  const handleMenuClick = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const action = target.dataset.action;
+
+    switch (action) {
+      case "preview":
+        window.open(url, "_blank");
+        break;
+      case "save":
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = url.split("/").pop() || "image";
+        a.click();
+        break;
+      case "copy":
+        navigator.clipboard.writeText(url).then(() => {
+          uni.showToast({ title: "链接已复制", icon: "none" });
+        });
+        break;
+    }
+
+    // 清理
+    menu.remove();
+    style.remove();
+    document.removeEventListener("click", handleMenuClick);
+  };
+
+  // 点击其他地方关闭菜单
+  setTimeout(() => {
+    document.addEventListener("click", handleMenuClick);
+  }, 0);
+};
+// #endif
+
 // 返回上一页
 const goBack = () => {
   // 清除当前查看的群聊ID
@@ -845,17 +964,16 @@ onUnmounted(() => {
 @use "@/styles/variables.scss" as *;
 @use "@/styles/mixins.scss" as *;
 
-/* 聊天页面容器 - 使用固定定位确保内部元素稳定 */
+/* 聊天页面容器 - 使用相对定位确保跨平台兼容 */
 .chat-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background-color: $background-color;
-  z-index: 1;
+  flex: 1;
+  overflow: hidden;
 }
 
 /* 网络状态提示 */
@@ -945,6 +1063,11 @@ onUnmounted(() => {
   padding: $spacing-md;
   background-color: $background-color;
   overflow-y: auto;
+
+  // #ifdef MP-WEIXIN
+  // 小程序中 scroll-view 必须设置固定高度
+  height: calc(100vh - 120rpx - 240rpx);
+  // #endif
 
   .load-more {
     @include flex(row, center, center);
@@ -1197,72 +1320,32 @@ onUnmounted(() => {
     margin-right: $spacing-sm;
     display: flex;
     align-items: center;
-    // max-height: 240rpx;
+    min-width: 0; // 防止 flex 子元素溢出
+    width: 0; // 确保 flex: 1 正确计算宽度
 
-    .message-input {
+    // 原生 textarea 样式 - 支持多行输入
+    :deep(.message-input) {
       width: 100%;
-      // max-height: 240rpx;
-      padding: 0;
-      background-color: $background-color;
-      border: 2rpx solid $border-color;
-      border-radius: 40rpx;
+      min-height: 80rpx;
+      max-height: 200rpx;
+      padding: 16rpx 24rpx;
+      background-color: #f8f8f8;
+      border: 2rpx solid #e0e0e0;
+      border-radius: 16rpx;
       font-size: 28rpx;
-      line-height: 40rpx;
-      color: $text-primary;
-      transition: all 0.3s ease;
+      line-height: 44rpx;
+      color: #333333;
       box-sizing: border-box;
 
       &:focus {
         background-color: #fff;
-        border-color: $primary-color;
-        box-shadow: 0 0 0 4rpx rgba(249, 115, 22, 0.1);
+        border-color: #f97316;
       }
 
       &::placeholder {
-        color: $text-tertiary;
+        color: #999999;
         font-size: 28rpx;
       }
-    }
-
-    /* Wot Design Uni textarea 组件内部样式覆盖 */
-    :deep(.wd-textarea) {
-      background-color: transparent !important;
-      border: none !important;
-      padding: 0 !important;
-      height: 120rpx !important;
-      overflow-y: auto !important;
-    }
-
-    :deep(.wd-textarea__inner) {
-      background-color: transparent !important;
-      border: none !important;
-      padding: 20rpx 24rpx !important;
-      line-height: 40rpx !important;
-      font-size: 28rpx !important;
-      color: $text-primary !important;
-      box-sizing: border-box !important;
-      height: 120rpx !important;
-      overflow-y: auto !important;
-
-      /* 输入框滚动条样式 (H5) */
-      /* #ifdef H5 */
-      &::-webkit-scrollbar {
-        width: 6rpx;
-      }
-
-      &::-webkit-scrollbar-track {
-        background: transparent;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 3rpx;
-      }
-
-      &::-webkit-scrollbar-thumb:hover {
-        background: rgba(0, 0, 0, 0.3);
-      }
-      /* #endif */
     }
   }
 

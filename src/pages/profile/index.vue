@@ -47,7 +47,12 @@
         </view>
         <!-- 已登录状态 -->
         <template v-else>
-          <view class="header-section">
+          <view
+            class="header-section"
+            :style="{
+              paddingTop: platform.isMiniProgram() ? '0rpx' : '64rpx',
+            }"
+          >
             <view class="top-bar">
               <view class="avatar-wrapper">
                 <!-- 头像加载失败时显示图标兜底 -->
@@ -276,6 +281,7 @@ import { useUserStore } from "@/store/user";
 import { getProfile, getAuthProgress } from "@/api/profile/router";
 import type { GetStudentAuthProgressData } from "@/types/modules/profile";
 import { getWebSocket } from "@/utils/websocket";
+import { platform } from "@/utils/platform";
 
 const userStore = useUserStore();
 // 使用绝对路径确保静态资源正确加载

@@ -23,7 +23,6 @@ interface Response {
   errno?: number;
 }
 
-import { authApi } from "@/api/register/router";
 import {
   getBusinessCodeMessage,
   shouldRedirectToLogin,
@@ -299,8 +298,13 @@ const attemptTokenRefresh = (): Promise<string> => {
   if (!refreshToken) {
     return Promise.reject(new Error("No refresh token"));
   }
-  refreshPromise = authApi
-    .refreshToken({ refreshToken })
+
+  // 直接使用 post 调用刷新接口，避免循环依赖
+  refreshPromise = post<{ data: { accessToken: string } }>(
+    "/api/v1/refresh_token",
+    { refreshToken },
+    { showErrorToast: false, autoRefresh: false } // 禁止自动刷新和错误提示
+  )
     .then((resp: any) => {
       const newAccessToken = resp?.data?.accessToken ?? resp?.accessToken ?? "";
       if (!newAccessToken) {
@@ -459,12 +463,18 @@ export const http = <T>(
                 http<T>(retryConfig, retryCount)
                   .then(resolve)
                   .catch((err) => {
+                    // 刷新 token 后仍然失败（可能是 401 或其他错误）
+                    // 作为兜底，执行重新登录
+                    logger.error("Retry after token refresh failed", err);
+                    handleTokenError();
                     const processedErr = applyErrorInterceptors(err);
                     reject(processedErr);
                   });
               })
               .catch((refreshError) => {
+                // 刷新 token 失败，作为兜底，执行重新登录
                 logger.error("Token refresh failed", refreshError);
+                handleTokenError();
                 const processedErr = applyErrorInterceptors(processedResponse);
                 reject(processedErr);
               });
@@ -517,6 +527,9 @@ export const http = <T>(
                     http<T>(retryConfig, retryCount)
                       .then(resolve)
                       .catch((err) => {
+                        // 刷新 token 后重试仍然失败，作为兜底执行重新登录
+                        logger.error("Retry after token refresh failed in business code", err);
+                        handleTokenError();
                         handleBusinessError(
                           businessCode,
                           businessMessage,
@@ -823,9 +836,16 @@ export const upload = async <T>(
 
         // 尝试刷新 Token
         if (options?.autoRefresh !== false) {
-          await attemptTokenRefresh();
-          // Token 已刷新并保存到 storage，重新上传
-          return upload<T>(url, formData, options);
+          try {
+            await attemptTokenRefresh();
+            // Token 已刷新并保存到 storage，重新上传
+            return upload<T>(url, formData, options);
+          } catch (refreshErr) {
+            // 刷新 token 失败，作为兜底执行重新登录
+            logger.error("H5 upload: token refresh failed", refreshErr);
+            handleTokenError();
+            throw new Error(`业务错误(${businessCode}): ${businessMessage}`);
+          }
         }
 
         handleTokenError();
@@ -918,7 +938,14 @@ export const upload = async <T>(
                 attemptTokenRefresh()
                   .then(() => {
                     // Token 刷新成功，重新上传
-                    upload<T>(url, formData, options).then(resolve).catch(reject);
+                    upload<T>(url, formData, options).then(resolve).catch((err) => {
+                      // 刷新 token 后重试仍然失败，作为兜底执行重新登录
+                      logger.error("Upload retry after token refresh failed", err);
+                      handleTokenError();
+                      reject(
+                        new Error(`业务错误(${businessCode}): ${businessMessage}`),
+                      );
+                    });
                   })
                   .catch(() => {
                     handleTokenError();

@@ -1,260 +1,259 @@
 <template>
-  <CommonLayout
-    headerType="home"
-    contentBg="$background-color"
-    :showTabBar="true"
-    padding="0 8rpx"
-    :enableScroll="false"
-  >
-    <scroll-view
-      class="content"
-      :scroll-top="scrollTop"
-      @scrolltolower="handleScrollToLower"
-      scroll-y
-      :scroll-with-animation="true"
-      refresher-enabled="true"
-      :refresher-threshold="50"
-      refresher-default-style="none"
-      refresher-background="#f8f8f8"
-      :refresher-triggered="Refresher === 'isRefreshing'"
-      @refresherpulling="Refresher = 'isPulling'"
-      @refresherrefresh="onRefresh"
-      @scroll="handleScroll"
-    >
-      <!-- 自定义下拉刷新插槽 -->
-      <template #refresher>
-        <view class="custom-refresher">
-          <view v-if="Refresher === 'isPulling'" class="refresher-content">
-            <view class="refresher-icon">
-              <wd-icon name="refresh" size="40rpx" color="#666666" />
-            </view>
-            <text class="refresher-text">
-              {{ "下拉刷新" }}
-            </text>
-          </view>
-          <view v-else class="refresher-content">
-            <view class="refresher-icon">
-              <wd-icon
-                :name="Refresher === 'isRefreshing' ? 'refresh' : 'check-bold'"
-                size="40rpx"
-                :color="Refresher === 'isRefreshing' ? '#f97316' : '#4ade80'"
-                :class="{ spin: Refresher === 'isRefreshing' }"
-              />
-            </view>
-            <text class="refresher-text">
-              {{ Refresher === "isRefreshing" ? "刷新中..." : "刷新完成" }}
-            </text>
-          </view>
-        </view>
-      </template>
-      <view class="search-section">
-        <view class="search-container">
-          <wd-icon
-            name="search"
-            size="32rpx"
-            color="#999999"
-            class="search-icon"
-          />
-          <wd-search
-            v-model="searchQuery"
-            hide-cancel
-            placeholder="搜索活动..."
-            placeholder-left
-            custom-class="custom-search"
-            :class="{ 'search-focused': isSearchFocused }"
-            @focus="isSearchFocused = true"
-            @blur="isSearchFocused = false"
-            @search="search"
-          />
-        </view>
-      </view>
-
-      <!-- 推荐活动标题 -->
-      <view class="recommend-header">
-        <text class="recommend-title">推荐活动</text>
-        <view class="recommend-line"></view>
-      </view>
-
-      <!-- 标签行 -->
-      <view class="tag-row">
-        <scroll-view scroll-x class="tag-scroll" show-scrollbar="false">
-          <view
-            key="0"
-            class="tag-item"
-            :class="{ active: activeTag === 0 }"
-            @click="selectTag(0)"
-          >
-            <wd-icon class-prefix="iconfont" name="quanbu" size="30rpx" />
-            <text>全部类型</text>
-          </view>
-          <view
-            v-for="tag in tags"
-            :key="tag.id"
-            class="tag-item"
-            :class="{ active: activeTag === tag.id }"
-            @click="selectTag(tag.id)"
-          >
-            <wd-icon
-              v-if="tag.icon"
-              class-prefix="iconfont"
-              :name="tag.icon"
-              size="30rpx"
-            />
-            <text>{{ tag.name }}</text>
-          </view>
-        </scroll-view>
-      </view>
-      <!-- 活动列表 -->
-      <view class="activity-list">
-        <view v-if="loading" class="loading">
-          <AsyncLoading text="加载中..." />
-        </view>
-        <view v-else-if="!activities?.length" class="empty">
-          <text>暂无活动</text>
-        </view>
-        <view v-else>
-          <view
-            v-for="activity in activities"
-            :key="activity.id"
-            class="activity-card"
-            @click="viewDetail(activity.id)"
-          >
-            <!-- 活动图片 -->
-            <view class="card-image-container">
-              <wd-img
-                :src="activity.coverUrl || '默认图'"
-                class="card-image"
-                mode="aspectFill"
-              >
-                <template #error>
-                  <wd-icon
-                    class-prefix="iconfont"
-                    name="morentupian"
-                    size="460rpx"
-                    color="#e9e9e9"
-                  >
-                  </wd-icon>
-                </template>
-                <template #loading>
-                  <AsyncLoading text="加载中..." />
-                </template>
-              </wd-img>
-              <!-- 报名状态 未开始报名，报名中，报名已截止-->
-              <view
-                class="registration-status"
-                :style="{
-                  color:
-                    activity.registrationStatus === 1
-                      ? '#4ade80'
-                      : activity.registrationStatus === 2
-                        ? '$primary-color'
-                        : activity.registrationStatus === 3
-                          ? '#666666'
-                          : '#000000',
-                }"
-              >
-                <view
-                  class="iconfont"
-                  style="font-size: 25rpx"
-                  :class="{
-                    'iconfont-people': activity.registrationStatus === 1,
-                    'iconfont-remen': activity.registrationStatus === 2,
-                  }"
-                  v-if="!(activity.registrationStatus === 3)"
-                />
-                <text>{{ activity.registrationStatusText }}</text>
-              </view>
-              <!-- 人数信息 -->
-              <view class="participant-count">
-                <text>
-                  {{ activity.currentParticipants }}/{{
-                    activity.maxParticipants
-                  }}人
-                </text>
-              </view>
-            </view>
-
-            <!-- 活动标题 -->
-            <text class="activity-title">{{ activity.title }}</text>
-
-            <!-- 活动标签 -->
-            <view class="activity-tags">
-              <view
-                v-for="tag in activity.tags"
-                :key="tag.id"
-                class="activity-tag"
-                :style="{
-                  backgroundColor: tag.color,
-                }"
-              >
-                <wd-icon
-                  class-prefix="iconfont"
-                  :name="tag.icon"
-                  size="25rpx"
-                />
-                <text>{{ tag.name }}</text>
-              </view>
-            </view>
-
-            <!-- 活动信息 -->
-            <view class="activity-info">
-              <view class="info-item">
-                <wd-icon name="time" size="28rpx" color="#999" />
-                <text>{{ formatTime(activity.activityStartTime) }}</text>
-              </view>
-              <view class="log"></view>
-              <view class="info-item">
-                <wd-icon name="location" size="28rpx" color="#999" />
-                <text>{{ activity.location }}</text>
-              </view>
-            </view>
-
-            <!-- 底部信息 -->
-            <view class="card-footer">
-              <view class="organizer">
-                <wd-img
-                  :src="activity.organizerAvatar || '默认图'"
-                  class="organizer-avatar"
-                  mode="aspectFill"
-                >
-                  <template #error>
-                    <wd-icon
-                      class-prefix="iconfont"
-                      name="morentouxiang"
-                      size="48rpx"
-                      color="#999999"
-                    >
-                    </wd-icon>
-                  </template>
-                </wd-img>
-                <text>{{ activity.organizerName || "默认昵称" }}</text>
-              </view>
-              <view class="action-button">
-                <text>查看详情</text>
-                <wd-icon
-                  name="arrow-right1"
-                  size="28rpx"
-                  style="font-weight: 600"
-                />
-              </view>
-            </view>
-          </view>
-          <wd-loadmore
-            :state="state"
-            @reload="loadMore"
-            finished-text="暂无更多活动"
-          />
-        </view>
-      </view>
-    </scroll-view>
-
-    <!-- 回到顶部按钮 -->
-    <view v-if="showBackTop" class="back-to-top" @click="scrollToTop">
-      <wd-icon name="arrow-up" size="40rpx" color="#fff" />
-    </view>
-  </CommonLayout>
+	  <CommonLayout
+	    headerType="home"
+	    contentBg="$background-color"
+	    :showTabBar="true"
+	    padding="0 8rpx"
+	    :enableScroll="false"
+	  >
+	    <scroll-view
+	      class="content"
+	      :scroll-top="scrollTop"
+	      @scrolltolower="handleScrollToLower"
+	      scroll-y
+	      :scroll-with-animation="true"
+	      refresher-enabled="true"
+	      :refresher-threshold="50"
+	      refresher-default-style="none"
+	      refresher-background="#f8f8f8"
+	      :refresher-triggered="Refresher === 'isRefreshing'"
+	      @refresherpulling="Refresher = 'isPulling'"
+	      @refresherrefresh="onRefresh"
+	      @scroll="handleScroll"
+	    >
+	      <!-- 自定义下拉刷新插槽 -->
+	      <template #refresher>
+	        <view class="custom-refresher">
+	          <view v-if="Refresher === 'isPulling'" class="refresher-content">
+	            <view class="refresher-icon">
+	              <wd-icon name="refresh" size="40rpx" color="#666666" />
+	            </view>
+	            <text class="refresher-text">
+	              {{ "下拉刷新" }}
+	            </text>
+	          </view>
+	          <view v-else class="refresher-content">
+	            <view class="refresher-icon">
+	              <wd-icon
+	                :name="Refresher === 'isRefreshing' ? 'refresh' : 'check-bold'"
+	                size="40rpx"
+	                :color="Refresher === 'isRefreshing' ? '#f97316' : '#4ade80'"
+	                :class="{ spin: Refresher === 'isRefreshing' }"
+	              />
+	            </view>
+	            <text class="refresher-text">
+	              {{ Refresher === "isRefreshing" ? "刷新中..." : "刷新完成" }}
+	            </text>
+	          </view>
+	        </view>
+	      </template>
+	      <view class="search-section">
+	        <view class="search-container">
+	          <wd-icon
+	            name="search"
+	            size="32rpx"
+	            color="#999999"
+	            class="search-icon"
+	          />
+	          <wd-search
+	            v-model="searchQuery"
+	            hide-cancel
+	            placeholder="搜索活动..."
+	            placeholder-left
+	            custom-class="custom-search"
+	            :class="{ 'search-focused': isSearchFocused }"
+	            @focus="isSearchFocused = true"
+	            @blur="isSearchFocused = false"
+	            @search="search"
+	          />
+	        </view>
+	      </view>
+	
+	      <!-- 推荐活动标题 -->
+	      <view class="recommend-header">
+	        <text class="recommend-title">推荐活动</text>
+	        <view class="recommend-line"></view>
+	      </view>
+	
+	      <!-- 标签行 -->
+	      <view class="tag-row">
+	        <scroll-view scroll-x class="tag-scroll" show-scrollbar="false">
+	          <view
+	            key="0"
+	            class="tag-item"
+	            :class="{ active: activeTag === 0 }"
+	            @click="selectTag(0)"
+	          >
+	            <wd-icon class-prefix="iconfont" name="quanbu" size="30rpx" />
+	            <text>全部类型</text>
+	          </view>
+	          <view
+	            v-for="tag in tags"
+	            :key="tag.id"
+	            class="tag-item"
+	            :class="{ active: activeTag === tag.id }"
+	            @click="selectTag(tag.id)"
+	          >
+	            <wd-icon
+	              v-if="tag.icon"
+	              class-prefix="iconfont"
+	              :name="tag.icon"
+	              size="30rpx"
+	            />
+	            <text>{{ tag.name }}</text>
+	          </view>
+	        </scroll-view>
+	      </view>
+	      <!-- 活动列表 -->
+	      <view class="activity-list">
+	        <view v-if="loading" class="loading">
+	          <AsyncLoading text="加载中..." />
+	        </view>
+	        <view v-else-if="!activities?.length" class="empty">
+	          <text>暂无活动</text>
+	        </view>
+	        <view v-else>
+	          <view
+	            v-for="activity in activities"
+	            :key="activity.id"
+	            class="activity-card"
+	            @click="viewDetail(activity.id)"
+	          >
+	            <!-- 活动图片 -->
+	            <view class="card-image-container">
+	              <wd-img
+	                :src="activity.coverUrl || '默认图'"
+	                class="card-image"
+	                mode="aspectFill"
+	              >
+	                <template #error>
+	                  <wd-icon
+	                    class-prefix="iconfont"
+	                    name="morentupian"
+	                    size="460rpx"
+	                    color="#e9e9e9"
+	                  >
+	                  </wd-icon>
+	                </template>
+	                <template #loading>
+	                  <AsyncLoading text="加载中..." />
+	                </template>
+	              </wd-img>
+	              <!-- 报名状态 未开始报名，报名中，报名已截止-->
+	              <view
+	                class="registration-status"
+	                :style="{
+	                  color:
+	                    activity.registrationStatus === 1
+	                      ? '#4ade80'
+	                      : activity.registrationStatus === 2
+	                        ? '$primary-color'
+	                        : activity.registrationStatus === 3
+	                          ? '#666666'
+	                          : '#000000',
+	                }"
+	              >
+	                <view
+	                  class="iconfont"
+	                  style="font-size: 25rpx"
+	                  :class="{
+	                    'iconfont-people': activity.registrationStatus === 1,
+	                    'iconfont-remen': activity.registrationStatus === 2,
+	                  }"
+	                  v-if="!(activity.registrationStatus === 3)"
+	                />
+	                <text>{{ activity.registrationStatusText }}</text>
+	              </view>
+	              <!-- 人数信息 -->
+	              <view class="participant-count">
+	                <text>
+	                  {{ activity.currentParticipants }}/{{
+	                    activity.maxParticipants
+	                  }}人
+	                </text>
+	              </view>
+	            </view>
+	
+	            <!-- 活动标题 -->
+	            <text class="activity-title">{{ activity.title }}</text>
+	
+	            <!-- 活动标签 -->
+	            <view class="activity-tags">
+	              <view
+	                v-for="tag in activity.tags"
+	                :key="tag.id"
+	                class="activity-tag"
+	                :style="{
+	                  backgroundColor: tag.color,
+	                }"
+	              >
+	                <wd-icon
+	                  class-prefix="iconfont"
+	                  :name="tag.icon"
+	                  size="25rpx"
+	                />
+	                <text>{{ tag.name }}</text>
+	              </view>
+	            </view>
+	
+	            <!-- 活动信息 -->
+	            <view class="activity-info">
+	              <view class="info-item">
+	                <wd-icon name="time" size="28rpx" color="#999" />
+	                <text>{{ formatTime(activity.activityStartTime) }}</text>
+	              </view>
+	              <view class="log"></view>
+	              <view class="info-item">
+	                <wd-icon name="location" size="28rpx" color="#999" />
+	                <text>{{ activity.location }}</text>
+	              </view>
+	            </view>
+	
+	            <!-- 底部信息 -->
+	            <view class="card-footer">
+	              <view class="organizer">
+	                <wd-img
+	                  :src="activity.organizerAvatar || '默认图'"
+	                  class="organizer-avatar"
+	                  mode="aspectFill"
+	                >
+	                  <template #error>
+	                    <wd-icon
+	                      class-prefix="iconfont"
+	                      name="morentouxiang"
+	                      size="48rpx"
+	                      color="#999999"
+	                    >
+	                    </wd-icon>
+	                  </template>
+	                </wd-img>
+	                <text>{{ activity.organizerName || "默认昵称" }}</text>
+	              </view>
+	              <view class="action-button">
+	                <text>查看详情</text>
+	                <wd-icon
+	                  name="arrow-right1"
+	                  size="28rpx"
+	                  style="font-weight: 600"
+	                />
+	              </view>
+	            </view>
+	          </view>
+	          <wd-loadmore
+	            :state="state"
+	            @reload="loadMore"
+	            finished-text="暂无更多活动"
+	          />
+	        </view>
+	      </view>
+	    </scroll-view>
+	
+	    <!-- 回到顶部按钮 -->
+	    <view v-if="showBackTop" class="back-to-top" @click="scrollToTop">
+	      <wd-icon name="arrow-up" size="40rpx" color="#fff" />
+	    </view>
+	  </CommonLayout>
 </template>
-
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import {

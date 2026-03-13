@@ -8,24 +8,39 @@ declare const wx: any;
 
 export const platform = {
   /**
-   * 是否为小程序
-   */
-  isMiniProgram(): boolean {
-    return typeof wx !== 'undefined' && wx.getSystemInfoSync;
-  },
-
-  /**
    * 是否为微信小程序
    */
   isWeixinMiniProgram(): boolean {
-    return this.isMiniProgram() && (wx as any).__wxConfig?.appId;
+    // #ifdef MP-WEIXIN
+    return true;
+    // #endif
+    // #ifndef MP-WEIXIN
+    return false;
+    // #endif
+  },
+
+  /**
+   * 是否为小程序（包括各种小程序）
+   */
+  isMiniProgram(): boolean {
+    // #ifdef MP-WEIXIN || MP-ALIPAY || MP-BAIDU || MP-TOUTIAO || MP-QQ
+    return true;
+    // #endif
+    // #ifndef MP-WEIXIN || MP-ALIPAY || MP-BAIDU || MP-TOUTIAO || MP-QQ
+    return false;
+    // #endif
   },
 
   /**
    * 是否为 H5
    */
   isH5(): boolean {
-    return typeof window !== 'undefined' && typeof document !== 'undefined';
+    // #ifdef H5
+    return true;
+    // #endif
+    // #ifndef H5
+    return false;
+    // #endif
   },
 
   /**

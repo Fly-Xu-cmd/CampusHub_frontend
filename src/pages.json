@@ -148,7 +148,9 @@
   "easycom": {
     "autoscan": true,
     "custom": {
-      "^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue"
+      "^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue",
+      "^async-loading$": "@/components/AsyncLoading/AsyncLoading.vue",
+      "^common-layout$": "@/components/CommonLayout/CommonLayout.vue"
     }
   },
   "style": {

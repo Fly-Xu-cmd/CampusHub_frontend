@@ -305,6 +305,7 @@ const viewPubilcProfil = (id: number) => {
 </script>
 
 <style lang="scss" scoped>
+@use "sass:color";
 @use "@/styles/variables.scss" as *;
 @use "@/styles/mixins.scss" as *;
 
@@ -516,7 +517,7 @@ const viewPubilcProfil = (id: number) => {
         background: linear-gradient(
           135deg,
           $primary-color 0%,
-          lighten($primary-color, 10%) 100%
+          color.adjust($primary-color, $lightness: 10%) 100%
         );
         box-shadow: 0 4rpx 16rpx rgba($primary-color, 0.4);
         transition:

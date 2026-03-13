@@ -20,6 +20,14 @@ import type {
 type WebSocketEventCallback = (data?: any) => void;
 type WebSocketStatus = "connecting" | "connected" | "disconnected" | "error";
 
+// WebSocket readyState 常量（兼容小程序环境）
+const READY_STATE = {
+  CONNECTING: 0,
+  OPEN: 1,
+  CLOSING: 2,
+  CLOSED: 3,
+} as const;
+
 interface WebSocketConfig {
   url: string;
   token: string;
@@ -62,7 +70,12 @@ class ChatWebSocket {
    * 发送消息
    */
   private send(type: string, data?: any): boolean {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+    // 小程序环境下使用 this.status 判断，其他环境使用 readyState
+    const isOpen =
+      this.status === "connected" ||
+      (this.ws && (this.ws as any).readyState === READY_STATE.OPEN);
+
+    if (!isOpen) {
       console.warn("[WebSocket] 未连接，消息已加入队列");
       this.messageQueue.push({
         type,
@@ -84,7 +97,20 @@ class ChatWebSocket {
     }
 
     try {
+      // #ifdef H5
       this.ws.send(JSON.stringify(message));
+      // #endif
+
+      // #ifndef H5
+      // 小程序环境使用 uni.sendSocketMessage
+      uni.sendSocketMessage({
+        data: JSON.stringify(message),
+        fail: (err) => {
+          console.error("[WebSocket] 发送消息失败:", err);
+        },
+      });
+      // #endif
+
       console.log("[WebSocket] 发送消息:", message);
       return true;
     } catch (error) {
@@ -97,7 +123,8 @@ class ChatWebSocket {
    * 连接 WebSocket
    */
   connect(): void {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+    // 使用 status 判断，避免小程序 SocketTask 没有 readyState 的问题
+    if (this.status === "connected") {
       console.warn("[WebSocket] 已连接");
       return;
     }
@@ -110,16 +137,26 @@ class ChatWebSocket {
     try {
       // #ifdef H5
       this.ws = new WebSocket(this.config.url);
+      this.setupEventHandlers();
       // #endif
 
       // #ifndef H5
       // 小程序环境使用 uni.connectSocket
-      this.ws = uni.connectSocket({
+      // 注意：uni.connectSocket 返回 SocketTask，需要保存引用
+      const socketTask = uni.connectSocket({
         url: this.config.url,
+        fail: (err) => {
+          console.error("[WebSocket] 连接失败:", err);
+          this.status = "error";
+          this.emit("statusChange", this.status);
+          this.handleReconnect();
+        },
       });
-      // #endif
 
-      this.setupEventHandlers();
+      // 保存 SocketTask 引用
+      this.ws = socketTask;
+      this.setupMiniProgramHandlers(socketTask);
+      // #endif
     } catch (error) {
       console.error("[WebSocket] 连接失败:", error);
       this.status = "error";
@@ -129,12 +166,11 @@ class ChatWebSocket {
   }
 
   /**
-   * 设置事件处理器
+   * 设置事件处理器（H5 环境）
    */
   private setupEventHandlers(): void {
     if (!this.ws) return;
 
-    // #ifdef H5
     this.ws.onopen = () => {
       console.log("[WebSocket] 连接已建立");
       this.status = "connected";
@@ -171,18 +207,20 @@ class ChatWebSocket {
         this.handleReconnect();
       }
     };
-    // #endif
+  }
 
-    // #ifndef H5
-    // 小程序环境
-    this.ws.onOpen(() => {
+  /**
+   * 设置小程序环境事件处理器
+   */
+  private setupMiniProgramHandlers(socketTask: UniApp.SocketTask): void {
+    socketTask.onOpen(() => {
       console.log("[WebSocket] 连接已建立");
       this.status = "connected";
       this.emit("statusChange", this.status);
       this.authenticate();
     });
 
-    this.ws.onMessage((event: any) => {
+    socketTask.onMessage((event: any) => {
       try {
         const message: WSMessage = JSON.parse(event.data);
         this.handleMessage(message);
@@ -191,13 +229,13 @@ class ChatWebSocket {
       }
     });
 
-    this.ws.onError((error: any) => {
+    socketTask.onError((error: any) => {
       console.error("[WebSocket] 错误:", error);
       this.status = "error";
       this.emit("statusChange", this.status);
     });
 
-    this.ws.onClose(() => {
+    socketTask.onClose(() => {
       console.log("[WebSocket] 连接已关闭");
       this.status = "disconnected";
       this.isAuthenticated = false;
@@ -209,7 +247,6 @@ class ChatWebSocket {
         this.handleReconnect();
       }
     });
-    // #endif
   }
 
   /**
@@ -282,7 +319,19 @@ class ChatWebSocket {
       const message = this.messageQueue.shift();
       if (message) {
         try {
+          // #ifdef H5
           this.ws?.send(JSON.stringify(message));
+          // #endif
+
+          // #ifndef H5
+          // 小程序环境使用 uni.sendSocketMessage
+          uni.sendSocketMessage({
+            data: JSON.stringify(message),
+            fail: (err) => {
+              console.error("[WebSocket] 发送队列消息失败:", err);
+            },
+          });
+          // #endif
         } catch (error) {
           console.error("[WebSocket] 发送队列消息失败:", error);
         }

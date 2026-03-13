@@ -197,16 +197,15 @@ const contentStyle = computed(() => {
     // 透明模式：内容上移覆盖导航栏，实现真正的透明效果
     const totalHeader = systemStore.statusBarHeight + systemStore.navBarHeight;
     return {
-      height: `calc(100vh - ${totalHeader}px)`,
+      flex: 1,
       marginTop: `-${totalHeader}px`,
       ...style,
     };
   }
 
   if (props.headerType === "home") {
-    // 60 是搜索框大概高度(px)，这里粗略估算
-    const headerH = systemStore.statusBarHeight + systemStore.navBarHeight + 60;
-    return { height: `calc(100vh - ${headerH}px)`, ...style };
+    // home 模式使用 flex: 1 自动填充
+    return { flex: 1, ...style };
   }
 
   if (
@@ -214,11 +213,11 @@ const contentStyle = computed(() => {
     props.headerType === "none" ||
     props.headerType === "title"
   ) {
-    const totalHeader = systemStore.statusBarHeight + systemStore.navBarHeight;
-    return { height: `calc(100vh - ${totalHeader}px)`, ...style };
+    // 标准模式使用 flex: 1 自动填充
+    return { flex: 1, ...style };
   }
 
-  return { height: "100vh", ...style };
+  return { flex: 1, ...style };
 });
 
 // 4. 底部垫片高度
@@ -288,10 +287,23 @@ const goSystemMessage = () => {
 .layout-wrapper {
   @include flex(column, flex-start, stretch);
   height: 100vh;
+  height: 100dvh; // 动态 viewport height，更精确的屏幕高度
   width: 100vw;
   background-color: $background-color;
   position: relative;
   overflow: hidden;
+
+  // #ifdef H5
+  // H5 端防止滚动条出现时的页面抖动
+  @supports (height: 100dvh) {
+    height: 100dvh;
+  }
+  // #endif
+
+  // #ifdef MP-WEIXIN
+  // 微信小程序使用 100vh 配合 safe-area
+  height: 100vh;
+  // #endif
 }
 
 .header-bg {
@@ -431,6 +443,7 @@ const goSystemMessage = () => {
 .main-content {
   flex: 1;
   width: 100%;
+  overflow: hidden;
   // padding 移到 :style 计算里了，这里不需要写默认 padding
 }
 </style>
