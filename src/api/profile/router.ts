@@ -1,4 +1,4 @@
-import { get, post } from "@/utils/http";
+import { get, post, upload } from "@/utils/http";
 import type {
   GetStudentAuthProgressData,
   PostUserDetailsRequest,
@@ -21,6 +21,10 @@ import type {
   PostQqCodeConfirmData,
   PostQqCodeConfirmRequest,
 } from "@/types/modules/profile";
+import type {
+  CreditLogsResponse,
+  CreditLogsParams,
+} from "@/types/modules/credit";
 
 const apiUrls = {
   getProfile: "/api/v1/users/details",
@@ -31,9 +35,14 @@ const apiUrls = {
   postStudentAuth: "/api/v1/verify/student/apply",
   postStudentAuthConfirm: "/api/v1/verify/student/confirm",
   postStudentAuthCancel: "/api/v1/verify/student/cancel",
+  uploadImage: "/api/v1/verify/student/apply",
   getCaptchaConfig: "/api/v1/captcha/config",
   postCaptcha: "/api/v1/captcha",
-  QqCode: "/api/v1/qq_code",
+  getQqCodeRegister: "/api/v1/qq_code/register",
+  getQqCodeForgotPassword: "/api/v1/qq_code/forgot_password",
+  getQqCodeDeleteUser: "/api/v1/qq_code/delete_user",
+  getActivityList: "/api/v1/activity/list",
+  getCreditLogs: "/api/v1/credit/logs",
 };
 
 // 获取用户详情
@@ -44,6 +53,20 @@ export const getProfile = () => {
 // 更新用户详情
 export const updateProfile = (data: PostUserDetailsRequest) => {
   return post<Response<UserDetailsData>>(apiUrls.updateProfile, data);
+};
+
+// 更新用户详情（带头像上传）
+export const updateProfileWithAvatar = (data: PostUserDetailsRequest) => {
+  const formData = {
+    nickname: data.nickname,
+    introduction: data.introduction,
+    age: data.age,
+    gender: data.gender,
+    avatar_image: data.avatar_image,
+    interestTagIds: data.interestTagIds,
+  };
+
+  return upload<Response<UserDetailsData>>(apiUrls.updateProfile, formData);
 };
 
 // 更新用户兴趣标签
@@ -64,6 +87,11 @@ export const getAuthProgress = () => {
 // 提交学生认证申请
 export const postStudentAuth = (data: PostStudentAuthRequest) => {
   return post<Response<PostStudentAuthData>>(apiUrls.postStudentAuth, data);
+};
+
+// 提交学生认证申请（带文件上传）
+export const postStudentAuthWithFiles = (data: PostStudentAuthRequest) => {
+  return upload<Response<PostStudentAuthData>>(apiUrls.postStudentAuth, data);
 };
 
 // 确认学生认证申请
@@ -92,12 +120,31 @@ export const postCaptcha = (data: PostCaptchaRequest) => {
   return post<Response<PostCaptchaData>>(apiUrls.postCaptcha, data);
 };
 
-// 获取QQ验证码
-export const getQqCode = (params: PostQqCodeRequest) => {
-  return get<Response<PostQqCodeData>>(apiUrls.QqCode, { data: params });
+// 获取QQ注册验证码
+export const getQqCodeRegister = (params: PostQqCodeRequest) => {
+  return get<Response<PostQqCodeData>>(apiUrls.getQqCodeRegister, {
+    data: params,
+  });
 };
 
-// 提交QQ验证码
-export const postQqCodeConfirm = (data: PostQqCodeConfirmRequest) => {
-  return post<Response<PostQqCodeConfirmData>>(apiUrls.QqCode, data);
+// 获取QQ忘记密码验证码
+export const getQqCodeForgotPassword = (params: PostQqCodeRequest) => {
+  return post<Response<PostQqCodeConfirmData>>(
+    apiUrls.getQqCodeForgotPassword,
+    { data: params },
+  );
+};
+
+// 获取QQ删除用户验证码
+export const getQqCodeDeleteUser = (params: PostQqCodeRequest) => {
+  return post<Response<PostQqCodeConfirmData>>(apiUrls.getQqCodeDeleteUser, {
+    data: params,
+  });
+};
+
+// 获取信用分变更记录
+export const getCreditLogs = (params?: CreditLogsParams) => {
+  return get<Response<CreditLogsResponse>>(apiUrls.getCreditLogs, {
+    data: params,
+  });
 };

@@ -17,12 +17,22 @@ export interface InterestTag {
   tagDesc: string;
   tagIcon: string;
   tagName: string;
+  tagColor?: string;
   [property: string]: any;
 }
 // 更新用户详情请求数据
 export interface PostUserDetailsRequest {
   age: number;
+  /**
+   * 要上传的头像图片的id
+   */
+  avatarId: number;
+  avatarUrl?: string;
   gender: string;
+  /**
+   * 标签id
+   */
+  interestTagIds: number[];
   introduction: string;
   nickname: string;
   [property: string]: any;
@@ -30,7 +40,6 @@ export interface PostUserDetailsRequest {
 // 更新用户兴趣标签请求数据
 export interface PostUserInterestsData {
   interestTags: InterestTag[];
-  userId: number;
   [property: string]: any;
 }
 
@@ -150,12 +159,33 @@ export interface VerifyData {
 }
 
 export interface PostStudentAuthRequest {
+  /**
+   * 入学年份
+   */
   admission_year: string;
+  /**
+   * 学生证详情面照片（jpg/jpeg/png，最大5MB）
+   */
   back_image_url: string;
+  /**
+   * 院系
+   */
   department: string;
+  /**
+   * 学生证正面照片（jpg/jpeg/png，最大5MB）
+   */
   front_image_url: string;
+  /**
+   * 姓名
+   */
   real_name: string;
+  /**
+   * 学校名称
+   */
   school_name: string;
+  /**
+   * 学号
+   */
   student_id: string;
   [property: string]: any;
 }

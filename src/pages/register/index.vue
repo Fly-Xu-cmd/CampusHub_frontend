@@ -45,8 +45,16 @@
               placeholder="设置密码"
               placeholder-class="placeholder-style"
               v-model="formData.password"
-              password
+              :password="!showPassword"
             />
+            <view class="input-icon" @click="toggleShowPassword">
+              <wd-icon
+                :name="showPassword ? 'browse-off' : 'browse'"
+                size="40rpx"
+                color="#94a3b8"
+                custom-class="input-icon"
+              ></wd-icon>
+            </view>
           </view>
 
           <!-- 极验验证码容器 -->
@@ -102,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from "vue";
+import { reactive, ref, onMounted, onUnmounted } from "vue";
 import { useSystemStore } from "@/store/system";
 import { authApi } from "@/api/register/router";
 import { useUserStore } from "@/store/user";
@@ -127,6 +135,7 @@ const timer = ref(0);
 const captchaObj = ref<any>(null);
 const captchaBox = ref<any>(null); // 极验验证码容器
 const captchaError = ref(false); // 验证码初始化失败状态
+const showPassword = ref(false); // 是否显示密码
 
 // 初始化极验
 const initCaptcha = async () => {
@@ -160,7 +169,7 @@ const initCaptcha = async () => {
           captcha.onError((err) => {
             console.error("验证码错误:", err);
           });
-        }
+        },
       );
     }
   } catch (error) {
@@ -185,6 +194,19 @@ const retryCaptcha = () => {
 onMounted(() => {
   // #ifdef H5
   initCaptcha();
+  // #endif
+});
+
+// 页面卸载时销毁极验实例
+onUnmounted(() => {
+  // #ifdef H5
+  if (captchaObj.value) {
+    captchaObj.value.destroy();
+    captchaObj.value = null;
+  }
+  // 清空容器
+  const el = document.getElementById("captchaBox");
+  if (el) el.innerHTML = "";
   // #endif
 });
 
@@ -265,17 +287,22 @@ const handleRegister = async () => {
     userStore.login(
       response.data.userInfo,
       response.data.accessToken,
-      response.data.refreshToken
+      response.data.refreshToken,
     );
     // 注册成功，跳转到选择标签页
     setTimeout(() => {
       uni.navigateTo({ url: "/pages/selectTags/index" });
     }, 1000);
   } catch (error) {
+    // HTTP 层已自动显示业务错误 toast
     uni.hideLoading();
-    uni.showToast({ title: "注册失败，请重试", icon: "none" });
     console.error("注册失败:", error);
+    // 不需要手动显示错误，HTTP 拦截器已处理
   }
+};
+
+const toggleShowPassword = () => {
+  showPassword.value = !showPassword.value;
 };
 </script>
 

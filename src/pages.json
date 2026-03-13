@@ -13,7 +13,7 @@
       "style": { "navigationStyle": "custom" }
     },
     {
-      "path": "pages/home/PublicProfile",
+      "path": "pages/home/publicProfile",
       "style": { "navigationStyle": "custom" }
     },
     {
@@ -82,8 +82,24 @@
       }
     },
     {
+      "path": "pages/forgot-password/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/profile/verify",
       "style": { "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/profile/credit",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
+    },
+    {
+      "path": "pages/activity/verify",
+      "style": { "navigationStyle": "custom" },
+      "needLogin": true
     },
     {
       "path": "pages/settings/edit-profile",
@@ -132,7 +148,9 @@
   "easycom": {
     "autoscan": true,
     "custom": {
-      "^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue"
+      "^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue",
+      "^async-loading$": "@/components/AsyncLoading/AsyncLoading.vue",
+      "^common-layout$": "@/components/CommonLayout/CommonLayout.vue"
     }
   },
   "style": {

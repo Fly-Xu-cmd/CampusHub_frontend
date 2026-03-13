@@ -2,7 +2,7 @@
   <CommonLayout headerType="transparent" contentBg="#fff">
     <view
       class="login-container"
-      :style="{ paddingTop: `${2 * (systemStore.statusBarHeight + 30)}rpx` }"
+      :style="{ paddingTop: `${2 * (systemStore.statusBarHeight + 94)}rpx` }"
     >
       <view class="header-section">
         <view class="logo-box">
@@ -14,7 +14,7 @@
           ></wd-icon>
         </view>
         <view class="title">欢迎回来</view>
-        <view class="subtitle">登录 Activity Pro，发现精彩校园生活</view>
+        <view class="subtitle">登录 CampusHub，发现精彩校园生活</view>
       </view>
 
       <view class="form-section">
@@ -55,7 +55,7 @@
           />
           <view class="input-icon" @click="toggleShowPassword">
             <wd-icon
-              :name="showPassword ? 'browse' : 'browse-off'"
+              :name="showPassword ? 'browse-off' : 'browse'"
               size="40rpx"
               color="#94a3b8"
               custom-class="input-icon"
@@ -98,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from "vue";
+import { reactive, ref, onMounted, onUnmounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useSystemStore } from "@/store/system";
 import { useUserStore } from "@/store/user";
@@ -166,7 +166,7 @@ const initCaptcha = async () => {
           captcha.onError((err) => {
             console.error("验证码错误:", err);
           });
-        }
+        },
       );
     }
   } catch (error) {
@@ -192,6 +192,19 @@ onMounted(() => {
   // 仅在 H5 环境下初始化极验，其他环境需适配
   // #ifdef H5
   initCaptcha();
+  // #endif
+});
+
+// 页面卸载时销毁极验实例
+onUnmounted(() => {
+  // #ifdef H5
+  if (captchaObj.value) {
+    captchaObj.value.destroy();
+    captchaObj.value = null;
+  }
+  // 清空容器
+  const el = document.getElementById("captchaBox");
+  if (el) el.innerHTML = "";
   // #endif
 });
 
@@ -228,16 +241,17 @@ const handleLogin = async () => {
 
     uni.hideLoading();
     uni.showToast({ title: "登录成功", icon: "success" });
-
+    response.data.userInfo.qqEmail =
+      response.data.userInfo.qqEmail || formData.qqEmail;
     // 登录成功，存储用户信息
     userStore.login(
       response.data.userInfo,
       response.data.accessToken,
-      response.data.refreshToken
+      response.data.refreshToken,
     );
 
     // 跳转页面
-    const targetUrl = redirectUrl.value || "/pages/index/index";
+    const targetUrl = redirectUrl.value || "/pages/home/index";
     setTimeout(() => {
       // 使用 reLaunch 确保清空页面栈，避免返回到登录页
       uni.reLaunch({ url: targetUrl });
@@ -253,11 +267,8 @@ const handleLogin = async () => {
     formData.genTime = "";
     formData.lotNumber = "";
     formData.passToken = "";
-
-    // 错误提示已在 http 拦截器中处理，但针对特定业务逻辑可补充
-    if (error.code === 401 || error.statusCode === 401) {
-      uni.showToast({ title: "账号或密码错误", icon: "none" });
-    }
+    // HTTP 层已自动显示业务错误 toast（包括账号密码错误、验证码错误等）
+    // 不需要手动显示错误提示
   }
 };
 
@@ -266,7 +277,7 @@ const goToRegister = () => {
 };
 
 const handleForgot = () => {
-  uni.showToast({ title: "功能开发中", icon: "none" });
+  uni.navigateTo({ url: "/pages/forgot-password/index" });
 };
 
 const toggleShowPassword = () => {
@@ -335,7 +346,7 @@ const toggleShowPassword = () => {
     }
 
     .input-icon {
-      margin-right: 24rpx;
+      margin-right: $spacing-xs;
     }
 
     .send-code-btn {

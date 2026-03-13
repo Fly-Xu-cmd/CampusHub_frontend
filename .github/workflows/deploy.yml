@@ -1,0 +1,173 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  NODE_VERSION: '18'
+  DOCKER_IMAGE_NAME: campushub-h5
+  DOCKER_REGISTRY: docker.io
+
+jobs:
+  # 构建和测试
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Build H5 SSR
+        run: npm run build:h5:ssr
+        env:
+          VITE_PROD_BASE_URL: ${{ secrets.VITE_PROD_BASE_URL }}
+          VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
+          VITE_GEETEST_ID: ${{ secrets.VITE_GEETEST_ID }}
+          VITE_DEBUG: 'false'
+
+      - name: Upload H5 build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: h5-ssr-build
+          path: dist/build/h5/
+          retention-days: 7
+
+  # 构建并推送 Docker 镜像
+  docker-build-push:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download H5 build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: h5-ssr-build
+          path: ./dist/build/h5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VITE_PROD_BASE_URL=${{ secrets.VITE_PROD_BASE_URL }}
+            VITE_WS_URL=${{ secrets.VITE_WS_URL }}
+            VITE_GEETEST_ID=${{ secrets.VITE_GEETEST_ID }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # 部署到服务器
+  deploy:
+    needs: docker-build-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            docker-compose.yml
+            nginx.conf
+          sparse-checkout-cone-mode: false
+          fetch-depth: 0
+
+      - name: Upload config files to server via SCP
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          source: "docker-compose.yml,nginx.conf"
+          target: "${{ secrets.DEPLOY_PATH || '~/campushub' }}"
+          strip_components: 0
+
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            mkdir -p ${{ secrets.DEPLOY_PATH || '~/campushub' }}
+            cd ${{ secrets.DEPLOY_PATH || '~/campushub' }}
+            # 登录 Docker Hub
+            echo ${{ secrets.DOCKER_PASSWORD }} | docker login docker.io -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+            # 拉取最新镜像
+            docker-compose pull
+            # 重启所有服务
+            docker-compose up -d
+            # 清理未使用的镜像
+            docker image prune -f
+
+  # 部署通知
+  notify:
+    needs: [build, docker-build-push, deploy]
+    runs-on: ubuntu-latest
+    if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+
+    steps:
+      - name: Send deployment notification
+        run: |
+          echo "Deployment completed!"
+          echo "Docker build status: ${{ needs.docker-build-push.result }}"
+          echo "Deploy status: ${{ needs.deploy.result }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"

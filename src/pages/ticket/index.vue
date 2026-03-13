@@ -1,38 +1,92 @@
 <template>
-	<CommonLayout headerType="title" title="我的票券" :showTabBar="true">
+	<CommonLayout headerType="title" title="我的票券" :showTabBar="true" :enableScroll="false">
 		<view class="content">
+			<scroll-view 
+				class="container" 
+				:style="{ padding: '30rpx', height: '100%' }" 
+                :scroll-top="scrollTop"
+				scroll-y
+				@scrolltolower="loadMore"
+				@refresherpulling="onRefresh"
+				@refresherrefresh="handleRefresh"
+                @scroll="handleScroll"
+                :scroll-with-animation="true"
+				:refresher-enabled="true"
+				:refresher-threshold="90"
+				:refresher-triggered="triggered"
+				refresher-background="#f5f5f5"
+			>
+				<!-- 加载状态 -->
+				<view v-if="loading && tickets.length === 0" class="loading-container">
+					<wd-icon name="loading" size="48rpx" color="#f97316" />
+					<text class="loading-text">加载中...</text>
+				</view>
 
+				<!-- 错误信息 -->
+				<view v-else-if="error" class="error-container">
+					<wd-icon name="error" size="48rpx" color="#ef4444" />
+					<text class="error-text">{{ error }}</text>
+					<view class="retry-btn" @click="() => fetchTicketDetails()">重试</view>
+				</view>
 
-			<view class="container" style="padding: 30rpx;">
-				<view class="time-item">
-					<view class="time-item-left">
-						<view class="i-running">
-							<wd-icon class-prefix="iconfont" name="running" size="68rpx" color="#f97316" />
-						</view>
-						<view class="event-info">
-							<view class="event-title">奥森公园夜跑</view>
-							<view class="event-time">
-								<wd-icon name="clock" size="28rpx" color="#666" />
-								<text class="time-value">
-									{{ formattedEndTime }}
-								</text>
+				<!-- 票券列表 -->
+				<view v-else-if="tickets.length > 0">
+					<view v-for="ticket in tickets" :key="ticket.id" class="time-item">
+						<view class="time-item-left">
+							<view class="i-running">
+					<image v-if="ticket.coverUrl && isImageUrl(ticket.coverUrl)" 
+                     :src="ticket.coverUrl" 
+                     class="ticket-image" 
+                     mode="aspectFill"
+                     @error="handleImageError(ticket)" 
+                     @click="navigateToDetail(ticket.eventId)" />
+					<wd-icon v-else class-prefix="iconfont" name="morentupian" size="68rpx" color="#f97316" @click="navigateToDetail(ticket.eventId)" />
+				</view>
+							<view class="event-info">
+								<view class="event-title">{{ ticket.eventName }}</view>
+								<view class="event-time">
+									<wd-icon name="clock" size="28rpx" color="#666" />
+									<text class="time-value">
+										{{ formatEventTime(ticket.eventTime) }}
+									</text>
+								</view>
+								<view :class="['event-status', ticket.status === 'used' ? 'status-used' : 'status-pending']">
+									{{ ticket.status === 'used' ? '已使用' : '待使用' }}
+								</view>
 							</view>
-							<view :class="['event-status', isUsed ? 'status-used' : 'status-pending']"
-								@click="toggleStatus">
-								{{ isUsed ? '已使用' : '待使用' }}
+						</view>
+						<view class="time-item-right">
+							<view class="qr-code-btn" @click="showQRCode(ticket)">
+								<view class="iconfont iconfont-qrcode" style="font-size: 44rpx; color: #999;"></view>
 							</view>
 						</view>
 					</view>
-					<view class="time-item-right">
-						<view class="qr-code-btn" @click="showQRCode">
-							<view class="iconfont iconfont-qrcode" style="font-size: 24rpx; color: #999;"></view>
-						</view>
+					
+					<!-- 加载更多 -->
+					<view v-if="loading && tickets.length > 0" class="load-more-container">
+						<wd-icon name="loading" size="32rpx" color="#f97316" />
+						<text class="load-more-text">加载更多...</text>
+					</view>
+					
+					<!-- 没有更多数据 -->
+					<view v-if="!hasMore && tickets.length > 0" class="no-more-container">
+						<text class="no-more-text">没有更多票券了</text>
 					</view>
 				</view>
-			</view>
+
+				<!-- 空状态 -->
+				<view v-else class="empty-container">
+					<wd-icon name="ticket" size="64rpx" color="#d1d5db" />
+					<text class="empty-text">暂无票券</text>
+				</view>
+			</scroll-view>
+
+            <wd-backtop :scrollTop="scrollTop" @click="scrollToTop" style="transform: translateY(130rpx) translateX(-100rpx);">
+                <wd-icon name="backtop" size="48rpx" color="#fff" />
+            </wd-backtop>
 
 			<!-- 二维码详情弹窗 -->
-			<view v-if="showQR" class="qr-modal">
+			<view v-if="showQR && selectedTicket" class="qr-modal">
 				<view class="qr-content">
 					<view class="qr-header">
 						<view class="qr-back" @click="hideQRCode">
@@ -42,15 +96,21 @@
 						<view class="qr-empty"></view>
 					</view>
 					<view class="qr-event-info">
-						<text class="qr-event-name">奥森公园夜跑</text>
-						<text class="qr-event-time">10.24 19:00-21:00</text>
+						<text class="qr-event-name">{{ selectedTicket.eventName }}</text>
+						<text class="qr-event-time">{{ formatEventTime(selectedTicket.eventTime) }}</text>
 					</view>
 					<view class="qr-body">
 						<view class="qr-code">
 							<qrcode :value="qrCodeValue" :options="qrCodeOptions"></qrcode>
 						</view>
-						<view class="qr-number">8293</view>
+						<view class="qr-number">{{ selectedTicket.ticketNumber }}</view>
 						<view class="qr-hint">请出示二维码核销入场</view>
+
+						<!-- TOTP码展示 -->
+						<view v-if="totpCode" class="totp-section">
+							<view class="totp-label">TOTP验证码</view>
+							<view class="totp-code">{{ totpCode }}</view>
+						</view>
 					</view>
 				</view>
 			</view>
@@ -59,251 +119,621 @@
 </template>
 
 <script lang="ts" setup>
-	import { computed, ref } from 'vue'
-	import { usePublishStore } from '@/store/publish'
-	import Qrcode from '@chenfengyuan/vue-qrcode'
+import { ref, onMounted } from 'vue'
+import Qrcode from '@chenfengyuan/vue-qrcode'
+import type { Ticket } from '@/types/modules/ticket/ticket'
+import { getTicketList, getTicketDetail } from '@/api/ticket/router'
 
-	const publishStore = usePublishStore()
-	const isUsed = ref(false)
-	const showQR = ref(false)
-	const qrCodeValue = ref('https://ticket.campus-hub.com/event/8293')
-	const qrCodeOptions = ref({
-		width: 180,
-		margin: 10,
-		color: {
-			dark: '#1e293b',
-			light: '#ffffff'
+const showQR = ref(false)
+const selectedTicket = ref<Ticket | null>(null)
+const qrCodeValue = ref('https://ticket.campus-hub.com/event/8293')
+const qrCodeOptions = ref({
+	width: 180,
+	margin: 10,
+	color: {
+		dark: '#1e293b',
+		light: '#ffffff'
+	}
+})
+const tickets = ref<Ticket[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
+
+// 分页相关状态
+const currentPage = ref(1)
+const pageSize = ref(8) // 初始每页显示8个票券
+const hasMore = ref(true) // 是否有更多数据
+const refreshing = ref(false) // 下拉刷新状态
+const triggered = ref(false) // 控制下拉刷新状态
+
+// TOTP码展示相关状态
+const totpCode = ref('')
+
+const scrollTop = ref<number>(0)
+
+// 处理滚动事件，更新scrollTop
+const handleScroll = (e: any) => {
+	scrollTop.value = e.detail.scrollTop
+}
+
+// 点击返回顶部按钮时，平滑滚动到顶部
+const scrollToTop = () => {
+    scrollTop.value = 0
+}
+// 格式化活动时间
+const formatEventTime = (eventTime: string) => {
+	// 假设eventTime格式为 '2024-10-24 19:00:00'
+	const parts = eventTime.split(' ')
+	if (parts.length < 2) return eventTime
+	const datePart = parts[0]
+	const timePart = parts[1]
+	
+	// 格式化日期为 '10.24'
+	const date = new Date(datePart)
+	const month = (date.getMonth() + 1).toString().padStart(2, '0')
+	const day = date.getDate().toString().padStart(2, '0')
+	
+	return `${month}.${day} ${timePart}`
+}
+
+// 判断是否为合法的图片URL
+const isImageUrl = (url: string): boolean => {
+	if (!url || typeof url !== 'string') return false
+	
+	// 去除首尾空格
+	const trimmedUrl = url.trim()
+	if (!trimmedUrl) return false
+	
+	// 检查是否为"null"、"undefined"等无效值
+	const invalidValues = ['null', 'undefined', 'none', 'false', '0']
+	if (invalidValues.includes(trimmedUrl.toLowerCase())) return false
+	
+	// 检查是否为常见的图片URL格式
+	const imageUrlRegex = /^(https?:\/\/\S+\.|\/\S+\.|data:image\/)[^\s]+$/i
+	return imageUrlRegex.test(trimmedUrl)
+}
+
+// 验证图片URL并返回处理后的值
+const validateImageUrl = (url: any): string => {
+	if (isImageUrl(url)) {
+		return typeof url === 'string' ? url.trim() : ''
+	}
+	return ''
+}
+
+// 处理图片加载失败
+const handleImageError = (ticket: any) => {
+	// 当图片加载失败时，将coverUrl设置为空字符串，这样在下一次渲染时就会显示默认图标
+	ticket.coverUrl = ''
+}
+
+// 从 qrCodeUrl 中提取 TOTP 码
+const extractTotpFromQrCode = (qrCodeUrl: string): string => {
+	const match = qrCodeUrl.match(/totp=([0-9]+)/)
+	return match ? match[1] : ''
+}
+
+// 从API获取票券列表
+const fetchTicketDetails = async (isRefresh: boolean = false) => {
+	if (isRefresh) {
+		currentPage.value = 1
+		tickets.value = []
+		hasMore.value = true
+	} else if (!isRefresh && !loading.value && !hasMore.value) {
+		// 没有更多数据，不再请求
+		return
+	}
+
+	if (!isRefresh) {
+		loading.value = true
+	}
+	error.value = null
+	
+	try {
+		// 尝试从API获取数据
+		const result = await getTicketList(currentPage.value, pageSize.value)
+		
+		// 检查result结构
+		if (!result || !result.data || !result.data.items) {
+			// API数据获取失败
+			error.value = '获取票券列表失败'
+			return
 		}
-	})
+		
+		// 直接使用后端返回的数据，进行必要的类型转换
+		const fetchedTickets = result.data.items.map((item: any) => {
+			return {
+				id: item.ticketId?.toString() || '',
+				eventId: item.activityId?.toString() || '',
+				eventName: item.activityName || '',
+				eventTime: item.activityTime || '',
+				eventLocation: '', // 默认空值
+				ticketNumber: item.ticketCode || '',
+				status: item.status === 1 ? 'used' : 'pending', // 将数字状态转换为字符串
+				qrCodeUrl: '', // 默认空值
+				createdAt: new Date().toISOString(), // 当前时间
+				coverUrl: validateImageUrl(item.activityImageUrl) // 活动封面图片URL
+			}
+		})
+		// 过滤掉无效票券
+		const validTickets = fetchedTickets.filter((ticket: any) => ticket && ticket.id) as Ticket[]
 
-	const formattedEndTime = computed(() => {
-		const time = publishStore.endTime
-		if (!time) return ''
-		const date = new Date(time)
-		const month = (date.getMonth() + 1).toString().padStart(2, '0')
-		const day = date.getDate().toString().padStart(2, '0')
-		const hours = date.getHours().toString().padStart(2, '0')
-		const minutes = date.getMinutes().toString().padStart(2, '0')
-		return `${month}.${day} ${hours}:${minutes}`
-	})
+		// 如果是刷新，替换数据；否则累加数据
+		if (isRefresh) {
+			tickets.value = validTickets
+		} else {
+			tickets.value = [...tickets.value, ...validTickets]
+		}
+		
+		// 检查是否有更多数据
+		// 使用total字段判断是否还有更多数据
+		const total = result.data.total || 0
+		hasMore.value = tickets.value.length < total
 
-	const toggleStatus = () => {
-		isUsed.value = !isUsed.value
-		// 这里可以添加API调用，将状态更新到服务器
-		console.log('Ticket status changed to:', isUsed.value ? 'used' : 'pending')
+		// 如果是刷新且无数据，设置error为null
+		if (isRefresh && validTickets.length === 0) {
+			error.value = null
+		}
+
+		// 增加页码
+		if (!isRefresh && hasMore.value) {
+			currentPage.value++
+		}
+	} catch (err) {
+		// API请求失败
+		error.value = '网络请求失败，请重试'
+	} finally {
+		loading.value = false
 	}
+}
 
-	const showQRCode = () => {
+
+
+
+
+// 显示二维码
+const showQRCode = async (ticket: Ticket) => {
+	try {
+		// 从后端获取票券详情
+		const detailResult = await getTicketDetail(ticket.id)
+		if (detailResult && detailResult.data) {
+			// 使用后端返回的详情数据
+			selectedTicket.value = {
+					id: detailResult.data.ticketId?.toString() || ticket.id,
+					eventId: detailResult.data.activityId?.toString() || ticket.eventId,
+					eventName: detailResult.data.activityName || ticket.eventName,
+					eventTime: detailResult.data.activityTime || ticket.eventTime,
+					eventLocation: ticket.eventLocation,
+					ticketNumber: detailResult.data.ticketCode || ticket.ticketNumber,
+					status: ticket.status,
+					qrCodeUrl: detailResult.data.qrCodeUrl || ticket.qrCodeUrl,
+					createdAt: ticket.createdAt,
+					coverUrl: ticket.coverUrl
+				}
+			// 更新二维码值
+			qrCodeValue.value = detailResult.data.qrCodeUrl || `https://ticket.campus-hub.com/event/${ticket.id}`
+			// 从 qrCodeUrl 中提取 TOTP 码
+			totpCode.value = extractTotpFromQrCode(detailResult.data.qrCodeUrl || '')
+		} else {
+			// 如果获取详情失败，使用列表中的数据
+			selectedTicket.value = ticket
+			qrCodeValue.value = `https://ticket.campus-hub.com/event/${ticket.id}`
+			totpCode.value = ''
+		}
 		showQR.value = true
-		// 这里可以添加生成二维码的逻辑
-		console.log('Show QR code')
+	} catch (error) {
+		// 如果获取详情失败，使用列表中的数据
+		selectedTicket.value = ticket
+		qrCodeValue.value = `https://ticket.campus-hub.com/event/${ticket.id}`
+		totpCode.value = ''
+		showQR.value = true
 	}
+}
 
-	const hideQRCode = () => {
-		showQR.value = false
+// 隐藏二维码
+const hideQRCode = () => {
+	showQR.value = false
+	selectedTicket.value = null
+	// 重置TOTP码状态
+	totpCode.value = ''
+}
+
+// 简化的随机文本检测正则表达式
+const RANDOM_TEXT_REGEX = /\b(lorem|ipsum|dolor|sit|amet|consectetur|adipisicing|elit|sed|do|eiusmod|tempor|incididunt|ut|labore|et|dolore|magna|aliqua)\b/i
+
+// 检查是否为随机文本
+const isRandomText = (text: string): boolean => {
+	return RANDOM_TEXT_REGEX.test(text)
+}
+
+
+
+// 加载更多数据
+const loadMore = () => {
+	if (!loading.value && hasMore.value) {
+		fetchTicketDetails()
 	}
+}
+
+// const scrollTop = ref<number>(0)
+// onPageScroll((e) => {
+//   scrollTop.value = e.scrollTop
+// })
+// 下拉刷新开始
+const onRefresh = () => {
+	// 下拉刷新的视觉效果由框架处理
+}
+
+// 处理下拉刷新
+const handleRefresh = async () => {
+	// 开始刷新，显示刷新图标
+	triggered.value = true
+	
+	try {
+		// 刷新时重新加载数据
+		await fetchTicketDetails(true)
+	} finally {
+		// 无论成功失败，都结束刷新状态
+		// 延迟一点时间，让用户看到刷新的视觉效果
+		setTimeout(() => {
+			triggered.value = false
+		}, 300)
+	}
+}
+
+// 跳转到活动详情页面
+const navigateToDetail = (eventId: string) => {
+	uni.navigateTo({
+		url: `/pages/home/detail?id=${eventId}`
+	})
+}
+
+// 组件挂载时获取票券数据
+onMounted(() => {
+	fetchTicketDetails()
+})
 </script>
 
 <style lang="scss" scoped>
-	.nav-title {
-		font-size: 32rpx;
-		font-weight: bold;
-		color: #333;
-	}
+.nav-title {
+	font-size: 32rpx;
+	font-weight: bold;
+	color: #333;
+}
 
-	.container {
-		box-sizing: border-box;
-	}
+.content {
+	height: 92%;
+	box-sizing: border-box;
+}
 
-	.time-item {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		width: 100%;
-		height: 180rpx;
-		padding: 25rpx 5%;
-		background-color: #fff;
-		border-radius: 20rpx;
-		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
-	}
+.container {
+	box-sizing: border-box;
+	overflow: auto;
+	height: 100%;
+}
 
-	.time-item-left {
-		display: flex;
-		align-items: flex-start;
-		gap: 20rpx;
-		margin-top: 10rpx;
-	}
+.time-item {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	width: 100%;
+	height: 180rpx;
+	padding: 25rpx 5%;
+	background-color: #fff;
+	border-radius: 20rpx;
+	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+	margin-bottom: 20rpx;
+}
 
-	.time-item-right {
-		display: flex;
-		align-items: center;
-		margin-top: 35rpx;
-	}
+.time-item-left {
+	display: flex;
+	align-items: flex-start;
+	gap: 20rpx;
+	margin-top: 10rpx;
+}
 
-	.qr-code-btn {
-		padding: 10rpx;
-		cursor: pointer;
-		border-radius: 8rpx;
-		transition: background-color 0.3s ease;
-	}
+.time-item-right {
+	display: flex;
+	align-items: center;
+	margin-top: 35rpx;
+}
 
-	.qr-code-btn:hover {
-		background-color: #f3f4f6;
-	}
+.qr-code-btn {
+	padding: 10rpx;
+	cursor: pointer;
+	border-radius: 8rpx;
+	transition: background-color 0.3s ease;
+}
 
-	/* 二维码详情弹窗样式 */
-	.qr-modal {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: #1e293b;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 1000;
-	}
+.qr-code-btn:hover {
+	background-color: #f3f4f6;
+}
 
-	.qr-content {
-		background-color: #fff;
-		border-radius: 20rpx;
-		width: 90%;
-		max-width: 500rpx;
-		overflow: hidden;
-		box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.3);
-	}
+/* 二维码详情弹窗样式 */
+.qr-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #1e293b;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+}
 
-	.qr-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 30rpx;
-		background-color: #1e293b;
-	}
+.qr-content {
+	background-color: #fff;
+	border-radius: 20rpx;
+	width: 90%;
+	max-width: 500rpx;
+	overflow: hidden;
+	box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.3);
+}
 
-	.qr-back {
-		padding: 10rpx;
-	}
+.qr-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 30rpx;
+	background-color: #1e293b;
+}
 
-	.qr-title {
+.qr-back {
+	padding: 10rpx;
+}
+
+.qr-title {
+	font-size: 28rpx;
+	font-weight: bold;
+	color: #fff;
+}
+
+.qr-empty {
+	width: 44rpx;
+}
+
+.qr-event-info {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 30rpx;
+	background-color: #f97316;
+	color: #fff;
+	gap: 10rpx;
+}
+
+.qr-event-name {
+	font-size: 32rpx;
+	font-weight: bold;
+}
+
+.qr-event-time {
+	font-size: 24rpx;
+	opacity: 0.9;
+}
+
+.qr-body {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 60rpx 30rpx;
+	gap: 40rpx;
+}
+
+.qr-code {
+	width: 280rpx;
+	height: 280rpx;
+	background-color: #f3f4f6;
+	border-radius: 16rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20rpx;
+}
+
+.qr-number {
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #333;
+	letter-spacing: 8rpx;
+}
+
+.qr-hint {
+	font-size: 22rpx;
+	color: #6b7280;
+	text-align: center;
+	line-height: 1.4;
+}
+
+.event-info {
+	display: flex;
+	flex-direction: column;
+	gap: 8rpx;
+}
+
+.event-title {
+	font-size: 29rpx;
+	font-weight: bold;
+	color: #333;
+	font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+	letter-spacing: 2rpx;
+	text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.05);
+}
+
+.event-time {
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+}
+
+.event-status {
+	font-size: 24rpx;
+	font-weight: 500;
+	padding: 6rpx 16rpx;
+	border-radius: 12rpx;
+	width: fit-content;
+	cursor: pointer;
+	transition: all 0.3s ease;
+}
+
+/* 加载状态样式 */
+.loading-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 120rpx 0;
+	
+	.loading-text {
+		margin-top: 24rpx;
 		font-size: 28rpx;
-		font-weight: bold;
-		color: #fff;
+		color: #666;
+		font-weight: 500;
 	}
+}
 
-	.qr-empty {
-		width: 44rpx;
-	}
-
-	.qr-event-info {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 30rpx;
-		background-color: #f97316;
-		color: #fff;
-		gap: 10rpx;
-	}
-
-	.qr-event-name {
-		font-size: 32rpx;
-		font-weight: bold;
-	}
-
-	.qr-event-time {
-		font-size: 24rpx;
-		opacity: 0.9;
-	}
-
-	.qr-body {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 60rpx 30rpx;
-		gap: 40rpx;
-	}
-
-	.qr-code {
-		width: 280rpx;
-		height: 280rpx;
-		background-color: #f3f4f6;
-		border-radius: 16rpx;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 20rpx;
-	}
-
-	.qr-number {
-		font-size: 36rpx;
-		font-weight: bold;
-		color: #333;
-		letter-spacing: 8rpx;
-	}
-
-	.qr-hint {
-		font-size: 22rpx;
-		color: #6b7280;
-		text-align: center;
+/* 错误状态样式 */
+.error-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 120rpx 40rpx;
+	text-align: center;
+	
+	.error-text {
+		margin: 24rpx 0;
+		font-size: 28rpx;
+		color: #ef4444;
+		font-weight: 500;
 		line-height: 1.4;
 	}
-
-	.event-info {
-		display: flex;
-		flex-direction: column;
-		gap: 8rpx;
-	}
-
-	.event-title {
-		font-size: 25rpx;
-		font-weight: bold;
-		color: #333;
-		font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-		letter-spacing: 2rpx;
-		text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.05);
-	}
-
-	.event-time {
-		display: flex;
-		align-items: center;
-		gap: 12rpx;
-	}
-
-	.event-status {
-		font-size: 24rpx;
+	
+	.retry-btn {
+		margin-top: 32rpx;
+		padding: 16rpx 48rpx;
+		background-color: #f97316;
+		color: #fff;
+		font-size: 28rpx;
 		font-weight: 500;
-		padding: 6rpx 16rpx;
 		border-radius: 12rpx;
-		width: fit-content;
+		box-shadow: 0 4rpx 12rpx 0 rgba(249, 115, 22, 0.3);
 		cursor: pointer;
 		transition: all 0.3s ease;
+		
+		&:active {
+			background-color: #ea580c;
+			transform: scale(0.98);
+		}
 	}
+}
 
-	.status-pending {
-		color: #3bb267;
-		background-color: #dcfce7;
+/* 空状态样式 */
+.empty-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 120rpx 0;
+	
+	.empty-text {
+		margin-top: 24rpx;
+		font-size: 28rpx;
+		color: #9ca3af;
+		font-weight: 500;
 	}
+}
 
-	.status-used {
-		color: #6b7280;
-		background-color: #f3f4f6;
-	}
+/* 加载更多样式 */
+.load-more-container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 30rpx 0;
+	color: #999;
+	font-size: 24rpx;
+}
 
-	.i-running {
-		width: 120rpx;
-		height: 120rpx;
-		background-color: #ffedd5;
-		border-radius: 16rpx;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
+.load-more-text {
+	margin-left: 10rpx;
+}
 
-	.time-value {
-		font-size: 26rpx;
-		color: #999;
-	}
+/* 没有更多数据样式 */
+.no-more-container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 30rpx 0;
+	color: #999;
+	font-size: 24rpx;
+}
+
+.status-pending {
+	color: #3bb267;
+	background-color: #dcfce7;
+}
+
+.status-used {
+	color: #6b7280;
+	background-color: #f3f4f6;
+}
+
+.i-running {
+	width: 120rpx;
+	height: 120rpx;
+	background-color: #ffedd5;
+	border-radius: 16rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+}
+
+.ticket-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	border-radius: 16rpx;
+}
+
+.time-value {
+	font-size: 26rpx;
+	color: #999;
+}
+
+/* TOTP码展示样式 */
+.totp-section {
+	width: 100%;
+	margin-top: 30rpx;
+	padding: 0 20rpx;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16rpx;
+}
+
+.totp-label {
+	font-size: 44rpx;
+	color: #f97316;
+	font-weight: 700;
+}
+
+.totp-code {
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #333;
+	letter-spacing: 8rpx;
+	padding: 16rpx 32rpx;
+	background-color: #f9fafb;
+	border: 2rpx solid #e5e7eb;
+	border-radius: 12rpx;
+	min-width: 200rpx;
+	text-align: center;
+}
+
 </style>

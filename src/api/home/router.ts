@@ -1,0 +1,84 @@
+import { get, post } from "@/utils/http";
+
+import type { categories } from "@/types/modules/home/categories";
+import type {
+  activities,
+  ActivitiesRequest,
+} from "@/types/modules/home/activities";
+import type { search, SearchRequest } from "@/types/modules/home/search";
+import type { detail } from "@/types/modules/home/detail";
+import type { sign } from "@/types/modules/home/sign";
+import type { wait, WaitRequest } from "@/types/modules/home/wait";
+import type { systemMessage } from "@/types/modules/home/index";
+import type { user } from "@/types/modules/home/user";
+
+const apiUrls = {
+  getActivityCategoryList: "/api/v1/activity/categories",
+  getActivityList: "/api/v1/activity/lists",
+  searchActivity: "/api/v1/activity/search",
+  getActivityDetail: "/api/v1/activity",
+  getNotifications: "/api/notifications",
+  signActivity: "/api/v1/activity/register",
+  cancelSign: "/api/v1/activity/cancel",
+  getWaitList: "/api/v1/activity/list",
+  getUserHome: "/api/v1/users",
+  getNotificationCount: "/api/notifications/unread-count",
+};
+
+// 获取活动分类列表
+export const getActivityCategoryList = () => {
+  console.log(get(apiUrls.getActivityCategoryList));
+  return get<categories>(apiUrls.getActivityCategoryList);
+};
+
+// 获取活动列表
+export const getActivityList = (params: ActivitiesRequest) => {
+  return get<activities>(
+    `${apiUrls.getActivityList}?page=${params.page}&pageSize=${params.pageSize}&categoryId=${params.categoryId}&status=${params.status}`,
+  );
+};
+
+// 搜索活动
+export const searchActivity = (params: SearchRequest) => {
+  return get<search>(
+    `${apiUrls.searchActivity}?keyword=${params.keyword}&page=${params.page}&pageSize=${params.pageSize}`,
+  );
+};
+
+// 获取活动详情
+export const getActivityDetail = (id: string) => {
+  return get<detail>(`${apiUrls.getActivityDetail}/${id}`);
+};
+
+// 报名活动
+export const signActivity = (id: number) => {
+  return post<sign>(apiUrls.signActivity, {
+    activityId: id,
+  });
+};
+
+// 取消报名活动
+export const cancelSign = (id: number) => {
+  return post<sign>(apiUrls.cancelSign, {
+    activityId: id,
+  });
+};
+
+// 获取待参加活动列表
+export const getWaitList = (params: WaitRequest) => {
+  return get<wait>(
+    `${apiUrls.getWaitList}?type=${params.type}&page=1&pageSize=12`,
+  );
+};
+
+// 获取用户首页信息
+export const getUserHome = (user_id: string) => {
+  return get<user>(`${apiUrls.getUserHome}/${user_id}/home`);
+};
+
+// 获取系统消息未读数量
+export const getNotificationCount = (user_id: number) => {
+  return get<Response<systemMessage>>(apiUrls.getNotificationCount, {
+    data: { user_id },
+  });
+};
