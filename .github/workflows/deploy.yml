@@ -71,6 +71,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: List files for debug
+        run: |
+          ls -la
+          ls -la server.js || echo "server.js not found"
+
       - name: Download H5 build artifacts
         uses: actions/download-artifact@v4
         with:
