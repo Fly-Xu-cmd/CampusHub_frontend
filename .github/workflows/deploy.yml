@@ -164,6 +164,10 @@ jobs:
           script: |
             mkdir -p ${{ secrets.DEPLOY_PATH || '~/campushub' }}
             cd ${{ secrets.DEPLOY_PATH || '~/campushub' }}
+            # 修复 docker-compose 权限（如有需要）
+            if [ -f /usr/local/bin/docker-compose ]; then
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
             # 登录阿里云 ACR
             echo ${{ secrets.ACR_PASSWORD }} | docker login ${{ secrets.ACR_REGISTRY }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
             # 拉取最新镜像
