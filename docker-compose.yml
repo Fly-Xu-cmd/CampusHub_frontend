@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # CampusHub H5 SSR 应用
   app:
-    image: docker.io/${DOCKER_USERNAME:-user}/campushub-h5:latest
+    image: ${ACR_REGISTRY:-registry.cn-hangzhou.aliyuncs.com}/${ACR_NAMESPACE:-your-namespace}/campushub-h5:latest
     container_name: campushub-h5
     restart: unless-stopped
     environment:

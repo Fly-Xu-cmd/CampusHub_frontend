@@ -50,12 +50,13 @@ server.get(/.*/, async (req, res) => {
     }
 
     // 将渲染结果注入模板
-    // UniApp 这里的占位符可能是 也可能是 <div id="app"></div>
+    // UniApp 使用 <div id="app"></div> 作为占位符
     let html = template;
-    if (html.includes('')) {
-      html = html.replace('', appHtml);
-    } else {
+    if (html.includes('<div id="app"></div>')) {
       html = html.replace('<div id="app"></div>', `<div id="app">${appHtml}</div>`);
+    } else {
+      // 兼容其他可能的占位符格式
+      html = html.replace('<!--app-html-->', appHtml);
     }
 
     res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
