@@ -167,7 +167,9 @@ jobs:
             echo ${{ secrets.ACR_PASSWORD }} | docker login ${{ secrets.ACR_REGISTRY }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
             # 拉取最新镜像
             docker-compose pull
-            # 重启所有服务
+            # 删除旧容器（解决旧版 docker-compose 兼容性问题）
+            docker-compose down --remove-orphans
+            # 重新创建并启动服务
             docker-compose up -d
             # 清理未使用的镜像
             docker image prune -f
