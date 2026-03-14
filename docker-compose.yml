@@ -29,9 +29,6 @@ services:
         limits:
           cpus: '0.5'      # 限制 CPU 使用（1/2 核心）
           memory: 768M      # 限制内存使用（保留 512MB 给系统）
-        reservations:
-          cpus: '0.25'     # 保留 CPU（1/4 核心）
-          memory: 384M      # 保留内存
 
   # Nginx 反向代理
   nginx:
@@ -65,9 +62,6 @@ services:
         limits:
           cpus: '0.25'      # 限制 CPU 使用
           memory: 128M       # 限制内存使用
-        reservations:
-          cpus: '0.1'
-          memory: 64M
 
 networks:
   campushub-network:
