@@ -115,6 +115,7 @@ jobs:
             VITE_GEETEST_ID=${{ secrets.VITE_GEETEST_ID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          no-cache: true
 
   # 部署到服务器
   deploy:
