@@ -132,6 +132,16 @@ jobs:
           sparse-checkout-cone-mode: false
           fetch-depth: 0
 
+      - name: Create env file for server
+        run: |
+          cat > .env << EOF
+          ACR_REGISTRY=${{ secrets.ACR_REGISTRY }}
+          ACR_NAMESPACE=${{ secrets.ACR_NAMESPACE }}
+          VITE_PROD_BASE_URL=${{ secrets.VITE_PROD_BASE_URL }}
+          VITE_WS_URL=${{ secrets.VITE_WS_URL }}
+          VITE_GEETEST_ID=${{ secrets.VITE_GEETEST_ID }}
+          EOF
+
       - name: Upload config files to server via SCP
         uses: appleboy/scp-action@master
         with:
@@ -139,7 +149,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT || 22 }}
-          source: "docker-compose.yml,nginx.conf"
+          source: "docker-compose.yml,nginx.conf,.env"
           target: "${{ secrets.DEPLOY_PATH || '~/campushub' }}"
           strip_components: 0
 
