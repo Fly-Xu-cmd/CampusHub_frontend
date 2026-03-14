@@ -2,17 +2,34 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 
-// 1. 路径配置 (根据您的实际目录结构)
+// 1. 路径配置 - 支持多种 SSR 构建产物位置
 const distPath = path.join(__dirname, 'dist/build/h5');
-const clientPath = path.join(distPath, 'client');
-const serverPath = path.join(distPath, 'server');
+let serverPath = path.join(distPath, 'server');
+let clientPath = path.join(distPath, 'client');
+
+// 检查 server 路径是否存在，如果不存在尝试其他位置
+if (!fs.existsSync(serverPath)) {
+  serverPath = path.join(__dirname, 'dist/server');
+  clientPath = path.join(__dirname, 'dist/client');
+}
+
+console.log('Server path:', serverPath);
+console.log('Client path:', clientPath);
+console.log('Server exists:', fs.existsSync(serverPath));
+console.log('Client exists:', fs.existsSync(clientPath));
+
+// 列出 server 目录内容
+if (fs.existsSync(serverPath)) {
+  console.log('Server files:', fs.readdirSync(serverPath));
+}
 
 // 2. 引入 manifest (静态资源清单)
 let manifest = {};
-try {
-  manifest = require(path.join(serverPath, 'ssr-manifest.json'));
-} catch (e) {
-  console.log('Manifest not found, skipping...');
+const manifestPath = path.join(serverPath, 'ssr-manifest.json');
+if (fs.existsSync(manifestPath)) {
+  manifest = require(manifestPath);
+} else {
+  console.log('Manifest not found at:', manifestPath);
 }
 
 // 3. 引入服务端入口
