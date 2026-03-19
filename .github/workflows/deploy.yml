@@ -48,6 +48,7 @@ jobs:
       - name: Build H5 SSR
         run: npm run build:h5:ssr
         env:
+          VITE_BASE_URL: ${{ secrets.VITE_PROD_BASE_URL }}
           VITE_PROD_BASE_URL: ${{ secrets.VITE_PROD_BASE_URL }}
           VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
           VITE_GEETEST_ID: ${{ secrets.VITE_GEETEST_ID }}

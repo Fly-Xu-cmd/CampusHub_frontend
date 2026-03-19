@@ -37,6 +37,6 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    base: "http://192.168.10.9:3029/", // 设置基础路径，确保资源正确加载
+    base: env.VITE_BASE_URL || '/', // 构建时从环境变量读取基础路径
   };
 });
