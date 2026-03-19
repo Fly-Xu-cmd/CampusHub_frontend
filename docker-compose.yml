@@ -51,6 +51,9 @@ services:
       - app
     networks:
       - campushub-network
+    # 允许容器访问宿主机服务
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     logging:
       driver: "json-file"
       options:
