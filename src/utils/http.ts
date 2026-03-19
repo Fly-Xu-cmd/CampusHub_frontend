@@ -81,10 +81,10 @@ const CACHE_EXPIRY = 5 * 60 * 1000;
 // 环境配置
 const env = import.meta.env.MODE;
 
-// 根据环境设置 BASE_URL
+// 根据环境设置 BASE_URL（后端 API 地址）
 const BASE_URL =
   env === "production"
-    ? import.meta.env.VITE_PROD_BASE_URL || "http://192.168.10.9"
+    ? import.meta.env.VITE_API_URL || "http://8.136.112.63:3030"
     : import.meta.env.VITE_BASE_URL || "http://192.168.10.9";
 
 // 获取系统信息用于 User-Agent
