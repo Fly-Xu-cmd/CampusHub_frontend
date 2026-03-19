@@ -37,6 +37,6 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    base: env.VITE_BASE_URL || '/', // 构建时从环境变量读取基础路径
+    base: env.VITE_PROD_BASE_URL || '/', // 前端静态资源基础路径
   };
 });
