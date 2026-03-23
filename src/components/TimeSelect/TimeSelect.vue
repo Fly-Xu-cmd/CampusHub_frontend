@@ -25,8 +25,8 @@
 					allow-same-day
 					:display-format="displayFormat"
 					:inner-display-format="innerDisplayFormat"
-					hide-second="false"
-					z-index="9999"
+					:hide-second="false"
+					:z-index="9999"
 				/>
 			</view>
 		</view>
@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 
 // 定义组件的props
 const props = defineProps({
@@ -78,7 +78,13 @@ const localStartValue = ref(props.startValue)
 const localEndValue = ref(props.endValue)
 const localErrorMessage = ref(props.errorMessage)
 const localIsShowPicker = ref(props.isShowPicker)
-const calendarValue = ref<number[]>([localStartValue.value, localEndValue.value])
+// SSR安全：初始值为空数组，在客户端挂载后设置实际值
+const calendarValue = ref<number[]>([])
+
+// 客户端挂载后初始化日历值，避免SSR水合不匹配
+onMounted(() => {
+	calendarValue.value = [localStartValue.value, localEndValue.value]
+})
 
 // 自定义显示格式化函数
 const displayFormat = (value: number[]): string => {
