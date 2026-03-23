@@ -391,21 +391,16 @@ const goBackHome = () => {
 };
 
 // 验证联系电话格式
-const validatePhone = (event: any) => {
-  // 检查event和event.target是否存在
-  if (!event || !event.target) return;
-
-  // 获取输入值，确保value是字符串
-  let value = event.target.value || "";
-
+const validatePhone = (e: any) => {
+  // 使用 uni-app 标准的 detail.value 获取输入值
+  let value = String(e.detail?.value ?? contactPhone.value ?? "");
+  console.log('phone:',value,e)
   // 只允许输入数字
   value = value.replace(/[^0-9]/g, "");
 
   // 限制长度不超过11个数字
   if (value.length > 11) {
-    value = value.substring(0, 11);
-    // 直接设置input元素的value，确保用户看不到超出的数字
-    event.target.value = value;
+    value = value.slice(0, 11);
     // 显示文本提示
     uni.showToast({ title: "联系电话长度不能超过11个数字", icon: "none" });
   }
@@ -422,43 +417,35 @@ const isValidPhone = (phone: string): boolean => {
 };
 
 // 验证活动详情长度
-const validateDetail = (event: any) => {
-  // 检查event和event.target是否存在
-  if (!event || !event.target) return;
-
-  // 获取输入值
-  let value = event.target.value || "";
+const validateDetail = (e: any) => {
+  // 使用 uni-app 标准的 detail.value 获取输入值
+  let value = String(e.detail?.value ?? activityDetail.value ?? "");
 
   // 限制长度不超过30个字符
   if (value.length > 30) {
-    value = value.substring(0, 30);
-    // 直接设置textarea元素的value，确保用户看不到超出的内容
-    event.target.value = value;
-    // 更新活动详情值
-    activityDetail.value = value;
+    value = value.slice(0, 30);
     // 显示文本提示
     uni.showToast({ title: "活动详情长度不能超过30个字符", icon: "none" });
   }
+
+  // 更新活动详情值
+  activityDetail.value = value;
 };
 
 // 验证活动标题长度
-const validateTitle = (event: any) => {
-  // 检查event和event.target是否存在
-  if (!event || !event.target) return;
-
-  // 获取输入值
-  let value = event.target.value || "";
+const validateTitle = (e: any) => {
+  // 使用 uni-app 标准的 detail.value 获取输入值
+  let value = String(e.detail?.value ?? activityTitle.value ?? "");
 
   // 限制长度不超过20个字符
   if (value.length > 20) {
-    value = value.substring(0, 20);
-    // 直接设置input元素的value，确保用户看不到超出的内容
-    event.target.value = value;
-    // 更新活动标题值
-    activityTitle.value = value;
+    value = value.slice(0, 20);
     // 显示文本提示
     uni.showToast({ title: "标题长度不能超过20个字符", icon: "none" });
   }
+
+  // 更新活动标题值
+  activityTitle.value = value;
 };
 </script>
 

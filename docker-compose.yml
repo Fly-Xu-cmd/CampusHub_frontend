@@ -68,6 +68,9 @@ services:
         reservations:
           cpus: '0.1'
           memory: 64M
+    # 允许容器访问宿主机服务
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 networks:
   campushub-network:
