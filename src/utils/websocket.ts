@@ -182,10 +182,28 @@ class ChatWebSocket {
 
     this.ws.onmessage = (event: MessageEvent) => {
       try {
-        const message: WSMessage = JSON.parse(event.data);
+        const rawData = event.data;
+        console.log("[WebSocket] 原始消息:", rawData);
+
+        // 处理可能的多行消息（每行一个 JSON）
+        if (typeof rawData === "string" && rawData.includes("\n")) {
+          const lines = rawData.split("\n").filter((line) => line.trim());
+          lines.forEach((line) => {
+            try {
+              const message: WSMessage = JSON.parse(line);
+              this.handleMessage(message);
+            } catch (e) {
+              console.error("[WebSocket] 解析多行消息中的某行失败:", line, e);
+            }
+          });
+          return;
+        }
+
+        const message: WSMessage = JSON.parse(rawData);
         this.handleMessage(message);
       } catch (error) {
         console.error("[WebSocket] 解析消息失败:", error);
+        console.error("[WebSocket] 消息内容:", event.data);
       }
     };
 
@@ -222,10 +240,28 @@ class ChatWebSocket {
 
     socketTask.onMessage((event: any) => {
       try {
-        const message: WSMessage = JSON.parse(event.data);
+        const rawData = event.data;
+        console.log("[WebSocket] 原始消息:", rawData);
+
+        // 处理可能的多行消息（每行一个 JSON）
+        if (typeof rawData === "string" && rawData.includes("\n")) {
+          const lines = rawData.split("\n").filter((line) => line.trim());
+          lines.forEach((line) => {
+            try {
+              const message: WSMessage = JSON.parse(line);
+              this.handleMessage(message);
+            } catch (e) {
+              console.error("[WebSocket] 解析多行消息中的某行失败:", line, e);
+            }
+          });
+          return;
+        }
+
+        const message: WSMessage = JSON.parse(rawData);
         this.handleMessage(message);
       } catch (error) {
         console.error("[WebSocket] 解析消息失败:", error);
+        console.error("[WebSocket] 消息内容:", event.data);
       }
     });
 

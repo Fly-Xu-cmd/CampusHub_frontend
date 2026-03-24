@@ -277,11 +277,15 @@ const formatTime = (timestamp: number) => {
 };
 
 onMounted(async () => {
-  // 获取活动分类列表
-  await getCategories();
+  try {
+    // 获取活动分类列表
+    await getCategories();
 
-  // 获取活动列表
-  getActivities();
+    // 获取活动列表
+    await getActivities();
+  } catch (error) {
+    console.error("[首页] 初始化数据失败:", error);
+  }
 });
 
 const tags = ref(); // 活动分类列表
