@@ -56,6 +56,10 @@
               ></wd-icon>
             </view>
           </view>
+          <view class="password-notice">
+            <wd-icon name="info-circle" size="28rpx" color="#f97316"></wd-icon>
+            <text class="notice-text">{{ passwordRulesHint }}</text>
+          </view>
 
           <!-- 极验验证码容器 -->
           <!-- #ifdef H5 -->
@@ -115,6 +119,7 @@ import { useSystemStore } from "@/store/system";
 import { authApi } from "@/api/register/router";
 import { useUserStore } from "@/store/user";
 import { loadGeetestScript } from "@/utils/geetest";
+import { validateQQEmail, validatePassword, getPasswordRulesHint } from "@/utils/validators";
 
 const userStore = useUserStore();
 
@@ -136,6 +141,7 @@ const captchaObj = ref<any>(null);
 const captchaBox = ref<any>(null); // 极验验证码容器
 const captchaError = ref(false); // 验证码初始化失败状态
 const showPassword = ref(false); // 是否显示密码
+const passwordRulesHint = getPasswordRulesHint(); // 密码规则提示
 
 // 初始化极验
 const initCaptcha = async () => {
@@ -216,11 +222,11 @@ const getVerifyCode = async () => {
     return;
   }
   if (timer.value > 0) return;
-  if (
-    !formData.qqEmail ||
-    !/^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$/.test(formData.qqEmail)
-  ) {
-    uni.showToast({ title: "请输入正确的QQ邮箱", icon: "none" });
+
+  // QQ 邮箱格式验证
+  const emailValidation = validateQQEmail(formData.qqEmail);
+  if (!emailValidation.valid) {
+    uni.showToast({ title: emailValidation.message, icon: "none" });
     return;
   }
 
@@ -264,13 +270,32 @@ const getVerifyCode = async () => {
 };
 
 const handleRegister = async () => {
-  if (
-    !formData.qqEmail ||
-    !formData.password ||
-    !formData.nickname ||
-    !formData.qqCode
-  ) {
-    uni.showToast({ title: "请填写完整信息", icon: "none" });
+  // QQ 邮箱格式验证
+  const emailValidation = validateQQEmail(formData.qqEmail);
+  if (!emailValidation.valid) {
+    uni.showToast({ title: emailValidation.message, icon: "none" });
+    return;
+  }
+
+  if (!formData.password) {
+    uni.showToast({ title: "请输入密码", icon: "none" });
+    return;
+  }
+
+  // 密码复杂度验证
+  const passwordValidation = validatePassword(formData.password);
+  if (!passwordValidation.valid) {
+    uni.showToast({ title: passwordValidation.message, icon: "none" });
+    return;
+  }
+
+  if (!formData.nickname) {
+    uni.showToast({ title: "请输入昵称", icon: "none" });
+    return;
+  }
+
+  if (!formData.qqCode) {
+    uni.showToast({ title: "请输入验证码", icon: "none" });
     return;
   }
 
@@ -353,6 +378,23 @@ const toggleShowPassword = () => {
   flex-direction: column;
   gap: 40rpx;
   margin-bottom: 80rpx;
+
+  .password-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 16rpx;
+    background: #fff7ed;
+    border: 1rpx solid #ffedd5;
+    border-radius: 16rpx;
+    padding: 20rpx 24rpx;
+    margin-top: -24rpx;
+
+    .notice-text {
+      font-size: 24rpx;
+      color: #c2410c;
+      line-height: 1.5;
+    }
+  }
 
   .input-wrapper {
     background-color: #f9fafb;

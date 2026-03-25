@@ -18,9 +18,7 @@
           size="32rpx"
           color="#f97316"
         ></wd-icon>
-        <text class="text"
-          >为保障账号安全，请设置包含字母和数字的8位以上密码。</text
-        >
+        <text class="text">{{ passwordRulesHint }}</text>
       </view>
 
       <view class="form-section">
@@ -46,7 +44,7 @@
           <view class="input-inner">
             <input
               class="real-input"
-              placeholder="请输入新密码（至少8位）"
+              placeholder="请输入新密码（8-20位）"
               :password="!showNewPassword"
               v-model="formData.newPassword"
             />
@@ -96,6 +94,7 @@ import {
   CodePasswordUpdateFailed,
 } from "@/utils/businessCodes";
 import type { PostUserPasswordRequest } from "@/types/modules/profile";
+import { validatePassword, getPasswordRulesHint } from "@/utils/validators";
 
 const userStore = useUserStore();
 const loading = ref(false);
@@ -111,10 +110,7 @@ const timer = ref(0);
 const showCurrentPassword = ref(false);
 const showNewPassword = ref(false);
 const showConfirmPassword = ref(false);
-
-// 密码强度验证正则（至少8位，包含字母和数字）
-const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
-const qqEmailRegex = /^[1-9][0-9]{4,10}@qq\.com$/;
+const passwordRulesHint = getPasswordRulesHint(); // 密码规则提示
 
 import { safeNavigateBack } from "@/utils/navigation";
 
@@ -156,8 +152,10 @@ const handleSave = async () => {
     return;
   }
 
-  if (!passwordRegex.test(formData.value.newPassword)) {
-    uni.showToast({ title: "新密码需包含字母和数字，至少8位", icon: "none" });
+  // 密码复杂度验证
+  const passwordValidation = validatePassword(formData.value.newPassword);
+  if (!passwordValidation.valid) {
+    uni.showToast({ title: passwordValidation.message, icon: "none" });
     return;
   }
 

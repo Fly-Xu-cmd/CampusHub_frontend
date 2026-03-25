@@ -104,6 +104,7 @@ import { useSystemStore } from "@/store/system";
 import { useUserStore } from "@/store/user";
 import { authApi } from "@/api/register/router";
 import { loadGeetestScript } from "@/utils/geetest";
+import { validateQQEmail } from "@/utils/validators";
 
 const userStore = useUserStore();
 const passwordPlaceholder = ref("密码");
@@ -209,10 +210,13 @@ onUnmounted(() => {
 });
 
 const handleLogin = async () => {
-  if (!formData.qqEmail) {
-    uni.showToast({ title: "请输入QQ邮箱", icon: "none" });
+  // QQ 邮箱格式验证
+  const emailValidation = validateQQEmail(formData.qqEmail);
+  if (!emailValidation.valid) {
+    uni.showToast({ title: emailValidation.message, icon: "none" });
     return;
   }
+
   // 密码登录逻辑
   if (!formData.password) {
     uni.showToast({ title: "请输入密码", icon: "none" });
